@@ -1,0 +1,258 @@
+<div class="mb-6">
+  <h1 class="page-title">Generación de Informes</h1>
+  <p class="text-gray-500 mt-1">Libros auxiliares, balances y estados financieros</p>
+</div>
+
+<mat-card class="p-4 mb-6">
+  <form [formGroup]="form" (ngSubmit)="generar()" class="form-row">
+          <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+            <mat-icon matPrefix>category</mat-icon>
+            <mat-label>Informe</mat-label>
+            <mat-select formControlName="tipo">
+              <mat-option *ngFor="let t of tiposInforme" [value]="t.id">{{ t.nombre }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" *ngIf="tipo === 'libro' || tipo === 'terceros'">
+            <mat-icon matPrefix>account_balance</mat-icon>
+            <mat-label>Cuenta Mayor</mat-label>
+            <input type="text"
+                   matInput
+                   [formControl]="cuentaSearch"
+                   [matAutocomplete]="autoCuenta"
+                   (focus)="onFocus(0)"
+                   placeholder="Buscar por código o nombre" />
+            <button *ngIf="cuentaSearch.value" matSuffix mat-icon-button type="button" (click)="limpiarCuenta()">
+              <mat-icon>close</mat-icon>
+            </button>
+            <mat-autocomplete #autoCuenta="matAutocomplete" (optionSelected)="seleccionarCuenta($event.option.value)">
+              <mat-option *ngFor="let c of cuentasFiltradas" [value]="c">
+                ({{ c.codigo }}) {{ c.nombre }}
+              </mat-option>
+              <mat-option *ngIf="!cuentasFiltradas.length" disabled>
+                No se encontraron cuentas
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" *ngIf="tipo === 'terceros'">
+            <mat-icon matPrefix>person</mat-icon>
+            <mat-label>Tercero</mat-label>
+            <input type="text"
+                   matInput
+                   [formControl]="terceroSearch"
+                   [matAutocomplete]="autoTercero"
+                   placeholder="Buscar tercero" />
+            <button *ngIf="terceroSearch.value" matSuffix mat-icon-button type="button" (click)="limpiarTercero()">
+              <mat-icon>close</mat-icon>
+            </button>
+            <mat-autocomplete #autoTercero="matAutocomplete" (optionSelected)="seleccionarTercero($event.option.value)">
+              <mat-option *ngFor="let t of tercerosFiltrados" [value]="t">
+                {{ t.nombre }} - {{ t.documento ?? t.codigo }}
+              </mat-option>
+              <mat-option *ngIf="!tercerosFiltrados.length" disabled>
+                No se encontraron terceros
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" *ngIf="tipo === 'rango'">
+            <mat-icon matPrefix>account_balance</mat-icon>
+            <mat-label>Cuenta Inicial</mat-label>
+            <input type="text"
+                   matInput
+                   [formControl]="desdeSearch"
+                   [matAutocomplete]="autoDesde"
+                   (focus)="onFocus(1)"
+                   placeholder="Cuenta inicial" />
+            <button *ngIf="desdeSearch.value" matSuffix mat-icon-button type="button" (click)="limpiarDesde()">
+              <mat-icon>close</mat-icon>
+            </button>
+            <mat-autocomplete #autoDesde="matAutocomplete" (optionSelected)="seleccionarDesde($event.option.value)">
+              <mat-option *ngFor="let c of desdeFiltradas" [value]="c">
+                ({{ c.codigo }}) {{ c.nombre }}
+              </mat-option>
+              <mat-option *ngIf="!desdeFiltradas.length" disabled>
+                No se encontraron cuentas
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" *ngIf="tipo === 'rango'">
+            <mat-icon matPrefix>account_balance</mat-icon>
+            <mat-label>Cuenta Final</mat-label>
+            <input type="text"
+                   matInput
+                   [formControl]="hastaSearch"
+                   [matAutocomplete]="autoHasta"
+                   (focus)="onFocus(2)"
+                   placeholder="Cuenta final" />
+            <button *ngIf="hastaSearch.value" matSuffix mat-icon-button type="button" (click)="limpiarHasta()">
+              <mat-icon>close</mat-icon>
+            </button>
+            <mat-autocomplete #autoHasta="matAutocomplete" (optionSelected)="seleccionarHasta($event.option.value)">
+              <mat-option *ngFor="let c of hastaFiltradas" [value]="c">
+                ({{ c.codigo }}) {{ c.nombre }}
+              </mat-option>
+              <mat-option *ngIf="!hastaFiltradas.length" disabled>
+                No se encontraron cuentas
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" *ngIf="tipo === 'libro' || tipo === 'rango' || tipo === 'terceros'">
+            <mat-icon matPrefix>list</mat-icon>
+            <mat-label>Modo</mat-label>
+            <mat-select formControlName="modo">
+              <mat-option *ngFor="let m of modos" [value]="m.id">{{ m.nombre }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always">
+            <mat-icon matPrefix>event</mat-icon>
+            <mat-label>Fecha Inicial</mat-label>
+            <input matInput type="date" formControlName="date" />
+          </mat-form-field>
+
+          <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always">
+            <mat-icon matPrefix>event</mat-icon>
+            <mat-label>Fecha Final</mat-label>
+            <input matInput type="date" formControlName="date2" />
+          </mat-form-field>
+
+          <div class="field-action flex-none">
+            <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded" [disabled]="cargando || form.invalid">
+              <mat-icon>play_arrow</mat-icon>
+              Proceder
+            </button>
+          </div>
+        </form>
+      </mat-card>
+
+<mat-card class="p-4" *ngIf="resultado">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4" *ngIf="resultado.totales && resultado.tipo === 'balance'">
+    <div class="p-4 text-center rounded border border-gray-200">
+      <p class="text-sm text-gray-600">Total Activo</p>
+      <p class="text-xl font-extrabold text-blue-700">{{ resultado.totales.activo | number: '1.2-2' }}</p>
+    </div>
+    <div class="p-4 text-center rounded border border-gray-200">
+      <p class="text-sm text-gray-600">Total Pasivo</p>
+      <p class="text-xl font-extrabold text-red-700">{{ resultado.totales.pasivo | number: '1.2-2' }}</p>
+    </div>
+    <div class="p-4 text-center rounded border border-gray-200">
+      <p class="text-sm text-gray-600">Total Patrimonio</p>
+      <p class="text-xl font-extrabold text-green-700">{{ resultado.totales.patrimonio | number: '1.2-2' }}</p>
+    </div>
+    <div class="p-4 text-center rounded border border-gray-200">
+      <p class="text-sm text-gray-600">Pasivo + Patrimonio</p>
+      <p class="text-xl font-extrabold text-gray-800">{{ resultado.totales.pasivo_mas_patrimonio | number: '1.2-2' }}</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4" *ngIf="resultado.totales && resultado.tipo === 'pyg'">
+    <div class="p-4 text-center rounded border border-gray-200">
+      <p class="text-sm text-gray-600">Total Ingresos</p>
+      <p class="text-xl font-extrabold text-blue-700">{{ resultado.totales.ingresos | number: '1.2-2' }}</p>
+    </div>
+    <div class="p-4 text-center rounded border border-gray-200">
+      <p class="text-sm text-gray-600">Total Gastos</p>
+      <p class="text-xl font-extrabold text-red-700">{{ resultado.totales.gastos | number: '1.2-2' }}</p>
+    </div>
+    <div class="p-4 text-center rounded border border-gray-200">
+      <p class="text-sm text-gray-600">Utilidad / Pérdida</p>
+      <p class="text-xl font-extrabold" [ngClass]="resultado.totales.utilidad >= 0 ? 'text-green-700' : 'text-red-700'">{{ resultado.totales.utilidad | number: '1.2-2' }}</p>
+    </div>
+  </div>
+
+  <div class="flex items-center justify-between mb-4" *ngIf="!resultado.totales">
+    <div>
+      <h2 class="section-title mb-0">
+        {{ resultado.cuenta?.codigo }} - {{ resultado.cuenta?.nombre }}
+      </h2>
+      <p class="text-sm text-gray-500">Modo: {{ resultado.modo }}</p>
+    </div>
+    <div class="text-right">
+      <p class="text-sm text-gray-600">Saldo final</p>
+      <p class="text-2xl font-extrabold" [ngClass]="resultado.saldo_final >= 0 ? 'text-blue-700' : 'text-red-700'">
+        {{ resultado.saldo_final | number: '1.2-2' }}
+      </p>
+    </div>
+  </div>
+
+  <table mat-table [dataSource]="resultado.data" class="w-full" *ngIf="columnas.length">
+    <ng-container matColumnDef="fecha">
+      <th mat-header-cell *matHeaderCellDef>Fecha</th>
+      <td mat-cell *matCellDef="let row">{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="consecutivo">
+      <th mat-header-cell *matHeaderCellDef>Consecutivo</th>
+      <td mat-cell *matCellDef="let row">{{ row.consecutivo }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="cuenta">
+      <th mat-header-cell *matHeaderCellDef>Cuenta</th>
+      <td mat-cell *matCellDef="let row">
+        <span *ngIf="row.cuenta_contable">({{ row.cuenta_contable.codigo }}) {{ row.cuenta_contable.nombre }}</span>
+        <span *ngIf="row.cuenta">({{ row.cuenta.codigo }}) {{ row.cuenta.nombre }}</span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="tercero">
+      <th mat-header-cell *matHeaderCellDef>Tercero</th>
+      <td mat-cell *matCellDef="let row">{{ row.tercero?.nombre }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="descripcion">
+      <th mat-header-cell *matHeaderCellDef>Descripción</th>
+      <td mat-cell *matCellDef="let row">{{ row.descripcion }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="codigo">
+      <th mat-header-cell *matHeaderCellDef>Código</th>
+      <td mat-cell *matCellDef="let row">{{ row.cuenta?.codigo }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="nombre">
+      <th mat-header-cell *matHeaderCellDef>Nombre</th>
+      <td mat-cell *matCellDef="let row">{{ row.cuenta?.nombre }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="clase">
+      <th mat-header-cell *matHeaderCellDef>Clase</th>
+      <td mat-cell *matCellDef="let row">{{ row.clase }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="debito">
+      <th mat-header-cell *matHeaderCellDef>Débito</th>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.debito | number: '1.2-2' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="credito">
+      <th mat-header-cell *matHeaderCellDef>Crédito</th>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.credito | number: '1.2-2' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="valor">
+      <th mat-header-cell *matHeaderCellDef>Valor</th>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.valor | number: '1.2-2' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="saldo">
+      <th mat-header-cell *matHeaderCellDef>Saldo</th>
+      <td mat-cell *matCellDef="let row" class="text-right font-bold">{{ row.saldo | number: '1.2-2' }}</td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+    <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
+  </table>
+
+  <div *ngIf="resultado.data.length === 0" class="p-8 text-center text-gray-500">
+    No hay registros para los filtros seleccionados
+  </div>
+
+  <div class="mt-4 flex justify-end gap-6 text-sm text-gray-600" *ngIf="resultado.total_debito !== undefined">
+    <span><strong>Total débito:</strong> {{ resultado.total_debito | number: '1.2-2' }}</span>
+    <span><strong>Total crédito:</strong> {{ resultado.total_credito | number: '1.2-2' }}</span>
+  </div>
+</mat-card>

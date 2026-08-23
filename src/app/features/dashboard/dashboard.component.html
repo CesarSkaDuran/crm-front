@@ -1,0 +1,130 @@
+<div class="p-6">
+  <div class="comprobantes-header mb-6">
+    <h1 class="page-title">Resumen general</h1>
+    <p class="text-gray-500 mt-1">Visión rápida del estado contable y financiero</p>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+    <mat-card class="summary-card bg-blue-50">
+      <div class="flex items-center gap-4">
+        <div class="summary-icon bg-blue-100 text-blue-600">
+          <mat-icon>account_balance_wallet</mat-icon>
+        </div>
+        <div>
+          <p class="summary-label">Cartera por cobrar</p>
+          <p class="summary-value text-blue-700">
+            {{ resumen.cartera | number: '1.2-2' }}
+          </p>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="summary-card bg-red-50">
+      <div class="flex items-center gap-4">
+        <div class="summary-icon bg-red-100 text-red-600">
+          <mat-icon>payments</mat-icon>
+        </div>
+        <div>
+          <p class="summary-label">Cuentas por pagar</p>
+          <p class="summary-value text-red-700">
+            {{ resumen.porPagar | number: '1.2-2' }}
+          </p>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="summary-card bg-green-50">
+      <div class="flex items-center gap-4">
+        <div class="summary-icon bg-green-100 text-green-600">
+          <mat-icon>account_balance</mat-icon>
+        </div>
+        <div>
+          <p class="summary-label">Saldo bancario</p>
+          <p class="summary-value text-green-700">
+            {{ resumen.bancos | number: '1.2-2' }}
+          </p>
+        </div>
+      </div>
+    </mat-card>
+
+    <mat-card class="summary-card bg-purple-50">
+      <div class="flex items-center gap-4">
+        <div class="summary-icon bg-purple-100 text-purple-600">
+          <mat-icon>swap_horiz</mat-icon>
+        </div>
+        <div>
+          <p class="summary-label">Movimientos tesorería</p>
+          <p class="summary-value text-purple-700">
+            {{ resumen.tesoreria | number: '1.2-2' }}
+          </p>
+        </div>
+      </div>
+    </mat-card>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <mat-card class="p-6">
+      <h2 class="section-title">Últimos comprobantes</h2>
+      <table mat-table [dataSource]="ultimosComprobantes" class="w-full">
+        <ng-container matColumnDef="consecutivo">
+          <th mat-header-cell *matHeaderCellDef>Consecutivo</th>
+          <td mat-cell *matCellDef="let row">{{ row.consecutivo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fecha">
+          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <td mat-cell *matCellDef="let row">{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="total">
+          <th mat-header-cell *matHeaderCellDef>Total</th>
+          <td mat-cell *matCellDef="let row">{{ row.total_debito | number: '1.2-2' }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="comprobantesColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: comprobantesColumns;"></tr>
+      </table>
+    </mat-card>
+
+    <mat-card class="p-6">
+      <h2 class="section-title">Bancos</h2>
+      <table mat-table [dataSource]="bancosList" class="w-full">
+        <ng-container matColumnDef="nombre">
+          <th mat-header-cell *matHeaderCellDef>Nombre</th>
+          <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="monto">
+          <th mat-header-cell *matHeaderCellDef>Monto</th>
+          <td mat-cell *matCellDef="let row">{{ row.monto | number: '1.2-2' }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="bancosColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: bancosColumns;"></tr>
+      </table>
+    </mat-card>
+
+    <mat-card class="p-6">
+      <h2 class="section-title">Tesorería</h2>
+      <table mat-table [dataSource]="movimientosTesoreria" class="w-full">
+        <ng-container matColumnDef="codigo">
+          <th mat-header-cell *matHeaderCellDef>Código</th>
+          <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="nombre_tercero">
+          <th mat-header-cell *matHeaderCellDef>Tercero</th>
+          <td mat-cell *matCellDef="let row">{{ row.nombre_tercero }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="valor">
+          <th mat-header-cell *matHeaderCellDef>Valor</th>
+          <td mat-cell *matCellDef="let row">{{ row.valor | number: '1.2-2' }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="tesoreriaColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: tesoreriaColumns;"></tr>
+      </table>
+    </mat-card>
+  </div>
+</div>

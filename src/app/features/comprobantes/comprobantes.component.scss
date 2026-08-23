@@ -1,0 +1,57 @@
+:host {
+  display: block;
+  padding: 1.5rem;
+}
+
+.comprobantes-header {
+  @apply mb-6;
+}
+
+.form-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+
+  .field-action {
+    flex: 0 0 auto;
+  }
+}
+
+.totales-card {
+  @apply h-fit;
+
+  .total-line {
+    p:last-child {
+      @apply text-3xl font-extrabold text-gray-800;
+    }
+  }
+
+  .validacion-box {
+    @apply p-4 rounded-xl;
+
+    &.validado {
+      @apply bg-green-100 text-green-800;
+    }
+
+    &.no-validado {
+      @apply bg-red-100 text-red-800;
+    }
+  }
+}
+
+th.mat-mdc-header-cell {
+  font-weight: 700;
+  background-color: #f3f4f6;
+  color: #374151;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+td.mat-mdc-cell,
+th.mat-mdc-header-cell {
+  padding: 0 16px;
+}
+
+tr.mat-mdc-row:hover {
+  background-color: #f9fafb;
+}

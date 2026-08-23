@@ -1,0 +1,113 @@
+<div class="mb-6">
+  <h1 class="page-title">Tipos de comprobantes</h1>
+  <p class="text-gray-500 mt-1">Configura los tipos de documento y sus consecutivos</p>
+</div>
+
+<mat-card class="p-4 mb-6">
+  <h2 class="section-title">
+    {{ editandoId ? 'Editar tipo' : 'Nuevo tipo' }}
+  </h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <div class="form-row">
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>assignment</mat-icon>
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="nombre" required />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>short_text</mat-icon>
+        <mat-label>Sigla</mat-label>
+        <input matInput formControlName="simple" placeholder="FV" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>numbers</mat-icon>
+        <mat-label>Prefijo</mat-label>
+        <input matInput formControlName="prefijo" placeholder="000" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>trending_up</mat-icon>
+        <mat-label>Consecutivo</mat-label>
+        <input matInput type="number" formControlName="consecutivo" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>category</mat-icon>
+        <mat-label>Tipo</mat-label>
+        <mat-select formControlName="tipo">
+          <mat-option *ngFor="let t of tipos" [value]="t.id">{{ t.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="field-action flex-none">
+        <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded" [disabled]="form.invalid">
+          <mat-icon>{{ editandoId ? 'save' : 'add_circle_outline' }}</mat-icon>
+          <span class="ml-2 hidden md:inline">{{ editandoId ? 'Actualizar' : 'Agregar' }}</span>
+        </button>
+        <button *ngIf="editandoId" type="button" mat-stroked-button color="warn" class="fuse-mat-button-rounded" (click)="cancelar()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+  </form>
+</mat-card>
+
+<mat-card class="p-4">
+  <div class="flex items-center justify-between mb-4 gap-4">
+    <h2 class="section-title mb-0">Tipos registrados</h2>
+    <mat-form-field class="blue-input w-72" subscriptSizing="dynamic">
+      <mat-icon matPrefix>search</mat-icon>
+      <mat-label>Buscar</mat-label>
+      <input matInput [(ngModel)]="search" [ngModelOptions]="{ standalone: true }" (keyup.enter)="cargar()" />
+    </mat-form-field>
+  </div>
+
+  <table mat-table [dataSource]="lista" class="w-full">
+    <ng-container matColumnDef="nombre">
+      <th mat-header-cell *matHeaderCellDef>Nombre</th>
+      <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="simple">
+      <th mat-header-cell *matHeaderCellDef>Sigla</th>
+      <td mat-cell *matCellDef="let row">{{ row.simple }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="prefijo">
+      <th mat-header-cell *matHeaderCellDef>Prefijo</th>
+      <td mat-cell *matCellDef="let row">{{ row.prefijo }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="consecutivo">
+      <th mat-header-cell *matHeaderCellDef>Consecutivo</th>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.consecutivo }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="tipo">
+      <th mat-header-cell *matHeaderCellDef>Tipo</th>
+      <td mat-cell *matCellDef="let row">{{ nombreTipo(row.tipo) }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="acciones">
+      <th mat-header-cell *matHeaderCellDef>Acciones</th>
+      <td mat-cell *matCellDef="let row">
+        <button mat-icon-button color="primary" (click)="editar(row)">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="eliminar(row)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  <div *ngIf="lista.length === 0" class="p-8 text-center text-gray-500">
+    No hay tipos registrados
+  </div>
+</mat-card>

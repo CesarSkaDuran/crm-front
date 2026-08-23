@@ -1,0 +1,120 @@
+<mat-sidenav-container class="h-screen w-full bg-gray-50">
+  <mat-sidenav
+    [mode]="'side'"
+    [opened]="opened()"
+    class="!bg-slate-900 !border-r-slate-800"
+    [style.width.px]="280">
+
+    <div class="flex flex-col h-full text-slate-300">
+      <!-- Logo -->
+      <div class="flex items-center h-16 px-6 border-b border-slate-800">
+        <div class="w-8 h-8 rounded bg-indigo-600 flex items-center justify-center text-white font-bold">C</div>
+        <span class="ml-3 font-semibold text-white">CRM Solucion Empresarial</span>
+      </div>
+
+      <!-- User -->
+      <div class="p-6 text-center border-b border-slate-800">
+        <div class="w-16 h-16 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-2xl font-bold text-white">
+          {{ iniciales }}
+        </div>
+        <div class="mt-4 font-medium text-white">{{ nombreUsuario }}</div>
+        <div class="text-sm text-slate-500 truncate">{{ emailUsuario }}</div>
+        <button
+          type="button"
+          (click)="logout()"
+          class="mt-4 inline-flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg text-slate-300 border border-slate-700 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/40 transition"
+        >
+          <mat-icon class="!text-base !w-4 !h-4 leading-4">logout</mat-icon>
+          Cerrar sesión
+        </button>
+      </div>
+
+      <!-- Menu -->
+      <nav class="flex-1 overflow-y-auto py-4 space-y-1">
+        @for (item of menu(); track item.id) {
+          <div class="px-3">
+            @if (item.link && (!item.children || item.children.length === 0)) {
+              <a
+                [routerLink]="item.link"
+                routerLinkActive="nav-active"
+                [routerLinkActiveOptions]="{ exact: true }"
+                class="nav-link"
+              >
+                <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+                <span>{{ item.title }}</span>
+              </a>
+            } @else {
+              <button
+                type="button"
+                (click)="toggleGroup(item.id)"
+                class="nav-link w-full"
+              >
+                <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
+                <span class="flex-1 text-left">{{ item.title }}</span>
+                <mat-icon
+                  class="!text-slate-500 transition-transform duration-200"
+                  [class.rotate-180]="expanded()[item.id]"
+                >expand_more</mat-icon>
+              </button>
+
+              @if (expanded()[item.id]) {
+                <div class="mt-1 mb-2 ml-5 pl-3 border-l border-slate-700 space-y-1">
+                  @for (child of item.children; track child.id) {
+                    <a
+                      [routerLink]="child.link"
+                      routerLinkActive="nav-active"
+                      [routerLinkActiveOptions]="{ exact: true }"
+                      class="nav-sublink"
+                    >{{ child.title }}</a>
+                  }
+                </div>
+              }
+            }
+          </div>
+        }
+      </nav>
+
+      <!-- Footer logo area -->
+      <div class="flex items-center justify-center h-14 px-6 text-xs text-slate-600 border-t border-slate-800">
+        CRM &copy; 2026
+      </div>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="bg-gray-50">
+    <!-- Header -->
+    <mat-toolbar class="!h-16 !px-4 bg-white shadow-sm border-b">
+      <button type="button" mat-icon-button (click)="toggleSidenav()" class="mr-2">
+        <mat-icon>menu</mat-icon>
+      </button>
+      <span class="text-lg font-medium text-gray-800">CRM Solucion Empresarial</span>
+
+      <span class="flex-1"></span>
+
+      <button type="button" mat-button [matMenuTriggerFor]="userMenu" class="!rounded-full">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold text-white">
+            {{ iniciales }}
+          </div>
+          <span class="hidden md:inline text-sm text-gray-700">{{ nombreUsuario }}</span>
+          <mat-icon class="!text-gray-500">expand_more</mat-icon>
+        </div>
+      </button>
+
+      <mat-menu #userMenu="matMenu">
+        <div class="px-4 py-3 border-b">
+          <p class="text-sm font-medium text-gray-800">{{ nombreUsuario }}</p>
+          <p class="text-xs text-gray-500">{{ emailUsuario }}</p>
+        </div>
+        <button mat-menu-item (click)="logout()">
+          <mat-icon class="!text-red-500">logout</mat-icon>
+          <span class="text-red-600">Cerrar sesión</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <main class="p-6">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

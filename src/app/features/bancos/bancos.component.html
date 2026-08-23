@@ -1,0 +1,114 @@
+<div class="bancos-header mb-6">
+  <h1 class="page-title">Bancos</h1>
+  <p class="text-gray-500 mt-1">Administra las cuentas bancarias y cajas</p>
+</div>
+
+<mat-card class="p-4 mb-6">
+  <h2 class="section-title">
+    {{ editandoId ? 'Editar banco' : 'Nuevo banco' }}
+  </h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <div class="form-row">
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>account_balance</mat-icon>
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="nombre" required />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>category</mat-icon>
+        <mat-label>Tipo</mat-label>
+        <mat-select formControlName="tipo">
+          <mat-option *ngFor="let t of tipos" [value]="t.id">{{ t.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>list_alt</mat-icon>
+        <mat-label>Cuenta contable</mat-label>
+        <mat-select formControlName="cuenta_id">
+          <mat-option *ngFor="let c of cuentas" [value]="c.codigo">({{ c.codigo }}) {{ c.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>attach_money</mat-icon>
+        <mat-label>Monto</mat-label>
+        <input matInput type="number" formControlName="monto" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>today</mat-icon>
+        <mat-label>Monto del día</mat-label>
+        <input matInput type="number" formControlName="monto_dia" />
+      </mat-form-field>
+
+      <div class="field-action flex-none">
+        <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded" [disabled]="form.invalid">
+          <mat-icon>{{ editandoId ? 'save' : 'add_circle_outline' }}</mat-icon>
+          <span class="ml-2 hidden md:inline">{{ editandoId ? 'Actualizar' : 'Agregar' }}</span>
+        </button>
+        <button *ngIf="editandoId" type="button" mat-stroked-button color="warn" class="fuse-mat-button-rounded" (click)="cancelar()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+  </form>
+</mat-card>
+
+<mat-card class="p-4">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="section-title mb-0">Bancos registrados</h2>
+    <div class="text-right">
+      <p class="text-sm text-gray-600">Saldo total</p>
+      <p class="text-2xl font-extrabold text-gray-800">{{ totalMonto | number: '1.2-2' }}</p>
+    </div>
+  </div>
+
+  <table mat-table [dataSource]="lista" class="w-full">
+    <ng-container matColumnDef="nombre">
+      <th mat-header-cell *matHeaderCellDef>Nombre</th>
+      <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="tipo">
+      <th mat-header-cell *matHeaderCellDef>Tipo</th>
+      <td mat-cell *matCellDef="let row">{{ nombreTipo(row.tipo) }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="cuenta_id">
+      <th mat-header-cell *matHeaderCellDef>Cuenta</th>
+      <td mat-cell *matCellDef="let row">{{ nombreCuenta(row.cuenta_id) }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="monto">
+      <th mat-header-cell *matHeaderCellDef>Monto</th>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.monto | number: '1.2-2' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="monto_dia">
+      <th mat-header-cell *matHeaderCellDef>Monto del día</th>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.monto_dia | number: '1.2-2' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="acciones">
+      <th mat-header-cell *matHeaderCellDef>Acciones</th>
+      <td mat-cell *matCellDef="let row">
+        <button mat-icon-button color="primary" (click)="editar(row)">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="eliminar(row)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  <div *ngIf="lista.length === 0" class="p-8 text-center text-gray-500">
+    No hay bancos registrados
+  </div>
+</mat-card>

@@ -15,3 +15,76 @@
 body {
   @apply font-sans antialiased text-gray-700 bg-gray-50;
 }
+
+.mat-mdc-card {
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+}
+
+.mat-mdc-form-field {
+  border-radius: 8px;
+}
+
+.mat-mdc-text-field-wrapper {
+  border-radius: 12px !important;
+}
+
+.mdc-button,
+.mat-mdc-raised-button,
+.mat-mdc-stroked-button,
+.mat-mdc-button {
+  border-radius: 9999px !important;
+  text-transform: none;
+  font-weight: 600;
+}
+
+.fuse-mat-button-rounded {
+  border-radius: 9999px !important;
+  padding: 0 24px !important;
+  height: 44px !important;
+}
+
+.blue-input {
+  .mat-mdc-text-field-wrapper {
+    border-radius: 12px !important;
+    background-color: #eef6ff !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    border: 1px solid transparent !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  }
+
+  .mat-mdc-text-field-wrapper.mdc-text-field--focused {
+    background-color: #e3f2fd !important;
+    border-color: #2196f3 !important;
+  }
+
+  .mdc-text-field--invalid .mat-mdc-text-field-wrapper {
+    border-color: #f44336 !important;
+  }
+
+  .mdc-line-ripple {
+    display: none !important;
+  }
+
+  .mat-mdc-form-field-icon-prefix {
+    padding-right: 10px !important;
+    color: #2196f3 !important;
+  }
+
+  .mat-mdc-form-field-icon-suffix {
+    color: #2196f3 !important;
+  }
+
+  input.mat-mdc-input-element[type='date'] {
+    line-height: 1.2;
+  }
+}
+
+.page-title {
+  @apply text-3xl font-extrabold tracking-tight text-gray-900;
+}
+
+.section-title {
+  @apply text-lg font-semibold text-gray-800 mb-4;
+}

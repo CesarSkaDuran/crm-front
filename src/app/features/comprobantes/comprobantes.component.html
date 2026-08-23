@@ -1,0 +1,134 @@
+<div class="comprobantes-header mb-6">
+  <h1 class="page-title">Generación de Comprobantes</h1>
+</div>
+
+<mat-card class="p-4 mb-6">
+  <form [formGroup]="lineaForm" (ngSubmit)="agregarLinea()">
+    <div class="form-row flex-nowrap overflow-x-auto">
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>assignment</mat-icon>
+        <mat-label>Tipo</mat-label>
+        <mat-select formControlName="tipo" (selectionChange)="tipoSeleccionado()" required>
+          <mat-option *ngFor="let t of tipos" [value]="t.id">{{ t.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>account_balance</mat-icon>
+        <mat-label>Cuenta</mat-label>
+        <mat-select formControlName="cuenta_contable_id" required>
+          <mat-option *ngFor="let c of cuentas" [value]="c.id">({{ c.codigo }}) {{ c.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>edit</mat-icon>
+        <mat-label>Descripción</mat-label>
+        <input matInput formControlName="descripcion" required />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>attach_money</mat-icon>
+        <mat-label>Valor</mat-label>
+        <input matInput type="number" formControlName="valor" required />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>person</mat-icon>
+        <mat-label>Terceros</mat-label>
+        <mat-select formControlName="tercero_id">
+          <mat-option *ngFor="let t of terceros" [value]="t.id">{{ t.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="field-action flex-none">
+        <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded" [disabled]="lineaForm.invalid">
+          <mat-icon>add_circle_outline</mat-icon>
+          <span class="ml-2 hidden md:inline">Agregar</span>
+        </button>
+      </div>
+    </div>
+  </form>
+</mat-card>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+  <mat-card class="p-4 lg:col-span-2">
+    <h2 class="section-title">Líneas del comprobante</h2>
+    <table mat-table [dataSource]="lineas" class="w-full">
+      <ng-container matColumnDef="cuenta">
+        <th mat-header-cell *matHeaderCellDef>Cuenta</th>
+        <td mat-cell *matCellDef="let row">({{ row.cuenta?.codigo }}) {{ row.cuenta?.nombre }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="tercero">
+        <th mat-header-cell *matHeaderCellDef>Tercero</th>
+        <td mat-cell *matCellDef="let row">{{ row.tercero?.nombre }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="naturaleza">
+        <th mat-header-cell *matHeaderCellDef>Naturaleza</th>
+        <td mat-cell *matCellDef="let row">{{ row.naturaleza === 'D' ? 'Débito' : 'Crédito' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="descripcion">
+        <th mat-header-cell *matHeaderCellDef>Descripción</th>
+        <td mat-cell *matCellDef="let row">{{ row.descripcion }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="valor">
+        <th mat-header-cell *matHeaderCellDef>Valor</th>
+        <td mat-cell *matCellDef="let row" class="text-right">{{ row.valor | number: '1.2-2' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let row; let i = index">
+          <button mat-icon-button color="warn" (click)="eliminarLinea(i)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+    <div *ngIf="lineas.length === 0" class="p-8 text-center text-gray-500">
+      No hay líneas agregadas
+    </div>
+  </mat-card>
+
+  <mat-card class="p-4 totales-card">
+    <h3 class="section-title">Consecutivo</h3>
+    <p class="text-xl font-bold text-gray-800 mb-6">{{ consecutivo || '—' }}</p>
+
+    <h3 class="section-title">Totales</h3>
+    <div class="total-line mb-5">
+      <p class="text-sm text-gray-600">Total Débito</p>
+      <p class="text-3xl font-bold text-right">{{ totalDebito | number: '1.2-2' }}</p>
+    </div>
+
+    <div class="total-line mb-5">
+      <p class="text-sm text-gray-600">Total Crédito</p>
+      <p class="text-3xl font-bold text-right">{{ totalCredito | number: '1.2-2' }}</p>
+    </div>
+
+    <div class="validacion-box mb-6" [ngClass]="balanceado ? 'validado' : 'no-validado'">
+      <div class="flex items-center justify-between">
+        <span class="font-medium">{{ balanceado ? 'Débito = Crédito' : 'No balanceado' }}</span>
+        <mat-icon>{{ balanceado ? 'check_circle' : 'error' }}</mat-icon>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <button mat-stroked-button color="warn" (click)="restaurar()" class="fuse-mat-button-rounded w-full">
+        <mat-icon>refresh</mat-icon>
+        Restaurar
+      </button>
+      <button mat-raised-button color="primary" (click)="asentar()" [disabled]="!balanceado || lineas.length === 0" class="fuse-mat-button-rounded w-full">
+        <mat-icon>check</mat-icon>
+        Asentar
+      </button>
+    </div>
+  </mat-card>
+</div>

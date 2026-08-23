@@ -1,0 +1,197 @@
+<div class="cxp-header mb-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="page-title">Cuentas por pagar</h1>
+      <p class="text-gray-500 mt-1">Lista de cuentas pendientes</p>
+    </div>
+    <div class="flex items-center gap-3">
+      <mat-slide-toggle color="primary">Pagos al día</mat-slide-toggle>
+      <button mat-flat-button color="primary">
+        <mat-icon>assessment</mat-icon>
+        Reportes
+      </button>
+    </div>
+  </div>
+</div>
+
+<mat-card class="p-4 mb-6">
+  <form [formGroup]="productoForm" class="form-row items-end">
+    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+      <mat-label>Centro</mat-label>
+      <mat-select formControlName="centro">
+        <mat-option value="">Todos</mat-option>
+        <mat-option value="valor">Valor</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+      <mat-label>Vendedor</mat-label>
+      <mat-select formControlName="vendedor">
+        <mat-option value="">Todos</mat-option>
+        <mat-option value="valor">Valor</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+      <mat-label>Cobrador</mat-label>
+      <mat-select formControlName="cobrador">
+        <mat-option value="">Todos</mat-option>
+        <mat-option value="valor">Valor</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always">
+      <mat-icon matPrefix>event</mat-icon>
+      <mat-label>Fecha oportuna inicial</mat-label>
+      <input matInput type="date" formControlName="fecha_oportuna_inicial" />
+    </mat-form-field>
+
+    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always">
+      <mat-icon matPrefix>event</mat-icon>
+      <mat-label>Fecha oportuna final</mat-label>
+      <input matInput type="date" formControlName="fecha_oportuna_final" />
+    </mat-form-field>
+
+    <div class="field-action flex-none pb-2">
+      <button type="button" mat-raised-button color="primary" class="fuse-mat-button-rounded" (click)="consultar()" [disabled]="cargando">
+        <mat-icon>search</mat-icon>
+        Consultar
+      </button>
+    </div>
+  </form>
+</mat-card>
+
+<mat-card class="p-4 mb-6">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="section-title mb-0">Lista de cuentas</h2>
+    <div class="text-right">
+      <p class="text-sm text-gray-600">Total por pagar</p>
+      <p class="text-2xl font-extrabold text-red-700">{{ totalSaldo | number: '1.2-2' }}</p>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3 mb-4">
+    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput [formControl]="searchInputControl" placeholder="Buscar proveedor" autocomplete="off" />
+    </mat-form-field>
+    <button mat-flat-button color="primary">
+      <mat-icon>visibility</mat-icon>
+      Ver
+    </button>
+    <button mat-flat-button color="primary">
+      <mat-icon>grid_view</mat-icon>
+    </button>
+  </div>
+
+  <table mat-table [dataSource]="dataBancos" class="w-full">
+    <ng-container matColumnDef="cliente">
+      <th class="text-center" mat-header-cell *matHeaderCellDef>Proveedor</th>
+      <td class="text-center" mat-cell *matCellDef="let banco">{{ banco.nombre }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="cobrador">
+      <th class="text-center" mat-header-cell *matHeaderCellDef>Cobrador</th>
+      <td class="text-center" mat-cell *matCellDef="let banco">{{ banco.cobrador || '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="documento">
+      <th class="text-center" mat-header-cell *matHeaderCellDef>NIT/CC</th>
+      <td class="text-center" mat-cell *matCellDef="let banco">{{ banco.documento }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="vendedor">
+      <th class="text-center" mat-header-cell *matHeaderCellDef>Vendedor</th>
+      <td class="text-center" mat-cell *matCellDef="let banco">{{ banco.vendedor || '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="fecha_oportuna">
+      <th class="text-center" mat-header-cell *matHeaderCellDef>Fecha oportuna</th>
+      <td class="text-center" mat-cell *matCellDef="let banco">{{ banco.fecha_oportuna ? (banco.fecha_oportuna | date: 'dd/MM/yyyy') : '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="ultimo_pago">
+      <th class="text-center" mat-header-cell *matHeaderCellDef>Último pago</th>
+      <td class="text-center" mat-cell *matCellDef="let banco">{{ banco.ultimo_pago ? (banco.ultimo_pago | date: 'dd/MM/yyyy') : '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="dias_mora">
+      <th class="text-center" mat-header-cell *matHeaderCellDef>Días en mora</th>
+      <td class="text-center" mat-cell *matCellDef="let banco">{{ banco.dias_mora ?? '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="vr_cuota">
+      <th class="text-center" mat-header-cell *matHeaderCellDef>Vr cuota</th>
+      <td class="text-center" mat-cell *matCellDef="let banco">{{ (banco.vr_cuota | number: '1.2-2') ?? '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="saldo">
+      <th class="text-center" mat-header-cell *matHeaderCellDef>Saldo</th>
+      <td class="text-center" mat-cell *matCellDef="let banco">{{ banco.saldo | number: '1.2-2' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="centro">
+      <th class="text-center" mat-header-cell *matHeaderCellDef>Centro</th>
+      <td class="text-center" mat-cell *matCellDef="let banco">{{ banco.centro || '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="acciones">
+      <th class="text-center" mat-header-cell *matHeaderCellDef>Acciones</th>
+      <td class="text-center" mat-cell *matCellDef="let banco">
+        <button mat-icon-button color="primary" (click)="verDetalle(banco)">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  <div *ngIf="dataBancos.length === 0" class="p-8 text-center text-gray-500">
+    No hay proveedores con saldo
+  </div>
+</mat-card>
+
+<mat-card class="p-4" *ngIf="detalle">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h2 class="section-title mb-0">{{ detalle.tercero?.nombre }}</h2>
+      <p class="text-sm text-gray-500">Saldo: {{ detalle.resumen?.saldo | number: '1.2-2' }}</p>
+    </div>
+    <button mat-stroked-button color="warn" class="fuse-mat-button-rounded" (click)="cerrarDetalle()">
+      <mat-icon>close</mat-icon>
+      Cerrar
+    </button>
+  </div>
+
+  <table mat-table [dataSource]="detalle.movimientos" class="w-full">
+    <ng-container matColumnDef="fecha">
+      <th mat-header-cell *matHeaderCellDef>Fecha</th>
+      <td mat-cell *matCellDef="let row">{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="consecutivo">
+      <th mat-header-cell *matHeaderCellDef>Consecutivo</th>
+      <td mat-cell *matCellDef="let row">{{ row.consecutivo }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="descripcion">
+      <th mat-header-cell *matHeaderCellDef>Descripción</th>
+      <td mat-cell *matCellDef="let row">{{ row.descripcion }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="debito">
+      <th mat-header-cell *matHeaderCellDef>Débito</th>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.debito | number: '1.2-2' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="credito">
+      <th mat-header-cell *matHeaderCellDef>Crédito</th>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.credito | number: '1.2-2' }}</td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="movimientosColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: movimientosColumns;"></tr>
+  </table>
+</mat-card>

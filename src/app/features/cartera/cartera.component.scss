@@ -1,0 +1,25 @@
+:host {
+  display: block;
+  padding: 1.5rem;
+}
+
+.cartera-header {
+  @apply mb-6;
+}
+
+th.mat-mdc-header-cell {
+  font-weight: 700;
+  background-color: #f3f4f6;
+  color: #374151;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+td.mat-mdc-cell,
+th.mat-mdc-header-cell {
+  padding: 0 16px;
+}
+
+tr.mat-mdc-row:hover {
+  background-color: #f9fafb;
+}

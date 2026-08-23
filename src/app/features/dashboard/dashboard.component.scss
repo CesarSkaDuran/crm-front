@@ -1,4 +1,42 @@
-.dashboard {
-  padding: 2rem;
-  text-align: center;
+:host {
+  display: block;
+  padding: 1.5rem;
+}
+
+.summary-card {
+  @apply p-5 rounded-2xl;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  .summary-icon {
+    @apply w-12 h-12 rounded-full flex items-center justify-center text-3xl;
+  }
+
+  .summary-value {
+    @apply text-2xl font-bold;
+  }
+
+  .summary-label {
+    @apply text-sm text-gray-600;
+  }
+}
+
+th.mat-mdc-header-cell {
+  font-weight: 700;
+  background-color: #f3f4f6;
+  color: #374151;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+td.mat-mdc-cell,
+th.mat-mdc-header-cell {
+  padding: 0 16px;
+}
+
+tr.mat-mdc-row:hover {
+  background-color: #f9fafb;
 }
