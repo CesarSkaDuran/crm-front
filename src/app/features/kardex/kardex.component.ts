@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ReactiveFormsModule,
@@ -36,6 +36,7 @@ export class KardexComponent implements OnInit {
   private fb = inject(FormBuilder);
   private kardex = inject(KardexService);
   private products = inject(ProductsService);
+  private cdr = inject(ChangeDetectorRef);
 
   movimientos: any[] = [];
   productos: any[] = [];
@@ -70,6 +71,7 @@ export class KardexComponent implements OnInit {
   cargarProductos() {
     this.products.getAll().subscribe((res: any) => {
       this.productos = res.data ?? res ?? [];
+      this.cdr.detectChanges();
     });
   }
 
@@ -77,6 +79,7 @@ export class KardexComponent implements OnInit {
     const query = this.filters.value;
     this.kardex.getAll(query).subscribe((res: any) => {
       this.movimientos = res.data ?? res ?? [];
+      this.cdr.detectChanges();
     });
   }
 

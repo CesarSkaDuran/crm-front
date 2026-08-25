@@ -39,9 +39,46 @@
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>label</mat-icon>
         <mat-label>Categoría</mat-label>
-        <input matInput formControlName="categoria" />
+        <mat-select formControlName="categoria">
+          <mat-option *ngFor="let c of categoriasList" [value]="c.nombre">{{ c.nombre }}</mat-option>
+        </mat-select>
       </mat-form-field>
+
+      <button type="button" mat-icon-button color="primary" (click)="abrirNuevaCategoria()" title="Crear categoría">
+        <mat-icon>add</mat-icon>
+      </button>
     </div>
+
+    <mat-card class="p-4 mb-4" *ngIf="creandoCategoria">
+      <h3 class="section-title mb-2">Nueva categoría</h3>
+      <form [formGroup]="nuevaCategoriaForm" (ngSubmit)="guardarNuevaCategoria()" class="form-row items-end">
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="nombre" required />
+        </mat-form-field>
+
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-label>Tipo</mat-label>
+          <mat-select formControlName="tipo">
+            <mat-option *ngFor="let t of tipos" [value]="t.id">{{ t.nombre }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-label>Descripción</mat-label>
+          <input matInput formControlName="descripcion" />
+        </mat-form-field>
+
+        <button type="submit" mat-raised-button color="primary">
+          <mat-icon>save</mat-icon>
+          Guardar
+        </button>
+        <button type="button" mat-stroked-button color="warn" (click)="cancelarNuevaCategoria()">
+          <mat-icon>close</mat-icon>
+          Cancelar
+        </button>
+      </form>
+    </mat-card>
 
     <div class="form-row mb-3">
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">

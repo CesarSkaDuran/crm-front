@@ -13,4 +13,8 @@ export class CuentasPorPagarService {
   getOne(terceroId: number): Observable<any> {
     return this.api.getOne(`cuentas-por-pagar/${terceroId}`);
   }
+
+  pagar(dto: any): Observable<any> {
+    return this.api.post('cuentas-por-pagar/pago', dto);
+  }
 }

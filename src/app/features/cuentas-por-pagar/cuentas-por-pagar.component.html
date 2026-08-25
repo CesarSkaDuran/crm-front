@@ -138,8 +138,11 @@
     <ng-container matColumnDef="acciones">
       <th class="text-center" mat-header-cell *matHeaderCellDef>Acciones</th>
       <td class="text-center" mat-cell *matCellDef="let banco">
-        <button mat-icon-button color="primary" (click)="verDetalle(banco)">
+        <button mat-icon-button color="primary" (click)="verDetalle(banco)" title="Ver detalle">
           <mat-icon>chevron_right</mat-icon>
+        </button>
+        <button mat-icon-button color="accent" (click)="abrirPago(banco)" title="Registrar pago">
+          <mat-icon>payment</mat-icon>
         </button>
       </td>
     </ng-container>
@@ -151,6 +154,56 @@
   <div *ngIf="dataBancos.length === 0" class="p-8 text-center text-gray-500">
     No hay proveedores con saldo
   </div>
+</mat-card>
+
+<mat-card class="p-4 mb-6" *ngIf="pagoProveedor">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h2 class="section-title mb-0">Registrar pago</h2>
+      <p class="text-sm text-gray-500">{{ pagoProveedor.nombre }} — Saldo: {{ pagoProveedor.saldo | number: '1.2-2' }}</p>
+    </div>
+    <button mat-stroked-button color="warn" (click)="cerrarPago()">
+      <mat-icon>close</mat-icon>
+      Cancelar
+    </button>
+  </div>
+
+  <form [formGroup]="pagoForm" class="form-row items-end" (ngSubmit)="pagar()">
+    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+      <mat-label>Fecha</mat-label>
+      <input matInput type="date" formControlName="fecha" />
+    </mat-form-field>
+
+    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+      <mat-label>Tipo de comprobante</mat-label>
+      <mat-select formControlName="tipo_comprobante_id">
+        <mat-option *ngFor="let tipo of tipos" [value]="tipo.id">{{ tipo.nombre }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+      <mat-label>Banco / Caja</mat-label>
+      <mat-select formControlName="banco_id">
+        <mat-option *ngFor="let b of bancos" [value]="b.id">{{ b.nombre }} — $ {{ b.monto | number: '1.2-2' }}</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+      <mat-label>Valor</mat-label>
+      <input matInput type="number" formControlName="valor" min="1" />
+    </mat-form-field>
+
+    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+      <mat-label>Descripción</mat-label>
+      <input matInput formControlName="descripcion" />
+    </mat-form-field>
+
+    <button type="submit" mat-raised-button color="primary" [disabled]="pagoForm.invalid || pagando">
+      <mat-icon *ngIf="!pagando">save</mat-icon>
+      <span *ngIf="pagando">Guardando...</span>
+      <span *ngIf="!pagando">Guardar pago</span>
+    </button>
+  </form>
 </mat-card>
 
 <mat-card class="p-4" *ngIf="detalle">

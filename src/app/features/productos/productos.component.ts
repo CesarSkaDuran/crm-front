@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ReactiveFormsModule,
@@ -15,6 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { ProductsService } from '../../core/services/products.service';
 import { AccountsService } from '../../core/services/accounts.service';
+import { CategoriasService } from '../../core/services/categorias.service';
 
 @Component({
   selector: 'app-productos',
@@ -38,11 +39,21 @@ export class ProductosComponent implements OnInit {
   private fb = inject(FormBuilder);
   private products = inject(ProductsService);
   private accounts = inject(AccountsService);
+  private categorias = inject(CategoriasService);
+  private cdr = inject(ChangeDetectorRef);
 
   lista: any[] = [];
   cuentas: any[] = [];
+  categoriasList: any[] = [];
   editandoId: number | null = null;
+  creandoCategoria = false;
   search = '';
+
+  nuevaCategoriaForm = this.fb.group({
+    nombre: ['', Validators.required],
+    descripcion: [''],
+    tipo: [1],
+  });
 
   tipos = [
     { id: 1, nombre: 'Producto' },
@@ -76,18 +87,40 @@ export class ProductosComponent implements OnInit {
 
   ngOnInit() {
     this.cargarCuentas();
+    this.cargarCategorias();
     this.cargar();
+    this.form.get('tipo')?.valueChanges.subscribe(() => this.sugerirCuentas());
+    this.form.get('categoria')?.valueChanges.subscribe(() => this.sugerirCuentas());
+  }
+
+  cargarCategorias() {
+    this.categorias.getAll().subscribe((res: any) => {
+      this.categoriasList = res.data ?? res ?? [];
+      this.cdr.detectChanges();
+    });
+  }
+
+  sugerirCuentas() {
+    if (this.editandoId) return;
+    const tipo = this.form.get('tipo')?.value ?? 1;
+    const categoria = this.form.get('categoria')?.value ?? '';
+    this.products.sugerirCuentas(Number(tipo), categoria).subscribe((res: any) => {
+      this.form.patchValue(res, { emitEvent: false });
+      this.cdr.detectChanges();
+    });
   }
 
   cargarCuentas() {
     this.accounts.getAll().subscribe((res: any) => {
       this.cuentas = res.data ?? res ?? [];
+      this.cdr.detectChanges();
     });
   }
 
   cargar() {
     this.products.getAll({ search: this.search }).subscribe((res: any) => {
       this.lista = res.data ?? res ?? [];
+      this.cdr.detectChanges();
     });
   }
 
@@ -112,17 +145,46 @@ export class ProductosComponent implements OnInit {
 
   editar(row: any) {
     this.editandoId = row.id;
-    this.form.patchValue(row);
+    this.form.patchValue(row, { emitEvent: false });
   }
 
   cancelar() {
     this.editandoId = null;
-    this.form.reset({ tipo: 1, stock_min: 0, pvp1: 0, impuesto: 0 });
+    this.form.reset(
+      { tipo: 1, stock_min: 0, pvp1: 0, impuesto: 0 },
+      { emitEvent: false },
+    );
+    this.sugerirCuentas();
   }
 
   eliminar(row: any) {
     if (!confirm(`¿Eliminar el producto ${row.nombre}?`)) return;
     this.products.delete(row.id).subscribe(() => this.cargar());
+  }
+
+  abrirNuevaCategoria() {
+    this.creandoCategoria = true;
+    this.nuevaCategoriaForm.reset({ tipo: this.form.get('tipo')?.value ?? 1 });
+    this.cdr.detectChanges();
+  }
+
+  cancelarNuevaCategoria() {
+    this.creandoCategoria = false;
+    this.nuevaCategoriaForm.reset({ tipo: 1 });
+  }
+
+  guardarNuevaCategoria() {
+    if (this.nuevaCategoriaForm.invalid) return;
+    this.categorias.create(this.nuevaCategoriaForm.value).subscribe({
+      next: (res: any) => {
+        this.cargarCategorias();
+        this.form.patchValue({ categoria: res.nombre }, { emitEvent: true });
+        this.cancelarNuevaCategoria();
+      },
+      error: (err: any) => {
+        alert(err.error?.message || 'Error al crear la categoría');
+      },
+    });
   }
 
   nombreTipo(id: number) {

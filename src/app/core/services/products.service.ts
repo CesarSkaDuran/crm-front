@@ -29,6 +29,10 @@ export class ProductsService {
     return this.api.getOne(`productos/${id}`);
   }
 
+  sugerirCuentas(tipo: number, categoria: string): Observable<any> {
+    return this.api.get('productos/sugerir-cuentas', { tipo, categoria });
+  }
+
   create(body: CreateProduct): Observable<any> {
     return this.api.post('productos', body);
   }

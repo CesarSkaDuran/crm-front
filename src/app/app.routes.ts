@@ -16,6 +16,8 @@ import { PlanCuentasComponent } from './features/plan-cuentas/plan-cuentas.compo
 import { TiposComprobantesComponent } from './features/tipos-comprobantes/tipos-comprobantes.component';
 import { MovimientosComponent } from './features/movimientos/movimientos.component';
 import { InformesComponent } from './features/informes/informes.component';
+import { Configuracion } from './features/configuracion/configuracion';
+import { Categorias } from './features/configuracion/categorias/categorias';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
@@ -41,6 +43,8 @@ export const routes: Routes = [
       { path: 'terceros', component: TercerosComponent },
       { path: 'plan-cuentas', component: PlanCuentasComponent },
       { path: 'tipos-comprobantes', component: TiposComprobantesComponent },
+      { path: 'configuracion', component: Configuracion },
+      { path: 'configuracion/categorias', component: Categorias },
     ]
   },
   { path: '**', redirectTo: 'login' },

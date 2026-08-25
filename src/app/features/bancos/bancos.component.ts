@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -32,6 +32,7 @@ export class BancosComponent implements OnInit {
   private fb = inject(FormBuilder);
   private bancos = inject(BancosService);
   private accounts = inject(AccountsService);
+  private cdr = inject(ChangeDetectorRef);
 
   lista: any[] = [];
   cuentas: any[] = [];
@@ -72,12 +73,14 @@ export class BancosComponent implements OnInit {
   cargarCuentas() {
     this.accounts.getAll().subscribe((res: any) => {
       this.cuentas = res.data ?? res ?? [];
+      this.cdr.detectChanges();
     });
   }
 
   cargar() {
     this.bancos.getAll().subscribe((res: any) => {
       this.lista = res.data ?? res ?? [];
+      this.cdr.detectChanges();
     });
   }
 

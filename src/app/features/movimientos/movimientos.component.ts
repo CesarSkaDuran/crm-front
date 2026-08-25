@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -28,6 +28,7 @@ import { AccountingService } from '../../core/services/accounting.service';
 export class MovimientosComponent implements OnInit {
   private fb = inject(FormBuilder);
   private accounting = inject(AccountingService);
+  private cdr = inject(ChangeDetectorRef);
 
   movimientos: any[] = [];
   totalDebito = 0;
@@ -62,6 +63,7 @@ export class MovimientosComponent implements OnInit {
       this.totalDebito = res.total_debito ?? 0;
       this.totalCredito = res.total_credito ?? 0;
       this.total = res.total ?? 0;
+      this.cdr.detectChanges();
     });
   }
 

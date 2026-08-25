@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ReactiveFormsModule,
@@ -40,6 +40,7 @@ export class VentasComponent implements OnInit {
   private sales = inject(SalesService);
   private thirds = inject(ThirdsService);
   private products = inject(ProductsService);
+  private cdr = inject(ChangeDetectorRef);
 
   ventas: any[] = [];
   clientes: any[] = [];
@@ -78,6 +79,7 @@ export class VentasComponent implements OnInit {
   cargarVentas() {
     this.sales.getAll().subscribe((res: any) => {
       this.ventas = res ?? [];
+      this.cdr.detectChanges();
     });
   }
 
@@ -88,9 +90,11 @@ export class VentasComponent implements OnInit {
       this.vendedores = list.filter(
         (t: any) => t.tipo_terceros === 4 || t.tipo_terceros === 1,
       );
+      this.cdr.detectChanges();
     });
     this.products.getAll().subscribe((res: any) => {
       this.productos = res.data ?? res ?? [];
+      this.cdr.detectChanges();
     });
   }
 

@@ -55,6 +55,23 @@
       </mat-form-field>
 
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>payment</mat-icon>
+        <mat-label>Modo</mat-label>
+        <mat-select formControlName="modo" (selectionChange)="onModoChange()">
+          <mat-option [value]="1">Contado</mat-option>
+          <mat-option [value]="2">Crédito</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field *ngIf="esContado()" class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>account_balance</mat-icon>
+        <mat-label>Banco / Caja</mat-label>
+        <mat-select formControlName="banco_id" [required]="esContado()">
+          <mat-option *ngFor="let b of bancos" [value]="b.id">{{ b.nombre }} — $ {{ b.monto | number: '1.2-2' }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>edit_note</mat-icon>
         <mat-label>Observación</mat-label>
         <input matInput formControlName="observacion" />
@@ -110,7 +127,7 @@
         <mat-icon>add</mat-icon>
         Agregar producto
       </button>
-      <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded" [disabled]="form.invalid">
+      <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded">
         <mat-icon>save</mat-icon>
         Guardar compra
       </button>

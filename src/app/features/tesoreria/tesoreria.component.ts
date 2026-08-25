@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
@@ -34,6 +34,7 @@ export class TesoreriaComponent implements OnInit {
   private tesoreria = inject(TesoreriaService);
   private thirds = inject(ThirdsService);
   private accounts = inject(AccountsService);
+  private cdr = inject(ChangeDetectorRef);
 
   movimientos: any[] = [];
   terceros: any[] = [];
@@ -79,15 +80,18 @@ export class TesoreriaComponent implements OnInit {
   cargarCatalogos() {
     this.thirds.getAll().subscribe((res: any) => {
       this.terceros = res.data ?? res ?? [];
+      this.cdr.detectChanges();
     });
     this.accounts.getAll().subscribe((res: any) => {
       this.cuentas = res.data ?? res ?? [];
+      this.cdr.detectChanges();
     });
   }
 
   cargar() {
     this.tesoreria.getAll(this.filters.value).subscribe((res: any) => {
       this.movimientos = res.data ?? res ?? [];
+      this.cdr.detectChanges();
     });
   }
 

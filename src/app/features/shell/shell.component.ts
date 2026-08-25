@@ -77,14 +77,10 @@ const MENU: MenuGroup[] = [
     link: '/bancos'
   },
   {
-    id: 'configuraciones',
-    title: 'Configuraciones',
+    id: 'configuracion',
+    title: 'Configuración',
     icon: 'settings',
-    children: [
-      { id: 'plan-cuentas', title: 'Plan de cuentas', link: '/plan-cuentas' },
-      { id: 'tipos-comprobantes', title: 'Tipos de comprobantes', link: '/tipos-comprobantes' },
-      { id: 'terceros', title: 'Terceros', link: '/terceros' },
-    ]
+    link: '/configuracion'
   },
 ];
 

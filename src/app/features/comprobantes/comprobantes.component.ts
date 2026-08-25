@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ReactiveFormsModule,
@@ -39,6 +39,7 @@ export class ComprobantesComponent implements OnInit {
   private accounting = inject(AccountingService);
   private accounts = inject(AccountsService);
   private thirds = inject(ThirdsService);
+  private cdr = inject(ChangeDetectorRef);
 
   tipos: any[] = [];
   cuentas: any[] = [];
@@ -84,12 +85,15 @@ export class ComprobantesComponent implements OnInit {
   cargarCatalogos() {
     this.accounting.getTipos().subscribe((res: any) => {
       this.tipos = res.data ?? [];
+      this.cdr.detectChanges();
     });
     this.accounts.getAll().subscribe((res: any) => {
       this.cuentas = res.data ?? [];
+      this.cdr.detectChanges();
     });
     this.thirds.getAll().subscribe((res: any) => {
       this.terceros = res.data ?? [];
+      this.cdr.detectChanges();
     });
   }
 

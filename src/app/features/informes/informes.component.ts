@@ -161,6 +161,7 @@ export class InformesComponent implements OnInit {
     this.thirds.getAll().subscribe((res: any) => {
       this.terceros = res.data ?? res ?? [];
       this.filtrarTerceros(this.terceroSearch.value ?? '');
+      this.cdr.detectChanges();
     });
   }
 

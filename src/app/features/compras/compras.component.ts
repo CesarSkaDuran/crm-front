@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ReactiveFormsModule,
@@ -17,6 +17,7 @@ import { MatCardModule } from '@angular/material/card';
 import { PurchasesService } from '../../core/services/purchases.service';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { ProductsService } from '../../core/services/products.service';
+import { BancosService } from '../../core/services/bancos.service';
 
 @Component({
   selector: 'app-compras',
@@ -40,10 +41,13 @@ export class ComprasComponent implements OnInit {
   private purchases = inject(PurchasesService);
   private thirds = inject(ThirdsService);
   private products = inject(ProductsService);
+  private bancosService = inject(BancosService);
+  private cdr = inject(ChangeDetectorRef);
 
   compras: any[] = [];
   proveedores: any[] = [];
   productos: any[] = [];
+  bancos: any[] = [];
 
   displayedColumns = [
     'codigo',
@@ -66,6 +70,7 @@ export class ComprasComponent implements OnInit {
     almacen: ['PRINCIPAL'],
     modo: [1],
     forma: [1],
+    banco_id: [null as number | null],
     detalles: this.fb.array<FormGroup>([]),
   });
 
@@ -82,6 +87,7 @@ export class ComprasComponent implements OnInit {
   cargarCompras() {
     this.purchases.getAll().subscribe((res: any) => {
       this.compras = res.data ?? res ?? [];
+      this.cdr.detectChanges();
     });
   }
 
@@ -89,9 +95,15 @@ export class ComprasComponent implements OnInit {
     this.thirds.getAll().subscribe((res: any) => {
       const list = res.data ?? res ?? [];
       this.proveedores = list.filter((t: any) => t.tipo_terceros === 2);
+      this.cdr.detectChanges();
     });
     this.products.getAll().subscribe((res: any) => {
       this.productos = res.data ?? res ?? [];
+      this.cdr.detectChanges();
+    });
+    this.bancosService.getAll().subscribe((res: any) => {
+      this.bancos = res.data ?? res ?? [];
+      this.cdr.detectChanges();
     });
   }
 
@@ -117,15 +129,32 @@ export class ComprasComponent implements OnInit {
     const producto = this.productos.find((p) => p.id === productoId);
     if (producto) {
       const costo =
-        Number(producto.ultimo_precio) || Number(producto.promedio) || 0;
-      if (costo > 0 && !group.get('costo_unitario')?.dirty) {
+        Number(producto.ultimo_precio) ||
+        Number(producto.promedio) ||
+        Number(producto.pvp1) ||
+        0;
+      const actual = Number(group.get('costo_unitario')?.value) || 0;
+      const dirty = group.get('costo_unitario')?.dirty;
+      if (costo > 0 && (!dirty || actual === 0)) {
         group.get('costo_unitario')?.setValue(costo);
       }
     }
   }
 
+  esContado() {
+    return Number(this.form.get('modo')?.value) === 1;
+  }
+
+  onModoChange() {
+    this.cdr.detectChanges();
+  }
+
   guardar() {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      alert('Completa los campos requeridos: proveedor, fecha, productos y costo.');
+      return;
+    }
     const body = { ...this.form.value, detalles: this.detalles.value };
     this.purchases.create(body as any).subscribe({
       next: () => {

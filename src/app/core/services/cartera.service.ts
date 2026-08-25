@@ -13,4 +13,8 @@ export class CarteraService {
   getOne(terceroId: number): Observable<any> {
     return this.api.getOne(`cartera/${terceroId}`);
   }
+
+  cobrar(dto: any): Observable<any> {
+    return this.api.post('cartera/cobro', dto);
+  }
 }

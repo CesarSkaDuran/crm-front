@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   ReactiveFormsModule,
@@ -36,6 +36,7 @@ import { AccountsService } from '../../core/services/accounts.service';
 export class PlanCuentasComponent implements OnInit {
   private fb = inject(FormBuilder);
   private accounts = inject(AccountsService);
+  private cdr = inject(ChangeDetectorRef);
 
   lista: any[] = [];
   editandoId: number | null = null;
@@ -80,6 +81,7 @@ export class PlanCuentasComponent implements OnInit {
   cargar() {
     this.accounts.getAll({ search: this.search }).subscribe((res: any) => {
       this.lista = res.data ?? res ?? [];
+      this.cdr.detectChanges();
     });
   }
 
