@@ -8,21 +8,43 @@
 }
 
 .form-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
-  align-items: center;
+  align-items: start;
+  margin-bottom: 12px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  mat-form-field {
+    width: 100%;
+  }
 
   .field-action {
-    flex: 0 0 auto;
     display: flex;
-    gap: 10px;
+    gap: 8px;
+    align-items: flex-end;
+    justify-content: flex-end;
+    height: 100%;
+    padding-bottom: 4px;
+    min-height: 56px;
+
+    button {
+      white-space: nowrap;
+    }
   }
+}
+
+.full-width {
+  grid-column: 1 / -1;
 }
 
 th.mat-mdc-header-cell {
   font-weight: 700;
-  background-color: #f3f4f6;
-  color: #374151;
+  background-color: var(--countable-input);
+  color: var(--countable-text-secondary);
   text-transform: uppercase;
   font-size: 0.75rem;
 }
@@ -33,5 +55,25 @@ th.mat-mdc-header-cell {
 }
 
 tr.mat-mdc-row:hover {
-  background-color: #f9fafb;
+  background-color: rgba(56, 138, 243, 0.04);
+}
+
+.ingreso {
+  @apply inline-block px-2 py-0.5 rounded-full text-xs font-semibold;
+  background-color: rgba(34, 197, 94, 0.12);
+  color: #15803d;
+}
+
+.egreso {
+  @apply inline-block px-2 py-0.5 rounded-full text-xs font-semibold;
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+}
+
+.text-green-600 {
+  color: #15803d;
+}
+
+.text-red-600 {
+  color: #b91c1c;
 }

@@ -18,8 +18,8 @@
 
 th.mat-mdc-header-cell {
   font-weight: 700;
-  background-color: #f3f4f6;
-  color: #374151;
+  background-color: var(--countable-input);
+  color: var(--countable-text-secondary);
   text-transform: uppercase;
   font-size: 0.75rem;
 }
@@ -30,9 +30,91 @@ th.mat-mdc-header-cell {
 }
 
 tr.mat-mdc-row:hover {
-  background-color: #f9fafb;
+  background-color: rgba(56, 138, 243, 0.04);
 }
 
 ::ng-deep .mat-stepper-horizontal-line {
   min-width: 40px !important;
+}
+
+// =========================================================================
+// Estilos jerárquicos para Balance General y P&G
+//
+// Las filas se estilizan según el 'nivel' de la cuenta:
+//   nivel 1 = Clase (Activo, Pasivo, Patrimonio) -> negrita, fondo claro
+//   nivel 2 = Grupo (Disponible, Inventarios)    -> seminegrita
+//   nivel 3 = Cuenta (Caja, Bancos)              -> normal
+//   nivel 4 = Auxiliar (Caja General)            -> texto pequeño, cursiva
+// =========================================================================
+
+.fila-clase {
+  font-weight: 700 !important;
+  font-size: 0.95rem;
+  background-color: rgba(59, 130, 246, 0.06);
+  border-top: 2px solid rgba(59, 130, 246, 0.2);
+}
+
+.fila-grupo {
+  font-weight: 600 !important;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.fila-cuenta {
+  font-weight: 500 !important;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.fila-auxiliar {
+  font-weight: 400 !important;
+  font-size: 0.825rem;
+  color: #6b7280;
+}
+
+// =========================================================================
+// Badge para cuentas virtuales (Resultado del Ejercicio)
+// =========================================================================
+
+.virtual-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  margin-right: 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+  background-color: #7c3aed;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+// =========================================================================
+// Estilos para saldos contrarios a la naturaleza de la cuenta
+//
+// esSaldoContrario = true cuando:
+//   - Una cuenta de Activo (naturaleza D) tiene saldo negativo (ej: banco sobregirado)
+//   - Una cuenta de Pasivo/Patrimonio (naturaleza C) tiene saldo negativo
+//
+// El frontend muestra el saldo en rojo con un badge de advertencia ⚠
+// =========================================================================
+
+.saldo-contrario {
+  color: #dc2626 !important;
+  font-weight: 700 !important;
+}
+
+.saldo-contrario-badge {
+  display: inline-block;
+  margin-left: 4px;
+  color: #dc2626;
+  font-size: 0.75rem;
+  cursor: help;
+}
+
+.saldo-normal {
+  color: #1d4ed8;
+}
+
+.saldo-negativo {
+  color: #b91c1c;
 }

@@ -17,6 +17,7 @@ import { MatCardModule } from '@angular/material/card';
 import { SalesService } from '../../core/services/sales.service';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { ProductsService } from '../../core/services/products.service';
+import { BancosService } from '../../core/services/bancos.service';
 
 @Component({
   selector: 'app-ventas',
@@ -40,12 +41,14 @@ export class VentasComponent implements OnInit {
   private sales = inject(SalesService);
   private thirds = inject(ThirdsService);
   private products = inject(ProductsService);
+  private bancosSvc = inject(BancosService);
   private cdr = inject(ChangeDetectorRef);
 
   ventas: any[] = [];
   clientes: any[] = [];
   vendedores: any[] = [];
   productos: any[] = [];
+  bancos: any[] = [];
 
   displayedColumns = ['codigo', 'fecha', 'cliente', 'total', 'observacion'];
 
@@ -55,6 +58,7 @@ export class VentasComponent implements OnInit {
     fecha: ['', Validators.required],
     numero_factura: [''],
     codigo_guia_venta: [''],
+    banco_id: [null as number | null],
     descuento: [0],
     retencion: [0],
     flete: [0],
@@ -94,6 +98,10 @@ export class VentasComponent implements OnInit {
     });
     this.products.getAll().subscribe((res: any) => {
       this.productos = res.data ?? res ?? [];
+      this.cdr.detectChanges();
+    });
+    this.bancosSvc.getAll().subscribe((res: any) => {
+      this.bancos = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
   }

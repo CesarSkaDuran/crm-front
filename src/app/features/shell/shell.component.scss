@@ -1,7 +1,16 @@
-/* Shell layout overrides */
+/* Shell layout overrides - COUNTABLE palette */
 mat-sidenav {
   border-right-width: 1px;
   border-right-style: solid;
+  border-right-color: rgba(255, 255, 255, 0.06) !important;
+  background-color: var(--countable-sidebar) !important;
+}
+
+.shell-logo-img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px rgba(49, 184, 252, 0.35));
 }
 
 .nav-link {
@@ -11,27 +20,28 @@ mat-sidenav {
   padding: 10px 14px;
   font-size: 0.875rem;
   border-radius: 10px;
-  color: #cbd5e1;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  color: rgba(255, 255, 255, 0.72);
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.06);
-    color: #fff;
+    background-color: rgba(49, 184, 252, 0.1);
+    color: var(--countable-text-on-dark);
   }
 
   &.nav-active {
-    background-color: #4f46e5;
-    color: #fff;
+    background: linear-gradient(135deg, var(--countable-blue) 0%, var(--countable-blue-violet) 100%);
+    color: var(--countable-text-on-dark);
     font-weight: 600;
+    box-shadow: 0 6px 16px rgba(56, 138, 243, 0.28);
 
     .nav-icon {
-      color: #fff !important;
+      color: var(--countable-text-on-dark) !important;
     }
   }
 }
 
 .nav-icon {
-  color: #94a3b8 !important;
+  color: rgba(255, 255, 255, 0.55) !important;
   font-size: 20px;
   width: 20px;
   height: 20px;
@@ -43,17 +53,28 @@ mat-sidenav {
   padding: 8px 14px;
   font-size: 0.8125rem;
   border-radius: 8px;
-  color: #94a3b8;
+  color: rgba(255, 255, 255, 0.55);
   transition: background-color 0.15s ease, color 0.15s ease;
 
   &:hover {
-    background-color: rgba(255, 255, 255, 0.06);
-    color: #fff;
+    background-color: rgba(49, 184, 252, 0.1);
+    color: var(--countable-text-on-dark);
   }
 
   &.nav-active {
-    background-color: #4f46e5;
-    color: #fff;
+    background: linear-gradient(135deg, var(--countable-blue) 0%, var(--countable-blue-violet) 100%);
+    color: var(--countable-text-on-dark);
     font-weight: 600;
   }
+}
+
+.shell-avatar {
+  background: linear-gradient(135deg, var(--countable-cyan) 0%, var(--countable-blue) 55%, var(--countable-violet) 100%);
+  box-shadow: 0 8px 18px rgba(56, 138, 243, 0.28);
+}
+
+.shell-toolbar {
+  background-color: var(--countable-card) !important;
+  border-bottom: 1px solid var(--countable-border) !important;
+  color: var(--countable-text);
 }

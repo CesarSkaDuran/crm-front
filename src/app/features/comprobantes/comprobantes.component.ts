@@ -101,7 +101,7 @@ export class ComprobantesComponent implements OnInit {
     const tipo = this.lineaForm.get('tipo')?.value;
     if (tipo) {
       this.accounting.nextConsecutivo(Number(tipo)).subscribe((res: any) => {
-        this.consecutivo = res;
+        this.consecutivo = res?.consecutivo ?? res ?? '';
       });
     }
   }

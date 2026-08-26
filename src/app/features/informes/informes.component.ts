@@ -329,7 +329,7 @@ export class InformesComponent implements OnInit {
     const modo = this.form.get('modo')?.value;
     switch (modo) {
       case 'resumido':
-        return ['codigo', 'nombre', 'debito', 'credito', 'saldo'];
+        return ['codigo', 'nombre', 'debito', 'credito', 'saldoConsolidado', 'saldo'];
       case 'porComprobante':
         return ['consecutivo', 'fecha', 'debito', 'credito', 'saldo'];
       case 'discriminado':
@@ -337,5 +337,15 @@ export class InformesComponent implements OnInit {
       default:
         return ['fecha', 'consecutivo', 'cuenta', 'tercero', 'descripcion', 'debito', 'credito', 'valor', 'saldo'];
     }
+  }
+
+  /**
+   * Devuelve la lista de filas para la tabla según el tipo de informe.
+   * - P&G usa `resultado.detalle` (cuentas auxiliares con movimientos).
+   * - Los demás informes usan `resultado.data`.
+   */
+  get tablaData(): any[] {
+    if (!this.resultado) return [];
+    return this.resultado.detalle ?? this.resultado.data ?? [];
   }
 }

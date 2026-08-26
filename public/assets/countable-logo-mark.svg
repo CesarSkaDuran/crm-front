@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <linearGradient id="c" x1="40" y1="32" x2="216" y2="224" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#31B8FC"/>
+      <stop offset="38%" stop-color="#388AF3"/>
+      <stop offset="72%" stop-color="#4B5BF8"/>
+      <stop offset="100%" stop-color="#7540F9"/>
+    </linearGradient>
+    <filter id="g" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!--
+    Original Countable mark:
+    rounded square + bottom-right bubble notch.
+    Coordinates tuned to match the reference artwork.
+  -->
+  <path
+    d="M78 36
+       H178
+       C208 36 224 52 224 82
+       V150
+       C224 174 208 190 184 190
+       C168 190 158 180 154 166
+       C150 154 140 146 124 148
+       C104 150 90 168 90 188
+       C90 206 74 220 54 220
+       C36 220 24 204 24 182
+       V82
+       C24 52 42 36 78 36
+       Z"
+    stroke="url(#c)"
+    stroke-width="18"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+    filter="url(#g)"
+  />
+
+  <!-- Organic network lines -->
+  <g
+    stroke="url(#c)"
+    stroke-width="10"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+    filter="url(#g)"
+  >
+    <!-- left-upper to top -->
+    <path d="M92 98 C104 82 116 68 128 58"/>
+    <!-- top to right -->
+    <path d="M128 58 C148 72 164 90 176 110"/>
+    <!-- left-upper crossing down to bottom pocket -->
+    <path d="M92 98 C116 118 132 140 146 168"/>
+    <!-- mid-left arc into bottom -->
+    <path d="M76 120 C104 132 124 148 146 168"/>
+    <!-- right node curves into bottom pocket -->
+    <path d="M176 110 C170 132 160 152 146 168"/>
+  </g>
+
+  <!-- Nodes -->
+  <g fill="url(#c)" filter="url(#g)">
+    <circle cx="92" cy="98" r="11"/>     <!-- upper-left -->
+    <circle cx="128" cy="56" r="12"/>    <!-- top -->
+    <circle cx="178" cy="108" r="10"/>   <!-- upper-right -->
+    <circle cx="76" cy="120" r="11"/>    <!-- mid-left -->
+    <circle cx="146" cy="170" r="13"/>   <!-- bottom pocket -->
+  </g>
+</svg>

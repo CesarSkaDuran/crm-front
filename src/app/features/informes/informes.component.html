@@ -130,7 +130,7 @@
       </mat-card>
 
 <mat-card class="p-4" *ngIf="resultado">
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4" *ngIf="resultado.totales && resultado.tipo === 'balance'">
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4" *ngIf="resultado.totales && resultado.tipo === 'balance'">
     <div class="p-4 text-center rounded border border-gray-200">
       <p class="text-sm text-gray-600">Total Activo</p>
       <p class="text-xl font-extrabold text-blue-700">{{ resultado.totales.activo | number: '1.2-2' }}</p>
@@ -144,23 +144,31 @@
       <p class="text-xl font-extrabold text-green-700">{{ resultado.totales.patrimonio | number: '1.2-2' }}</p>
     </div>
     <div class="p-4 text-center rounded border border-gray-200">
+      <p class="text-sm text-gray-600">Resultado del Ejercicio</p>
+      <p class="text-xl font-extrabold" [ngClass]="resultado.totales.resultado_ejercicio >= 0 ? 'text-green-700' : 'text-red-700'">{{ resultado.totales.resultado_ejercicio | number: '1.2-2' }}</p>
+    </div>
+    <div class="p-4 text-center rounded border border-gray-200">
       <p class="text-sm text-gray-600">Pasivo + Patrimonio</p>
       <p class="text-xl font-extrabold text-gray-800">{{ resultado.totales.pasivo_mas_patrimonio | number: '1.2-2' }}</p>
     </div>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4" *ngIf="resultado.totales && resultado.tipo === 'pyg'">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4" *ngIf="resultado.tipo === 'pyg' && (resultado.totalIngresos !== undefined)">
     <div class="p-4 text-center rounded border border-gray-200">
       <p class="text-sm text-gray-600">Total Ingresos</p>
-      <p class="text-xl font-extrabold text-blue-700">{{ resultado.totales.ingresos | number: '1.2-2' }}</p>
+      <p class="text-xl font-extrabold text-blue-700">{{ resultado.totalIngresos | number: '1.2-2' }}</p>
+    </div>
+    <div class="p-4 text-center rounded border border-gray-200">
+      <p class="text-sm text-gray-600">Total Costos</p>
+      <p class="text-xl font-extrabold text-orange-700">{{ resultado.totalCostos | number: '1.2-2' }}</p>
     </div>
     <div class="p-4 text-center rounded border border-gray-200">
       <p class="text-sm text-gray-600">Total Gastos</p>
-      <p class="text-xl font-extrabold text-red-700">{{ resultado.totales.gastos | number: '1.2-2' }}</p>
+      <p class="text-xl font-extrabold text-red-700">{{ resultado.totalGastos | number: '1.2-2' }}</p>
     </div>
     <div class="p-4 text-center rounded border border-gray-200">
       <p class="text-sm text-gray-600">Utilidad / Pérdida</p>
-      <p class="text-xl font-extrabold" [ngClass]="resultado.totales.utilidad >= 0 ? 'text-green-700' : 'text-red-700'">{{ resultado.totales.utilidad | number: '1.2-2' }}</p>
+      <p class="text-xl font-extrabold" [ngClass]="resultado.utilidadPerdida >= 0 ? 'text-green-700' : 'text-red-700'">{{ resultado.utilidadPerdida | number: '1.2-2' }}</p>
     </div>
   </div>
 
@@ -179,7 +187,7 @@
     </div>
   </div>
 
-  <table mat-table [dataSource]="resultado.data" class="w-full" *ngIf="columnas.length">
+  <table mat-table [dataSource]="tablaData" class="w-full" *ngIf="columnas.length">
     <ng-container matColumnDef="fecha">
       <th mat-header-cell *matHeaderCellDef>Fecha</th>
       <td mat-cell *matCellDef="let row">{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
@@ -210,12 +218,21 @@
 
     <ng-container matColumnDef="codigo">
       <th mat-header-cell *matHeaderCellDef>Código</th>
-      <td mat-cell *matCellDef="let row">{{ row.cuenta?.codigo }}</td>
+      <td mat-cell *matCellDef="let row"
+          [style.padding-left.px]="row.nivel ? (row.nivel - 1) * 20 + 16 : 16"
+          [ngClass]="{ 'fila-clase': row.nivel === 1, 'fila-grupo': row.nivel === 2, 'fila-cuenta': row.nivel === 3, 'fila-auxiliar': row.nivel === 4 }">
+        {{ row.codigo ?? row.cuenta?.codigo }}
+      </td>
     </ng-container>
 
     <ng-container matColumnDef="nombre">
       <th mat-header-cell *matHeaderCellDef>Nombre</th>
-      <td mat-cell *matCellDef="let row">{{ row.cuenta?.nombre }}</td>
+      <td mat-cell *matCellDef="let row"
+          [style.padding-left.px]="row.nivel ? (row.nivel - 1) * 20 : 0"
+          [ngClass]="{ 'fila-clase': row.nivel === 1, 'fila-grupo': row.nivel === 2, 'fila-cuenta': row.nivel === 3, 'fila-auxiliar': row.nivel === 4 }">
+        <span *ngIf="row.esVirtual" class="virtual-badge">VIRTUAL</span>
+        {{ row.nombre ?? row.cuenta?.nombre }}
+      </td>
     </ng-container>
 
     <ng-container matColumnDef="clase">
@@ -225,12 +242,18 @@
 
     <ng-container matColumnDef="debito">
       <th mat-header-cell *matHeaderCellDef>Débito</th>
-      <td mat-cell *matCellDef="let row" class="text-right">{{ row.debito | number: '1.2-2' }}</td>
+      <td mat-cell *matCellDef="let row" class="text-right"
+          [ngClass]="{ 'fila-clase': row.nivel === 1, 'fila-grupo': row.nivel === 2, 'fila-cuenta': row.nivel === 3 }">
+        {{ row.debito | number: '1.2-2' }}
+      </td>
     </ng-container>
 
     <ng-container matColumnDef="credito">
       <th mat-header-cell *matHeaderCellDef>Crédito</th>
-      <td mat-cell *matCellDef="let row" class="text-right">{{ row.credito | number: '1.2-2' }}</td>
+      <td mat-cell *matCellDef="let row" class="text-right"
+          [ngClass]="{ 'fila-clase': row.nivel === 1, 'fila-grupo': row.nivel === 2, 'fila-cuenta': row.nivel === 3 }">
+        {{ row.credito | number: '1.2-2' }}
+      </td>
     </ng-container>
 
     <ng-container matColumnDef="valor">
@@ -240,14 +263,33 @@
 
     <ng-container matColumnDef="saldo">
       <th mat-header-cell *matHeaderCellDef>Saldo</th>
-      <td mat-cell *matCellDef="let row" class="text-right font-bold">{{ row.saldo | number: '1.2-2' }}</td>
+      <td mat-cell *matCellDef="let row" class="text-right font-bold"
+          [ngClass]="{
+            'fila-clase': row.nivel === 1,
+            'fila-grupo': row.nivel === 2,
+            'fila-cuenta': row.nivel === 3,
+            'saldo-contrario': row.esSaldoContrario,
+            'saldo-normal': !row.esSaldoContrario && row.saldo >= 0,
+            'saldo-negativo': !row.esSaldoContrario && row.saldo < 0
+          }">
+        {{ row.saldo | number: '1.2-2' }}
+        <span *ngIf="row.esSaldoContrario" class="saldo-contrario-badge" title="Saldo contrario a la naturaleza de la cuenta">⚠</span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="saldoConsolidado">
+      <th mat-header-cell *matHeaderCellDef>Saldo Directo</th>
+      <td mat-cell *matCellDef="let row" class="text-right"
+          [ngClass]="(row.saldoDirecto ?? row.saldo) >= 0 ? 'text-gray-700' : 'text-red-700'">
+        {{ (row.saldoDirecto ?? row.saldo) | number: '1.2-2' }}
+      </td>
     </ng-container>
 
     <tr mat-header-row *matHeaderRowDef="columnas"></tr>
     <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
   </table>
 
-  <div *ngIf="resultado.data.length === 0" class="p-8 text-center text-gray-500">
+  <div *ngIf="tablaData.length === 0" class="p-8 text-center text-gray-500">
     No hay registros para los filtros seleccionados
   </div>
 

@@ -1,23 +1,23 @@
 <div class="configuracion-header mb-6">
   <h1 class="page-title">Configuración</h1>
-  <p class="text-gray-500 mt-1">Administración del sistema y reglas de negocio</p>
+  <p class="mt-1" style="color: var(--countable-text-secondary);">Administración del sistema y reglas de negocio</p>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
   <mat-card *ngFor="let seccion of secciones" class="p-4">
     <div class="flex items-center gap-3 mb-4">
-      <mat-icon class="text-indigo-600">{{ seccion.icon }}</mat-icon>
-      <h2 class="text-lg font-semibold">{{ seccion.title }}</h2>
+      <mat-icon class="config-icon">{{ seccion.icon }}</mat-icon>
+      <h2 class="text-lg font-semibold" style="color: var(--countable-text);">{{ seccion.title }}</h2>
     </div>
 
     <div class="space-y-2">
       <a
         *ngFor="let item of seccion.items"
         [routerLink]="item.link"
-        class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition"
+        class="config-link flex items-center gap-3 p-2 rounded-lg transition"
       >
-        <mat-icon class="text-gray-500 text-lg">{{ item.icon }}</mat-icon>
-        <span class="text-sm text-gray-700">{{ item.title }}</span>
+        <mat-icon class="config-item-icon text-lg">{{ item.icon }}</mat-icon>
+        <span class="text-sm">{{ item.title }}</span>
       </a>
     </div>
   </mat-card>

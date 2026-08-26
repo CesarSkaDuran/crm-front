@@ -11,6 +11,7 @@ import { MatCardModule } from '@angular/material/card';
 import { TesoreriaService } from '../../core/services/tesoreria.service';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { AccountsService } from '../../core/services/accounts.service';
+import { BancosService } from '../../core/services/bancos.service';
 
 @Component({
   selector: 'app-tesoreria',
@@ -34,18 +35,21 @@ export class TesoreriaComponent implements OnInit {
   private tesoreria = inject(TesoreriaService);
   private thirds = inject(ThirdsService);
   private accounts = inject(AccountsService);
+  private bancosSvc = inject(BancosService);
   private cdr = inject(ChangeDetectorRef);
 
   movimientos: any[] = [];
   terceros: any[] = [];
   cuentas: any[] = [];
+  bancos: any[] = [];
   editandoId: number | null = null;
 
   displayedColumns = [
     'codigo',
     'fecha',
+    'tipo',
     'nombre_tercero',
-    'cuenta_contable_id',
+    'banco',
     'valor',
     'acciones',
   ];
@@ -53,6 +57,9 @@ export class TesoreriaComponent implements OnInit {
   form = this.fb.group({
     fecha: ['', Validators.required],
     codigo: ['', Validators.required],
+    tipo: [1, Validators.required],
+    banco_id: [null as number | null, Validators.required],
+    cuenta_contrapartida_id: [null as number | null, Validators.required],
     nombre_tercero: [''],
     tercero: [''],
     cuenta_contable_id: [''],
@@ -83,7 +90,16 @@ export class TesoreriaComponent implements OnInit {
       this.cdr.detectChanges();
     });
     this.accounts.getAll().subscribe((res: any) => {
-      this.cuentas = res.data ?? res ?? [];
+      const todas = res.data ?? res ?? [];
+      // Filtrar cuentas movimientos (las que tienen código con al menos 4 niveles)
+      this.cuentas = todas.filter((c: any) => {
+        const nivel = (c.codigo || '').split('.').length;
+        return nivel >= 3;
+      });
+      this.cdr.detectChanges();
+    });
+    this.bancosSvc.getAll().subscribe((res: any) => {
+      this.bancos = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
   }
@@ -129,7 +145,7 @@ export class TesoreriaComponent implements OnInit {
 
   cancelar() {
     this.editandoId = null;
-    this.form.reset({ valor: 0 });
+    this.form.reset({ tipo: 1, valor: 0 });
   }
 
   eliminar(row: any) {
@@ -140,5 +156,19 @@ export class TesoreriaComponent implements OnInit {
   nombreCuenta(codigo: string) {
     const c = this.cuentas.find((x) => x.codigo === codigo);
     return c ? `(${c.codigo}) ${c.nombre}` : codigo;
+  }
+
+  nombreCuentaPorId(id: number) {
+    const c = this.cuentas.find((x) => x.id === id);
+    return c ? `(${c.codigo}) ${c.nombre}` : id;
+  }
+
+  nombreBanco(id: number) {
+    const b = this.bancos.find((x) => x.id === id);
+    return b?.nombre || id;
+  }
+
+  tipoLabel(tipo: number) {
+    return tipo === 1 ? 'Ingreso' : 'Egreso';
   }
 }

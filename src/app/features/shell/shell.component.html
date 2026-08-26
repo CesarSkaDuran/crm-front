@@ -1,28 +1,32 @@
-<mat-sidenav-container class="h-screen w-full bg-gray-50">
+<mat-sidenav-container class="h-screen w-full" style="background-color: var(--countable-bg);">
   <mat-sidenav
     [mode]="'side'"
     [opened]="opened()"
-    class="!bg-slate-900 !border-r-slate-800"
+    class="!border-0"
+    style="background-color: var(--countable-sidebar);"
     [style.width.px]="280">
 
-    <div class="flex flex-col h-full text-slate-300">
+    <div class="flex flex-col h-full" style="color: rgba(255,255,255,0.72);">
       <!-- Logo -->
-      <div class="flex items-center h-16 px-6 border-b border-slate-800">
-        <div class="w-8 h-8 rounded bg-indigo-600 flex items-center justify-center text-white font-bold">C</div>
-        <span class="ml-3 font-semibold text-white">CRM Solucion Empresarial</span>
+      <div class="flex items-center h-16 px-6" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+        <img src="assets/countable-logo-mark.png" alt="Countable" class="shell-logo-img" />
+        <span class="ml-3 font-semibold tracking-wide">
+          <span style="color: #ffffff;">COUNT</span><span style="background: linear-gradient(90deg, #388AF3, #7540F9); -webkit-background-clip: text; background-clip: text; color: transparent;">ABLE</span>
+        </span>
       </div>
 
       <!-- User -->
-      <div class="p-6 text-center border-b border-slate-800">
-        <div class="w-16 h-16 mx-auto rounded-full bg-indigo-600 flex items-center justify-center text-2xl font-bold text-white">
+      <div class="p-6 text-center" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+        <div class="shell-avatar w-16 h-16 mx-auto rounded-full flex items-center justify-center text-2xl font-bold text-white">
           {{ iniciales }}
         </div>
         <div class="mt-4 font-medium text-white">{{ nombreUsuario }}</div>
-        <div class="text-sm text-slate-500 truncate">{{ emailUsuario }}</div>
+        <div class="text-sm truncate" style="color: rgba(255,255,255,0.45);">{{ emailUsuario }}</div>
         <button
           type="button"
           (click)="logout()"
-          class="mt-4 inline-flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg text-slate-300 border border-slate-700 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/40 transition"
+          class="mt-4 inline-flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg transition"
+          style="color: rgba(255,255,255,0.72); border: 1px solid rgba(255,255,255,0.12);"
         >
           <mat-icon class="!text-base !w-4 !h-4 leading-4">logout</mat-icon>
           Cerrar sesión
@@ -52,13 +56,14 @@
                 <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
                 <span class="flex-1 text-left">{{ item.title }}</span>
                 <mat-icon
-                  class="!text-slate-500 transition-transform duration-200"
+                  class="transition-transform duration-200"
+                  style="color: rgba(255,255,255,0.45);"
                   [class.rotate-180]="expanded()[item.id]"
                 >expand_more</mat-icon>
               </button>
 
               @if (expanded()[item.id]) {
-                <div class="mt-1 mb-2 ml-5 pl-3 border-l border-slate-700 space-y-1">
+                <div class="mt-1 mb-2 ml-5 pl-3 space-y-1" style="border-left: 1px solid rgba(255,255,255,0.1);">
                   @for (child of item.children; track child.id) {
                     <a
                       [routerLink]="child.link"
@@ -75,36 +80,36 @@
       </nav>
 
       <!-- Footer logo area -->
-      <div class="flex items-center justify-center h-14 px-6 text-xs text-slate-600 border-t border-slate-800">
-        CRM &copy; 2026
+      <div class="flex items-center justify-center h-14 px-6 text-xs" style="color: rgba(255,255,255,0.35); border-top: 1px solid rgba(255,255,255,0.06);">
+        Countable &copy; 2026
       </div>
     </div>
   </mat-sidenav>
 
-  <mat-sidenav-content class="bg-gray-50">
+  <mat-sidenav-content style="background-color: var(--countable-bg);">
     <!-- Header -->
-    <mat-toolbar class="!h-16 !px-4 bg-white shadow-sm border-b">
+    <mat-toolbar class="shell-toolbar !h-16 !px-4 shadow-sm">
       <button type="button" mat-icon-button (click)="toggleSidenav()" class="mr-2">
         <mat-icon>menu</mat-icon>
       </button>
-      <span class="text-lg font-medium text-gray-800">CRM Solucion Empresarial</span>
+      <span class="text-lg font-medium" style="color: var(--countable-text);">Countable</span>
 
       <span class="flex-1"></span>
 
       <button type="button" mat-button [matMenuTriggerFor]="userMenu" class="!rounded-full">
         <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-sm font-bold text-white">
+          <div class="shell-avatar w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white">
             {{ iniciales }}
           </div>
-          <span class="hidden md:inline text-sm text-gray-700">{{ nombreUsuario }}</span>
-          <mat-icon class="!text-gray-500">expand_more</mat-icon>
+          <span class="hidden md:inline text-sm" style="color: var(--countable-text);">{{ nombreUsuario }}</span>
+          <mat-icon style="color: var(--countable-text-secondary);">expand_more</mat-icon>
         </div>
       </button>
 
       <mat-menu #userMenu="matMenu">
         <div class="px-4 py-3 border-b">
-          <p class="text-sm font-medium text-gray-800">{{ nombreUsuario }}</p>
-          <p class="text-xs text-gray-500">{{ emailUsuario }}</p>
+          <p class="text-sm font-medium" style="color: var(--countable-text);">{{ nombreUsuario }}</p>
+          <p class="text-xs" style="color: var(--countable-text-secondary);">{{ emailUsuario }}</p>
         </div>
         <button mat-menu-item (click)="logout()">
           <mat-icon class="!text-red-500">logout</mat-icon>

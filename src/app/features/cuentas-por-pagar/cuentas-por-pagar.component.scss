@@ -9,8 +9,8 @@
 
 th.mat-mdc-header-cell {
   font-weight: 700;
-  background-color: #f3f4f6;
-  color: #374151;
+  background-color: var(--countable-input);
+  color: var(--countable-text-secondary);
   text-transform: uppercase;
   font-size: 0.75rem;
 }
@@ -21,5 +21,5 @@ th.mat-mdc-header-cell {
 }
 
 tr.mat-mdc-row:hover {
-  background-color: #f9fafb;
+  background-color: rgba(56, 138, 243, 0.04);
 }

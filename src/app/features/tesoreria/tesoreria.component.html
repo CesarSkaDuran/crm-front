@@ -10,41 +10,61 @@
 
   <form [formGroup]="form" (ngSubmit)="guardar()">
     <div class="form-row">
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always">
+      <mat-form-field class="blue-input" subscriptSizing="dynamic" floatLabel="always">
         <mat-icon matPrefix>event</mat-icon>
         <mat-label>Fecha</mat-label>
         <input matInput type="date" formControlName="fecha" required />
       </mat-form-field>
 
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+      <mat-form-field class="blue-input" subscriptSizing="dynamic">
         <mat-icon matPrefix>tag</mat-icon>
         <mat-label>Código</mat-label>
         <input matInput formControlName="codigo" required />
       </mat-form-field>
 
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>person</mat-icon>
-        <mat-label>Tercero</mat-label>
-        <mat-select formControlName="tercero" (selectionChange)="terceroSeleccionado()">
-          <mat-option *ngFor="let t of terceros" [value]="t.id">{{ t.nombre }}</mat-option>
+      <mat-form-field class="blue-input" subscriptSizing="dynamic">
+        <mat-icon matPrefix>swap_vert</mat-icon>
+        <mat-label>Tipo</mat-label>
+        <mat-select formControlName="tipo" required>
+          <mat-option [value]="1">Ingreso (entrada)</mat-option>
+          <mat-option [value]="2">Egreso (salida)</mat-option>
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>account_balance</mat-icon>
-        <mat-label>Cuenta contable</mat-label>
-        <mat-select formControlName="cuenta_contable_id">
-          <mat-option *ngFor="let c of cuentas" [value]="c.codigo">({{ c.codigo }}) {{ c.nombre }}</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+      <mat-form-field class="blue-input" subscriptSizing="dynamic">
         <mat-icon matPrefix>attach_money</mat-icon>
         <mat-label>Valor</mat-label>
         <input matInput type="number" formControlName="valor" required />
       </mat-form-field>
+    </div>
 
-      <div class="field-action flex-none">
+    <div class="form-row">
+      <mat-form-field class="blue-input" subscriptSizing="dynamic">
+        <mat-icon matPrefix>account_balance</mat-icon>
+        <mat-label>Banco / Caja</mat-label>
+        <mat-select formControlName="banco_id" required>
+          <mat-option *ngFor="let b of bancos" [value]="b.id">{{ b.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="blue-input" subscriptSizing="dynamic">
+        <mat-icon matPrefix>account_tree</mat-icon>
+        <mat-label>Cuenta contrapartida (PUC)</mat-label>
+        <mat-select formControlName="cuenta_contrapartida_id" required>
+          <mat-option *ngFor="let c of cuentas" [value]="c.id">({{ c.codigo }}) {{ c.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="blue-input" subscriptSizing="dynamic">
+        <mat-icon matPrefix>person</mat-icon>
+        <mat-label>Tercero (opcional)</mat-label>
+        <mat-select formControlName="tercero" (selectionChange)="terceroSeleccionado()">
+          <mat-option [value]="''">Sin tercero</mat-option>
+          <mat-option *ngFor="let t of terceros" [value]="t.id">{{ t.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="field-action">
         <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded" [disabled]="form.invalid">
           <mat-icon>{{ editandoId ? 'save' : 'add_circle_outline' }}</mat-icon>
           <span class="ml-2 hidden md:inline">{{ editandoId ? 'Actualizar' : 'Agregar' }}</span>
@@ -111,17 +131,30 @@
 
     <ng-container matColumnDef="nombre_tercero">
       <th mat-header-cell *matHeaderCellDef>Tercero</th>
-      <td mat-cell *matCellDef="let row">{{ row.nombre_tercero }}</td>
+      <td mat-cell *matCellDef="let row">{{ row.nombre_tercero || '—' }}</td>
     </ng-container>
 
-    <ng-container matColumnDef="cuenta_contable_id">
-      <th mat-header-cell *matHeaderCellDef>Cuenta</th>
-      <td mat-cell *matCellDef="let row">{{ nombreCuenta(row.cuenta_contable_id) }}</td>
+    <ng-container matColumnDef="tipo">
+      <th mat-header-cell *matHeaderCellDef>Tipo</th>
+      <td mat-cell *matCellDef="let row">
+        <span [class.ingreso]="row.tipo === 1" [class.egreso]="row.tipo === 2">
+          {{ tipoLabel(row.tipo) }}
+        </span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="banco">
+      <th mat-header-cell *matHeaderCellDef>Banco / Caja</th>
+      <td mat-cell *matCellDef="let row">{{ nombreBanco(row.banco_id) }}</td>
     </ng-container>
 
     <ng-container matColumnDef="valor">
       <th mat-header-cell *matHeaderCellDef>Valor</th>
-      <td mat-cell *matCellDef="let row" class="text-right">{{ row.valor | number: '1.2-2' }}</td>
+      <td mat-cell *matCellDef="let row" class="text-right"
+          [class.text-green-600]="row.tipo === 1"
+          [class.text-red-600]="row.tipo === 2">
+        {{ row.tipo === 1 ? '+' : '-' }}{{ row.valor | number: '1.2-2' }}
+      </td>
     </ng-container>
 
     <ng-container matColumnDef="acciones">

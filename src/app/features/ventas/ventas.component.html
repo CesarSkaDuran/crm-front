@@ -37,6 +37,15 @@
 
     <div class="form-row mb-4">
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>account_balance</mat-icon>
+        <mat-label>Banco / Caja (contado)</mat-label>
+        <mat-select formControlName="banco_id">
+          <mat-option [value]="null">A crédito</mat-option>
+          <mat-option *ngFor="let b of bancos" [value]="b.id">{{ b.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>percent</mat-icon>
         <mat-label>Descuento (%)</mat-label>
         <input matInput type="number" formControlName="descuento" />

@@ -1,0 +1,15 @@
+.config-link {
+  color: var(--countable-text);
+
+  &:hover {
+    background-color: var(--countable-input);
+  }
+}
+
+.config-icon {
+  color: var(--countable-blue);
+}
+
+.config-item-icon {
+  color: var(--countable-text-secondary);
+}

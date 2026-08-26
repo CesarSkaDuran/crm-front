@@ -1,3 +1,27 @@
-:host {
-  display: block;
+.login-logo {
+  width: 100px;
+  max-width: 100%;
+  height: auto;
+  border-radius: 16px;
+  filter: drop-shadow(0 0 22px rgba(49, 184, 252, 0.28));
+}
+
+.login-input {
+  background-color: #10233f;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--countable-text-on-dark);
+
+  &:focus {
+    border-color: rgba(56, 138, 243, 0.7);
+    box-shadow: 0 0 0 3px rgba(56, 138, 243, 0.15);
+  }
+}
+
+.login-submit {
+  background: linear-gradient(135deg, var(--countable-blue) 0%, var(--countable-blue-violet) 55%, var(--countable-violet) 100%);
+  box-shadow: 0 10px 24px rgba(56, 138, 243, 0.28);
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.05);
+  }
 }
