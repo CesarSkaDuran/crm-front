@@ -1,6 +1,16 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import {
+  LibroResponse,
+  BalanceGeneralResponse,
+  PygResponse,
+  LibroMayorQuery,
+  LibroRangoQuery,
+  LibroTercerosQuery,
+  BalanceGeneralQuery,
+  PygQuery,
+} from '../../models/informes.models';
 
 @Injectable({
   providedIn: 'root',
@@ -8,23 +18,23 @@ import { ApiService } from './api.service';
 export class InformesService {
   private api = inject(ApiService);
 
-  getLibroMayor(query: Record<string, any>): Observable<any> {
-    return this.api.get('informes/libro', query);
+  getLibroMayor(query: LibroMayorQuery): Observable<LibroResponse> {
+    return this.api.get('informes/libro', query as Record<string, any>);
   }
 
-  getRango(query: Record<string, any>): Observable<any> {
-    return this.api.get('informes/rango', query);
+  getRango(query: LibroRangoQuery): Observable<LibroResponse> {
+    return this.api.get('informes/rango', query as Record<string, any>);
   }
 
-  getBalance(query: Record<string, any>): Observable<any> {
-    return this.api.get('informes/balance', query);
+  getBalance(query: BalanceGeneralQuery): Observable<BalanceGeneralResponse> {
+    return this.api.get('informes/balance', query as Record<string, any>);
   }
 
-  getPyG(query: Record<string, any>): Observable<any> {
-    return this.api.get('informes/pyg', query);
+  getPyG(query: PygQuery): Observable<PygResponse> {
+    return this.api.get('informes/pyg', query as Record<string, any>);
   }
 
-  getTerceros(query: Record<string, any>): Observable<any> {
-    return this.api.get('informes/terceros', query);
+  getTerceros(query: LibroTercerosQuery): Observable<LibroResponse> {
+    return this.api.get('informes/terceros', query as Record<string, any>);
   }
 }

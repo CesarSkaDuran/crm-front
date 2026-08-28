@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, ViewChildren, QueryList, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
+import { Observable } from 'rxjs';
 
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,9 +11,25 @@ import { MatAutocompleteModule, MatAutocompleteTrigger } from '@angular/material
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { InformesService } from '../../core/services/informes.service';
 import { AccountsService } from '../../core/services/accounts.service';
 import { ThirdsService } from '../../core/services/thirds.service';
+import { ExportService, ExportColumn, ExportKpi } from '../../core/services/export.service';
+import {
+  Cuenta,
+  Tercero,
+  InformeResultado,
+  LibroMayorQuery,
+  LibroRangoQuery,
+  LibroTercerosQuery,
+  BalanceGeneralQuery,
+  PygQuery,
+  TipoInforme,
+  LibroResponse,
+  BalanceGeneralResponse,
+  PygResponse,
+} from '../../models/informes.models';
 
 @Component({
   selector: 'app-informes',
@@ -28,6 +45,7 @@ import { ThirdsService } from '../../core/services/thirds.service';
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    MatTooltipModule,
   ],
   templateUrl: './informes.component.html',
   styleUrl: './informes.component.scss',
@@ -38,22 +56,24 @@ export class InformesComponent implements OnInit {
   private accounts = inject(AccountsService);
   private thirds = inject(ThirdsService);
   private cdr = inject(ChangeDetectorRef);
+  private exportSvc = inject(ExportService);
 
-  cuentas: any[] = [];
-  cuentasFiltradas: any[] = [];
+  cuentas: Cuenta[] = [];
+  cuentasFiltradas: Cuenta[] = [];
   cuentaSearch = new FormControl('');
 
-  desdeFiltradas: any[] = [];
+  desdeFiltradas: Cuenta[] = [];
   desdeSearch = new FormControl('');
-  hastaFiltradas: any[] = [];
+  hastaFiltradas: Cuenta[] = [];
   hastaSearch = new FormControl('');
 
-  terceros: any[] = [];
-  tercerosFiltrados: any[] = [];
+  terceros: Tercero[] = [];
+  tercerosFiltrados: Tercero[] = [];
   terceroSearch = new FormControl('');
 
-  resultado: any = null;
+  resultado: InformeResultado | null = null;
   cargando = false;
+  exportando = false;
   focusedIndex: number | null = null;
 
   @ViewChildren(MatAutocompleteTrigger) triggers!: QueryList<MatAutocompleteTrigger>;
@@ -145,8 +165,9 @@ export class InformesComponent implements OnInit {
   }
 
   cargarCuentas() {
-    this.accounts.getAll().subscribe((res: any) => {
-      this.cuentas = res.data ?? res ?? [];
+    this.accounts.getAll().subscribe((res: { data: Cuenta[] } | Cuenta[]) => {
+      const list = Array.isArray(res) ? res : res.data ?? [];
+      this.cuentas = list;
       this.filtrarCuentas(this.cuentaSearch.value ?? '');
       this.filtrarCuentasDesde(this.desdeSearch.value ?? '');
       this.filtrarCuentasHasta(this.hastaSearch.value ?? '');
@@ -158,8 +179,9 @@ export class InformesComponent implements OnInit {
   }
 
   cargarTerceros() {
-    this.thirds.getAll().subscribe((res: any) => {
-      this.terceros = res.data ?? res ?? [];
+    this.thirds.getAll().subscribe((res: { data: Tercero[] } | Tercero[]) => {
+      const list = Array.isArray(res) ? res : res.data ?? [];
+      this.terceros = list;
       this.filtrarTerceros(this.terceroSearch.value ?? '');
       this.cdr.detectChanges();
     });
@@ -193,8 +215,8 @@ export class InformesComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  filtrar(text: string) {
-    const q = (text ?? '').toLowerCase().trim();
+  filtrar(text: string): Cuenta[] {
+    const q = (typeof text === 'string' ? text : '').toLowerCase().trim();
     if (!q) return this.cuentas.slice(0, 100);
     return this.cuentas.filter((c) =>
       (c.codigo ?? '').toLowerCase().includes(q) ||
@@ -203,7 +225,7 @@ export class InformesComponent implements OnInit {
   }
 
   filtrarTerceros(text: string) {
-    const q = (text ?? '').toLowerCase().trim();
+    const q = (typeof text === 'string' ? text : '').toLowerCase().trim();
     if (!q) {
       this.tercerosFiltrados = this.terceros.slice(0, 100);
     } else {
@@ -216,32 +238,54 @@ export class InformesComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  seleccionarCuenta(cuenta: any) {
+  seleccionarCuenta(cuenta: Cuenta) {
     this.form.get('cuenta_id')?.setValue(cuenta?.id ?? null);
     this.cuentaSearch.setValue(this.mostrarCuenta(cuenta), { emitEvent: false });
+    this.cdr.detectChanges();
   }
 
-  seleccionarDesde(cuenta: any) {
+  seleccionarDesde(cuenta: Cuenta) {
     this.form.get('desde_id')?.setValue(cuenta?.id ?? null);
     this.desdeSearch.setValue(this.mostrarCuenta(cuenta), { emitEvent: false });
+    this.cdr.detectChanges();
   }
 
-  seleccionarHasta(cuenta: any) {
+  seleccionarHasta(cuenta: Cuenta) {
     this.form.get('hasta_id')?.setValue(cuenta?.id ?? null);
     this.hastaSearch.setValue(this.mostrarCuenta(cuenta), { emitEvent: false });
+    this.cdr.detectChanges();
   }
 
-  mostrarCuenta(cuenta: any): string {
-    return cuenta ? `(${cuenta.codigo}) | ${cuenta.nombre}` : '';
+  mostrarCuenta(cuenta: Cuenta | string | null | undefined): string {
+    // displayWith puede recibir:
+    //  - undefined/null (sin selección) → ''
+    //  - string (valor ya formateado guardado en el FormControl) → devolverlo tal cual
+    //  - objeto cuenta → formatear (código | nombre)
+    if (!cuenta) return '';
+    if (typeof cuenta === 'string') return cuenta;
+    const codigo = cuenta.codigo ?? '';
+    const nombre = cuenta.nombre ?? '';
+    if (!codigo && !nombre) return '';
+    if (!codigo) return nombre;
+    if (!nombre) return `(${codigo})`;
+    return `(${codigo}) | ${nombre}`;
   }
 
-  mostrarTercero(tercero: any): string {
-    return tercero ? `${tercero.nombre} (${tercero.documento ?? tercero.codigo})` : '';
+  mostrarTercero(tercero: Tercero | string | null | undefined): string {
+    if (!tercero) return '';
+    if (typeof tercero === 'string') return tercero;
+    const nombre = tercero.nombre ?? '';
+    const doc = tercero.documento ?? tercero.codigo ?? '';
+    if (!nombre && !doc) return '';
+    if (!doc) return nombre;
+    if (!nombre) return doc;
+    return `${nombre} (${doc})`;
   }
 
-  seleccionarTercero(tercero: any) {
+  seleccionarTercero(tercero: Tercero) {
     this.form.get('tercero_id')?.setValue(tercero?.id ?? null);
     this.terceroSearch.setValue(this.mostrarTercero(tercero), { emitEvent: false });
+    this.cdr.detectChanges();
   }
 
   limpiarTercero() {
@@ -272,30 +316,30 @@ export class InformesComponent implements OnInit {
     if (this.form.invalid) return;
 
     const params = this.form.value;
-    const tipo = params.tipo;
+    const tipo = params.tipo as TipoInforme;
     this.cargando = true;
     this.resultado = null;
 
-    const req: any = {};
-    if (params.cuenta_id) req.cuenta_id = params.cuenta_id;
-    if (params.tercero_id) req.tercero_id = params.tercero_id;
-    if (params.desde_id) req.desde_id = params.desde_id;
-    if (params.hasta_id) req.hasta_id = params.hasta_id;
-    if (params.modo) req.modo = params.modo;
-    if (params.date) req.date = params.date;
+    const req: LibroMayorQuery | LibroRangoQuery | LibroTercerosQuery | BalanceGeneralQuery | PygQuery = {};
+    if (params.cuenta_id) (req as LibroMayorQuery | LibroTercerosQuery).cuenta_id = params.cuenta_id;
+    if (params.tercero_id) (req as LibroTercerosQuery).tercero_id = params.tercero_id;
+    if (params.desde_id) (req as LibroRangoQuery).desde_id = params.desde_id;
+    if (params.hasta_id) (req as LibroRangoQuery).hasta_id = params.hasta_id;
+    if (params.modo) (req as LibroMayorQuery | LibroRangoQuery | LibroTercerosQuery).modo = params.modo;
+    if (params.date) (req as LibroMayorQuery | LibroRangoQuery | LibroTercerosQuery | PygQuery).date = params.date;
     if (params.date2) req.date2 = params.date2;
 
-    let call$;
+    let call$: Observable<LibroResponse | BalanceGeneralResponse | PygResponse>;
     if (tipo === 'libro') {
-      call$ = this.informes.getLibroMayor(req);
+      call$ = this.informes.getLibroMayor(req as LibroMayorQuery);
     } else if (tipo === 'terceros') {
-      call$ = this.informes.getTerceros(req);
+      call$ = this.informes.getTerceros(req as LibroTercerosQuery);
     } else if (tipo === 'rango') {
-      call$ = this.informes.getRango(req);
+      call$ = this.informes.getRango(req as LibroRangoQuery);
     } else if (tipo === 'balance') {
-      call$ = this.informes.getBalance(req);
+      call$ = this.informes.getBalance(req as BalanceGeneralQuery);
     } else if (tipo === 'pyg') {
-      call$ = this.informes.getPyG(req);
+      call$ = this.informes.getPyG(req as PygQuery);
     } else {
       alert('Informe no implementado aún');
       this.cargando = false;
@@ -303,15 +347,15 @@ export class InformesComponent implements OnInit {
     }
 
     call$.subscribe({
-      next: (res) => {
-        this.resultado = { ...res, tipo };
+      next: (res: LibroResponse | BalanceGeneralResponse | PygResponse) => {
+        this.resultado = { ...res, tipo } as InformeResultado;
         this.cargando = false;
-        this.cdr.detectChanges();
+        setTimeout(() => this.cdr.detectChanges());
       },
-      error: (err) => {
+      error: (err: any) => {
         alert(err.error?.message || 'Error al generar el informe');
         this.cargando = false;
-        this.cdr.detectChanges();
+        setTimeout(() => this.cdr.detectChanges());
       },
     });
   }
@@ -347,5 +391,200 @@ export class InformesComponent implements OnInit {
   get tablaData(): any[] {
     if (!this.resultado) return [];
     return this.resultado.detalle ?? this.resultado.data ?? [];
+  }
+
+  // ===========================================================================
+  // EXPORTACIÓN A EXCEL / PDF / WORD
+  // ===========================================================================
+
+  /**
+   * Exporta el informe actual al formato seleccionado.
+   *
+   * Construye un objeto ExportConfig con:
+   *   - title: nombre del informe + empresa
+   *   - subtitle: rango de fechas si aplica
+   *   - columns: columnas visibles de la tabla
+   *   - rows: filas de tablaData
+   *   - kpis: tarjetas KPI superiores (Balance, P&G)
+   *   - totalRowIndices: índices de filas padre/raíz para resaltar
+   */
+  async exportar(formato: 'excel' | 'pdf' | 'word') {
+    if (!this.resultado || this.tablaData.length === 0) return;
+
+    this.exportando = true;
+    this.cdr.detectChanges();
+
+    try {
+      const config = this.buildExportConfig();
+
+      if (formato === 'excel') {
+        await this.exportSvc.exportExcel(config);
+      } else if (formato === 'pdf') {
+        this.exportSvc.exportPDF(config);
+      } else if (formato === 'word') {
+        await this.exportSvc.exportWord(config);
+      }
+    } catch (err) {
+      console.error('Error al exportar:', err);
+      alert('Error al generar el archivo. Revise la consola para más detalles.');
+    } finally {
+      this.exportando = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  /**
+   * Construye la configuración de exportación a partir del resultado actual.
+   *
+   * Mapea las columnas visibles de la tabla a ExportColumn, identifica las
+   * filas que son totales (esPadre o esVirtual) para resaltarlas, y extrae
+   * los KPIs según el tipo de informe.
+   */
+  private buildExportConfig() {
+    if (!this.resultado) throw new Error('No hay resultado para exportar');
+
+    const tipo = this.resultado.tipo;
+    const tipoNombre = this.tiposInforme.find((t) => t.id === tipo)?.nombre || 'Informe';
+    const date = this.form.get('date')?.value;
+    const date2 = this.form.get('date2')?.value;
+
+    // --- Subtítulo con rango de fechas ---
+    let subtitle = '';
+    if (date && date2) {
+      subtitle = `Periodo: ${this.fmtDate(date)} al ${this.fmtDate(date2)}`;
+    } else if (date) {
+      subtitle = `Desde: ${this.fmtDate(date)}`;
+    } else if (date2) {
+      subtitle = `Hasta: ${this.fmtDate(date2)}`;
+    }
+
+    // --- Columnas según el tipo de informe ---
+    const columns: ExportColumn[] = this.getExportColumns(tipo);
+
+    // --- KPIs según el tipo de informe ---
+    const kpis: ExportKpi[] = this.getExportKpis(tipo);
+
+    // --- Identificar filas totales (padres o virtuales) ---
+    const totalRowIndices: number[] = [];
+    this.tablaData.forEach((row, idx) => {
+      if (row.esPadre || row.esVirtual || row.nivel === 1) {
+        totalRowIndices.push(idx);
+      }
+    });
+
+    return {
+      title: tipoNombre,
+      subtitle,
+      columns,
+      rows: this.tablaData,
+      kpis: kpis.length > 0 ? kpis : undefined,
+      totalRowIndices,
+    };
+  }
+
+  /**
+   * Devuelve las columnas de exportación según el tipo de informe.
+   * Cada columna incluye key, header, ancho y alineación.
+   */
+  private getExportColumns(tipo: string): ExportColumn[] {
+    if (tipo === 'balance' || tipo === 'pyg') {
+      return [
+        { header: 'Código', key: 'codigo', width: 14, align: 'left' },
+        { header: 'Nombre', key: 'nombre', width: 45, align: 'left' },
+        { header: 'Clase', key: 'clase', width: 8, align: 'center' },
+        { header: 'Débito', key: 'debito', width: 16, align: 'right' },
+        { header: 'Crédito', key: 'credito', width: 16, align: 'right' },
+        { header: 'Saldo', key: 'saldo', width: 16, align: 'right' },
+      ];
+    }
+
+    const modo = this.form.get('modo')?.value;
+    switch (modo) {
+      case 'resumido':
+        return [
+          { header: 'Código', key: 'codigo', width: 14 },
+          { header: 'Nombre', key: 'nombre', width: 45 },
+          { header: 'Débito', key: 'debito', width: 16, align: 'right' },
+          { header: 'Crédito', key: 'credito', width: 16, align: 'right' },
+          { header: 'Saldo Directo', key: 'saldoDirecto', width: 18, align: 'right' },
+          { header: 'Saldo Consolidado', key: 'saldo', width: 18, align: 'right' },
+        ];
+      case 'porComprobante':
+        return [
+          { header: 'Consecutivo', key: 'consecutivo', width: 18 },
+          { header: 'Fecha', key: 'fecha', width: 14 },
+          { header: 'Débito', key: 'debito', width: 16, align: 'right' },
+          { header: 'Crédito', key: 'credito', width: 16, align: 'right' },
+          { header: 'Saldo', key: 'saldo', width: 16, align: 'right' },
+        ];
+      case 'discriminado':
+        return [
+          { header: 'Tercero', key: 'tercero', width: 40 },
+          { header: 'Débito', key: 'debito', width: 16, align: 'right' },
+          { header: 'Crédito', key: 'credito', width: 16, align: 'right' },
+          { header: 'Saldo', key: 'saldo', width: 16, align: 'right' },
+        ];
+      default:
+        return [
+          { header: 'Fecha', key: 'fecha', width: 12 },
+          { header: 'Comprobante', key: 'consecutivo', width: 16 },
+          { header: 'Cuenta', key: 'cuenta_str', width: 30 },
+          { header: 'Tercero', key: 'tercero', width: 25 },
+          { header: 'Descripción', key: 'descripcion', width: 35 },
+          { header: 'Débito', key: 'debito', width: 14, align: 'right' },
+          { header: 'Crédito', key: 'credito', width: 14, align: 'right' },
+          { header: 'Valor', key: 'valor', width: 14, align: 'right' },
+          { header: 'Saldo', key: 'saldo', width: 14, align: 'right' },
+        ];
+    }
+  }
+
+  /**
+   * Devuelve los KPIs de exportación según el tipo de informe.
+   * Balance → Activo, Pasivo, Patrimonio, Resultado, P+P
+   * P&G → Ingresos, Costos, Gastos, Utilidad/Pérdida
+   */
+  private getExportKpis(tipo: string): ExportKpi[] {
+    const fmt = (v: number | undefined) =>
+      (v ?? 0).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    if (!this.resultado) return [];
+
+    if (tipo === 'balance' && this.resultado.tipo === 'balance' && this.resultado.totales) {
+      const t = this.resultado.totales;
+      return [
+        { label: 'Activo', value: fmt(t.activo) },
+        { label: 'Pasivo', value: fmt(t.pasivo) },
+        { label: 'Patrimonio', value: fmt(t.patrimonio) },
+        { label: 'Resultado Ejercicio', value: fmt(t.resultado_ejercicio) },
+        { label: 'Pasivo + Patrimonio', value: fmt(t.pasivo_mas_patrimonio) },
+      ];
+    }
+
+    if (tipo === 'pyg' && this.resultado.tipo === 'pyg') {
+      return [
+        { label: 'Total Ingresos', value: fmt(this.resultado.totalIngresos) },
+        { label: 'Total Costos', value: fmt(this.resultado.totalCostos) },
+        { label: 'Total Gastos', value: fmt(this.resultado.totalGastos) },
+        { label: 'Utilidad/Pérdida', value: fmt(this.resultado.utilidadPerdida) },
+      ];
+    }
+
+    // Libros auxiliares: mostrar totales de débito/crédito
+    if (this.resultado.tipo !== 'pyg' && this.resultado.tipo !== 'balance' && 'total_debito' in this.resultado) {
+      return [
+        { label: 'Total Débito', value: fmt(this.resultado.total_debito) },
+        { label: 'Total Crédito', value: fmt(this.resultado.total_credito) },
+      ];
+    }
+
+    return [];
+  }
+
+  /** Formatea una fecha ISO (YYYY-MM-DD) a DD/MM/YYYY */
+  private fmtDate(iso: string): string {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
   }
 }

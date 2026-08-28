@@ -118,3 +118,91 @@ tr.mat-mdc-row:hover {
 .saldo-negativo {
   color: #b91c1c;
 }
+
+// =========================================================================
+// Anchos de columna para la tabla de Libro Auxiliar (modo detallado)
+//
+// Material Table genera clases .mat-column-<nombre> que permiten controlar
+// el ancho de cada columna. Se usan anchos fijos en píxeles para columnas
+// cortas (fecha, comprobante, montos) y flex para columnas de texto largo
+// (cuenta, descripción, tercero).
+//
+// Distribución aproximada (tabla ~100% ancho):
+//   fecha:         90px   (dd/MM/yyyy)
+//   consecutivo:   100px  (VT000004)
+//   cuenta:        flex 2 (código + nombre)
+//   descripcion:   flex 3 (concepto libre)
+//   tercero:       flex 1.5 (nombre - documento)
+//   debito:        100px  (número)
+//   credito:       100px  (número)
+//   valor:         100px  (número)
+//   saldo:         110px  (número + badge)
+// =========================================================================
+
+.mat-column-fecha {
+  width: 100px;
+  min-width: 100px;
+  white-space: nowrap;
+}
+
+.mat-column-consecutivo {
+  width: 110px;
+  min-width: 110px;
+  white-space: nowrap;
+}
+
+.mat-column-cuenta {
+  min-width: 220px;
+}
+
+.mat-column-descripcion {
+  min-width: 220px;
+}
+
+.mat-column-tercero {
+  min-width: 140px;
+  max-width: 280px;
+  // Truncar texto largo con elipsis
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mat-column-debito,
+.mat-column-credito,
+.mat-column-valor,
+.mat-column-saldo {
+  width: 130px;
+  min-width: 130px;
+  white-space: nowrap;
+}
+
+// Columnas para Balance/P&G (codigo, nombre, clase)
+.mat-column-codigo {
+  width: 120px;
+  max-width: 140px;
+  white-space: nowrap;
+}
+
+.mat-column-nombre {
+  min-width: 250px;
+}
+
+.mat-column-clase {
+  width: 60px;
+  max-width: 70px;
+  text-align: center;
+}
+
+// Asegurar que la tabla use todo el ancho disponible
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+table.mat-mdc-table {
+  width: 100%;
+  min-width: 1100px; // Fuerza el scroll horizontal si la tabla no cabe
+  table-layout: auto;
+}
