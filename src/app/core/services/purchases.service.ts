@@ -41,4 +41,8 @@ export class PurchasesService {
   create(body: CreatePurchase): Observable<any> {
     return this.api.post('compras', body);
   }
+
+  anular(id: number): Observable<any> {
+    return this.api.post(`compras/${id}/anular`, {});
+  }
 }

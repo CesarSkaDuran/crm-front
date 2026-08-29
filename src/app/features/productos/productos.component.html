@@ -39,8 +39,9 @@
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>label</mat-icon>
         <mat-label>Categoría</mat-label>
-        <mat-select formControlName="categoria">
-          <mat-option *ngFor="let c of categoriasList" [value]="c.nombre">{{ c.nombre }}</mat-option>
+        <mat-select formControlName="categoria_id">
+          <mat-option [value]="null">— Sin categoría —</mat-option>
+          <mat-option *ngFor="let c of categoriasList" [value]="c.id">{{ c.nombre }}{{ c.nombre_padre ? ' (' + c.nombre_padre + ')' : '' }}</mat-option>
         </mat-select>
       </mat-form-field>
 
@@ -83,14 +84,46 @@
     <div class="form-row mb-3">
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>attach_money</mat-icon>
-        <mat-label>Precio de venta</mat-label>
-        <input matInput type="number" formControlName="pvp1" />
+        <mat-label>PVP 1 (base)</mat-label>
+        <input matInput type="number" formControlName="pvp1" (input)="recalcularPvp4()" />
       </mat-form-field>
 
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>attach_money</mat-icon>
+        <mat-label>PVP 2</mat-label>
+        <input matInput type="number" formControlName="pvp2" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>attach_money</mat-icon>
+        <mat-label>PVP 3</mat-label>
+        <input matInput type="number" formControlName="pvp3" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>attach_money</mat-icon>
+        <mat-label>PVP 4 (auto: PVP1+IVA)</mat-label>
+        <input matInput type="number" formControlName="pvp4" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>attach_money</mat-icon>
+        <mat-label>PVP 5</mat-label>
+        <input matInput type="number" formControlName="pvp5" />
+      </mat-form-field>
+    </div>
+
+    <div class="form-row mb-3">
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>percent</mat-icon>
         <mat-label>Impuesto (%)</mat-label>
-        <input matInput type="number" formControlName="impuesto" />
+        <input matInput type="number" formControlName="impuesto" (input)="recalcularPvp4()" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>local_shipping</mat-icon>
+        <mat-label>Costo flete (prorrateado)</mat-label>
+        <input matInput type="number" formControlName="costo_flete" />
       </mat-form-field>
 
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">

@@ -18,6 +18,9 @@ import { MovimientosComponent } from './features/movimientos/movimientos.compone
 import { InformesComponent } from './features/informes/informes.component';
 import { Configuracion } from './features/configuracion/configuracion';
 import { Categorias } from './features/configuracion/categorias/categorias';
+import { TiposDocumentoComponent } from './features/configuracion/tipos-documento/tipos-documento';
+import { InventarioFisicoComponent } from './features/inventario-fisico/inventario-fisico.component';
+import { FacturacionElectronicaComponent } from './features/facturacion-electronica/facturacion-electronica.component';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
@@ -45,6 +48,9 @@ export const routes: Routes = [
       { path: 'tipos-comprobantes', component: TiposComprobantesComponent },
       { path: 'configuracion', component: Configuracion },
       { path: 'configuracion/categorias', component: Categorias },
+      { path: 'configuracion/tipos-documento', component: TiposDocumentoComponent },
+      { path: 'inventario-fisico', component: InventarioFisicoComponent },
+      { path: 'facturacion-electronica', component: FacturacionElectronicaComponent },
     ]
   },
   { path: '**', redirectTo: 'login' },

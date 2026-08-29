@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatToolbar } from '@angular/material/toolbar';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificacionesComponent } from '../notificaciones/notificaciones.component';
 
 interface MenuGroup {
   id: string;
@@ -71,10 +72,22 @@ const MENU: MenuGroup[] = [
     link: '/cuentas-por-pagar'
   },
   {
-    id: 'bancos',
-    title: 'Bancos',
-    icon: 'account_balance_wallet',
-    link: '/bancos'
+    id: 'terceros',
+    title: 'Terceros',
+    icon: 'groups',
+    link: '/terceros'
+  },
+  {
+    id: 'inventario-fisico',
+    title: 'Inventario físico',
+    icon: 'inventory_2',
+    link: '/inventario-fisico'
+  },
+  {
+    id: 'facturacion-electronica',
+    title: 'Facturación DIAN',
+    icon: 'receipt_long',
+    link: '/facturacion-electronica'
   },
   {
     id: 'configuracion',
@@ -97,7 +110,8 @@ const MENU: MenuGroup[] = [
     MatIcon,
     MatToolbar,
     MatButtonModule,
-    MatMenuModule
+    MatMenuModule,
+    NotificacionesComponent,
   ],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss'

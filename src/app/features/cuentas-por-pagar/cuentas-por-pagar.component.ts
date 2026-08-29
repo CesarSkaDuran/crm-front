@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,10 +8,27 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { CuentasPorPagarService } from '../../core/services/cuentas-por-pagar.service';
 import { BancosService } from '../../core/services/bancos.service';
 import { AccountingService } from '../../core/services/accounting.service';
+import { ThirdsService } from '../../core/services/thirds.service';
+import {
+  CarteraResumenItem,
+  CarteraDetalleResponse,
+  CreditoDetalleResponse,
+  CuotaCredito,
+  CuotasVencidasResponse,
+  CreateCreditoDto,
+  RegistrarCobroDto,
+  Periodo,
+  EstadoCuota,
+  periodoLabel,
+  estadoCreditoLabel,
+  estadoCuotaLabel,
+  estadoCuotaColor,
+} from '../../models/cartera.models';
 
 @Component({
   selector: 'app-cuentas-por-pagar',
@@ -26,7 +43,8 @@ import { AccountingService } from '../../core/services/accounting.service';
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatSlideToggleModule,
+    MatChipsModule,
+    MatCheckboxModule,
   ],
   templateUrl: './cuentas-por-pagar.component.html',
   styleUrl: './cuentas-por-pagar.component.scss',
@@ -35,71 +53,90 @@ export class CuentasPorPagarComponent implements OnInit {
   private service = inject(CuentasPorPagarService);
   private bancosService = inject(BancosService);
   private accountingService = inject(AccountingService);
+  private thirdsService = inject(ThirdsService);
   private fb = inject(FormBuilder);
   private cdr = inject(ChangeDetectorRef);
 
-  lista: any[] = [];
-  detalle: any = null;
+  // Listado principal
+  lista: CarteraResumenItem[] = [];
   cargando = false;
+
+  // Detalle del tercero
+  detalle: CarteraDetalleResponse | null = null;
+
+  // Detalle de un crédito específico
+  creditoSeleccionado: CreditoDetalleResponse | null = null;
+
+  // Cuotas vencidas
+  vencidas: CuotasVencidasResponse | null = null;
+  mostrandoVencidas = false;
+
+  // Formularios
+  pagoForm: FormGroup;
+  creditoForm: FormGroup;
+  posfecharForm: FormGroup;
+
+  // Datos auxiliares
   bancos: any[] = [];
   tipos: any[] = [];
-  pagoProveedor: any = null;
+  proveedores: any[] = [];
+
+  // Estado de UI
   pagando = false;
-  pagoForm: FormGroup;
+  creandoCredito = false;
+  mostrandoFormCredito = false;
+  cuotaAPosfechar: CuotaCredito | null = null;
 
-  productoForm: FormGroup;
-  searchInputControl = new FormControl('');
+  // Crédito seleccionado para pago
+  pagoCredito: CreditoDetalleResponse | null = null;
 
-  displayedColumns = [
-    'cliente',
-    'cobrador',
-    'documento',
-    'vendedor',
-    'fecha_oportuna',
-    'ultimo_pago',
-    'dias_mora',
-    'vr_cuota',
-    'saldo',
-    'centro',
-    'acciones',
-  ];
+  displayedColumns = ['nombre', 'documento', 'saldo_total', 'cuotas_vencidas', 'dias_mora_max', 'acciones'];
+  cuotasColumns = ['numero_cuota', 'valor', 'saldo', 'fecha_pago_oportuno', 'dias_mora', 'total_pagar', 'estado', 'acciones'];
   movimientosColumns = ['fecha', 'consecutivo', 'descripcion', 'debito', 'credito'];
 
-  get dataBancos() {
-    const q = (this.searchInputControl.value ?? '').toLowerCase().trim();
-    if (!q) return this.lista;
-    return this.lista.filter((x) =>
-      (x.nombre ?? '').toLowerCase().includes(q) ||
-      (x.documento ?? '').toLowerCase().includes(q)
-    );
-  }
+  // Exponer enums y helpers al template
+  Periodo = Periodo;
+  EstadoCuota = EstadoCuota;
+  periodoLabel = periodoLabel;
+  estadoCreditoLabel = estadoCreditoLabel;
+  estadoCuotaLabel = estadoCuotaLabel;
+  estadoCuotaColor = estadoCuotaColor;
 
   get totalSaldo() {
-    return this.dataBancos.reduce((acc, x) => acc + (Number(x.saldo) || 0), 0);
+    return this.lista.reduce((acc, x) => acc + (Number(x.saldo_total) || 0), 0);
   }
 
   constructor() {
-    this.productoForm = this.fb.group({
-      centro: [''],
-      vendedor: [''],
-      cobrador: [''],
-      fecha_oportuna_inicial: [''],
-      fecha_oportuna_final: [''],
-    });
-
     this.pagoForm = this.fb.group({
-      tercero_id: [null, Validators.required],
-      fecha: ['', Validators.required],
-      descripcion: [''],
+      credito_id: [null, Validators.required],
+      cuota_id: [null],
+      fecha: [new Date().toISOString().split('T')[0], Validators.required],
       tipo_comprobante_id: [null, Validators.required],
       banco_id: [null, Validators.required],
       valor: [null, [Validators.required, Validators.min(1)]],
+      descripcion: [''],
+      pagar_todo: [false],
+    });
+
+    this.creditoForm = this.fb.group({
+      tercero_id: [null, Validators.required],
+      fecha: [new Date().toISOString().split('T')[0], Validators.required],
+      monto_total: [null, [Validators.required, Validators.min(1)]],
+      numero_cuotas: [1, [Validators.required, Validators.min(1)]],
+      periodo: [Periodo.MENSUAL, Validators.required],
+      observacion: [''],
+      tasa_mora: [0],
+    });
+
+    this.posfecharForm = this.fb.group({
+      cuota_id: [null, Validators.required],
+      fecha_posfechada: ['', Validators.required],
+      observacion: [''],
     });
   }
 
   ngOnInit() {
     this.cargar();
-    this.searchInputControl.valueChanges.subscribe(() => this.filtrar());
     this.bancosService.getAll().subscribe((res: any) => {
       this.bancos = res.data ?? res ?? [];
       this.cdr.detectChanges();
@@ -108,22 +145,17 @@ export class CuentasPorPagarComponent implements OnInit {
       this.tipos = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
-  }
-
-  filtrar() {
-    const q = (this.searchInputControl.value ?? '').toLowerCase().trim();
-    if (!q) {
+    this.thirdsService.getAll().subscribe((res: any) => {
+      this.proveedores = (res.data ?? res ?? []).filter((t: any) => Number(t.tipo_terceros) === 2);
       this.cdr.detectChanges();
-      return;
-    }
-    this.cdr.detectChanges();
+    });
   }
 
   cargar() {
     this.cargando = true;
     this.service.getAll().subscribe({
-      next: (res: any) => {
-        this.lista = res.data ?? res ?? [];
+      next: (res) => {
+        this.lista = res.data ?? [];
         this.cargando = false;
         this.cdr.detectChanges();
       },
@@ -134,60 +166,67 @@ export class CuentasPorPagarComponent implements OnInit {
     });
   }
 
-  consultar() {
-    const filters = this.productoForm.value;
-    this.cargando = true;
-    this.service.getAll(filters).subscribe({
-      next: (res: any) => {
-        this.lista = res.data ?? res ?? [];
-        this.cargando = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.cargando = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  verDetalle(row: any) {
-    this.service.getOne(row.tercero_id).subscribe((res: any) => {
+  verDetalle(row: CarteraResumenItem) {
+    this.service.getOne(row.tercero_id).subscribe((res) => {
       this.detalle = res;
+      this.creditoSeleccionado = null;
       this.cdr.detectChanges();
     });
   }
 
   cerrarDetalle() {
     this.detalle = null;
-    this.cdr.detectChanges();
+    this.creditoSeleccionado = null;
   }
 
-  abrirPago(row: any) {
-    this.pagoProveedor = row;
+  verCredito(creditoId: number) {
+    this.service.getCredito(creditoId).subscribe((res) => {
+      this.creditoSeleccionado = res;
+      this.cdr.detectChanges();
+    });
+  }
+
+  cerrarCredito() {
+    this.creditoSeleccionado = null;
+  }
+
+  // ============ Pago ============
+
+  abrirPago(credito: any) {
+    this.pagoCredito = credito;
     this.pagoForm.reset({
-      tercero_id: row.tercero_id,
+      credito_id: credito.id,
+      cuota_id: null,
       fecha: new Date().toISOString().split('T')[0],
-      descripcion: '',
       tipo_comprobante_id: '',
       banco_id: '',
-      valor: null,
+      valor: credito.pago_minimo ?? credito.saldo,
+      descripcion: '',
+      pagar_todo: false,
     });
     this.cdr.detectChanges();
   }
 
   cerrarPago() {
-    this.pagoProveedor = null;
+    this.pagoCredito = null;
     this.cdr.detectChanges();
   }
 
   pagar() {
     if (this.pagoForm.invalid) return;
     this.pagando = true;
-    this.service.pagar(this.pagoForm.value).subscribe({
+    const dto: RegistrarCobroDto = this.pagoForm.value;
+    this.service.pagar(dto).subscribe({
       next: () => {
         this.pagando = false;
-        this.pagoProveedor = null;
+        this.pagoCredito = null;
         this.cargar();
+        if (this.detalle) {
+          this.service.getOne(this.detalle.tercero.id).subscribe((res) => {
+            this.detalle = res;
+            this.cdr.detectChanges();
+          });
+        }
       },
       error: (err: any) => {
         this.pagando = false;
@@ -195,5 +234,90 @@ export class CuentasPorPagarComponent implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  // ============ Crear crédito manual ============
+
+  abrirFormCredito() {
+    this.mostrandoFormCredito = true;
+    this.creditoForm.reset({
+      tercero_id: null,
+      fecha: new Date().toISOString().split('T')[0],
+      monto_total: null,
+      numero_cuotas: 1,
+      periodo: Periodo.MENSUAL,
+      observacion: '',
+      tasa_mora: 0,
+    });
+    this.cdr.detectChanges();
+  }
+
+  cerrarFormCredito() {
+    this.mostrandoFormCredito = false;
+  }
+
+  crearCredito() {
+    if (this.creditoForm.invalid) return;
+    this.creandoCredito = true;
+    const dto: CreateCreditoDto = this.creditoForm.value;
+    this.service.crearCredito(dto).subscribe({
+      next: () => {
+        this.creandoCredito = false;
+        this.mostrandoFormCredito = false;
+        this.cargar();
+      },
+      error: (err: any) => {
+        this.creandoCredito = false;
+        window.alert(err?.error?.message || 'Error al crear el crédito');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  // ============ Posfechar cuota ============
+
+  abrirPosfechar(cuota: CuotaCredito) {
+    this.cuotaAPosfechar = cuota;
+    this.posfecharForm.reset({
+      cuota_id: cuota.id,
+      fecha_posfechada: '',
+      observacion: '',
+    });
+    this.cdr.detectChanges();
+  }
+
+  cerrarPosfechar() {
+    this.cuotaAPosfechar = null;
+  }
+
+  posfechar() {
+    if (this.posfecharForm.invalid) return;
+    this.service.posfechar(this.posfecharForm.value).subscribe({
+      next: () => {
+        this.cuotaAPosfechar = null;
+        if (this.creditoSeleccionado) {
+          this.verCredito(this.creditoSeleccionado.id);
+        }
+      },
+      error: (err: any) => {
+        window.alert(err?.error?.message || 'Error al posfechar');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  // ============ Cuotas vencidas ============
+
+  toggleVencidas() {
+    if (this.mostrandoVencidas) {
+      this.mostrandoVencidas = false;
+      this.vencidas = null;
+    } else {
+      this.service.cuotasVencidas().subscribe((res) => {
+        this.vencidas = res;
+        this.mostrandoVencidas = true;
+        this.cdr.detectChanges();
+      });
+    }
   }
 }

@@ -13,11 +13,26 @@ interface ConfigSection {
 
 const SECCIONES: ConfigSection[] = [
   {
-    title: 'Empresa',
+    title: 'Datos de la Empresa',
     icon: 'business',
     items: [
-      { title: 'Datos de la empresa', link: '/configuracion/empresa', icon: 'store' },
+      { title: 'Información legal (NIT, Razón Social)', link: '/configuracion/empresa', icon: 'store' },
+      { title: 'Contacto (Teléfono, Email, Dirección)', link: '/configuracion/empresa', icon: 'contact_phone' },
+      { title: 'Branding (Logo, Colores)', link: '/configuracion/empresa', icon: 'palette' },
+      { title: 'Configuración fiscal (Régimen, Obligaciones)', link: '/configuracion/empresa', icon: 'gavel' },
       { title: 'Usuarios', link: '/configuracion/usuarios', icon: 'people' },
+    ],
+  },
+  {
+    title: 'Configuración del Sistema (Reglas de Negocio)',
+    icon: 'settings',
+    items: [
+      { title: 'Tipos de Documento', link: '/configuracion/tipos-documento', icon: 'description' },
+      { title: 'Tipos de Tercero', link: '/configuracion/tipos-terceros', icon: 'groups' },
+      { title: 'Bancos y Cuentas Bancarias', link: '/bancos', icon: 'account_balance_wallet' },
+      { title: 'Categorías', link: '/configuracion/categorias', icon: 'category' },
+      { title: 'Parámetros Contables (IVA, Retenciones)', link: '/configuracion/parametros-contables', icon: 'percent' },
+      { title: 'Parámetros Generales (Moneda, País)', link: '/configuracion/parametros-generales', icon: 'public' },
     ],
   },
   {
@@ -26,25 +41,14 @@ const SECCIONES: ConfigSection[] = [
     items: [
       { title: 'Plan de cuentas', link: '/plan-cuentas', icon: 'account_tree' },
       { title: 'Tipos de comprobantes', link: '/tipos-comprobantes', icon: 'receipt' },
-      { title: 'Bancos y cajas', link: '/bancos', icon: 'account_balance_wallet' },
     ],
   },
   {
     title: 'Inventario',
     icon: 'inventory_2',
     items: [
-      { title: 'Categorías', link: '/configuracion/categorias', icon: 'category' },
       { title: 'Unidades de medida', link: '/configuracion/unidades', icon: 'straighten' },
       { title: 'Impuestos', link: '/configuracion/impuestos', icon: 'percent' },
-    ],
-  },
-  {
-    title: 'Terceros',
-    icon: 'groups',
-    items: [
-      { title: 'Terceros', link: '/terceros', icon: 'contacts' },
-      { title: 'Tipos de terceros', link: '/configuracion/tipos-terceros', icon: 'label' },
-      { title: 'Vendedores', link: '/configuracion/vendedores', icon: 'person' },
     ],
   },
 ];

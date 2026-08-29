@@ -53,6 +53,7 @@ export class ProductosComponent implements OnInit {
     nombre: ['', Validators.required],
     descripcion: [''],
     tipo: [1],
+    padre_id: [null as number | null],
   });
 
   tipos = [
@@ -77,8 +78,14 @@ export class ProductosComponent implements OnInit {
     tipo: [1],
     unidad_medida: [''],
     categoria: [''],
+    categoria_id: [null as number | null],
     stock_min: [0],
     pvp1: [0],
+    pvp2: [0],
+    pvp3: [0],
+    pvp4: [0],
+    pvp5: [0],
+    costo_flete: [0],
     impuesto: [0],
     cuenta_inventarios_id: [null as number | null],
     cuenta_costos_id: [null as number | null],
@@ -103,11 +110,18 @@ export class ProductosComponent implements OnInit {
   sugerirCuentas() {
     if (this.editandoId) return;
     const tipo = this.form.get('tipo')?.value ?? 1;
-    const categoria = this.form.get('categoria')?.value ?? '';
-    this.products.sugerirCuentas(Number(tipo), categoria).subscribe((res: any) => {
+    const categoria = this.form.get('categoria_id')?.value ?? '';
+    this.products.sugerirCuentas(Number(tipo), String(categoria)).subscribe((res: any) => {
       this.form.patchValue(res, { emitEvent: false });
       this.cdr.detectChanges();
     });
+  }
+
+  recalcularPvp4() {
+    const pvp1 = Number(this.form.get('pvp1')?.value) || 0;
+    const iva = Number(this.form.get('impuesto')?.value) || 19;
+    const pvp4 = Math.round(pvp1 * (1 + iva / 100) * 100) / 100;
+    this.form.get('pvp4')?.setValue(pvp4);
   }
 
   cargarCuentas() {
@@ -151,7 +165,7 @@ export class ProductosComponent implements OnInit {
   cancelar() {
     this.editandoId = null;
     this.form.reset(
-      { tipo: 1, stock_min: 0, pvp1: 0, impuesto: 0 },
+      { tipo: 1, stock_min: 0, pvp1: 0, pvp2: 0, pvp3: 0, pvp4: 0, pvp5: 0, costo_flete: 0, impuesto: 0, categoria_id: null },
       { emitEvent: false },
     );
     this.sugerirCuentas();
@@ -175,10 +189,16 @@ export class ProductosComponent implements OnInit {
 
   guardarNuevaCategoria() {
     if (this.nuevaCategoriaForm.invalid) return;
-    this.categorias.create(this.nuevaCategoriaForm.value).subscribe({
+    const v = this.nuevaCategoriaForm.value;
+    this.categorias.create({
+      nombre: v.nombre ?? '',
+      descripcion: v.descripcion || undefined,
+      tipo: v.tipo ?? 1,
+      padre_id: v.padre_id ?? undefined,
+    }).subscribe({
       next: (res: any) => {
         this.cargarCategorias();
-        this.form.patchValue({ categoria: res.nombre }, { emitEvent: true });
+        this.form.patchValue({ categoria_id: res.id }, { emitEvent: true });
         this.cancelarNuevaCategoria();
       },
       error: (err: any) => {

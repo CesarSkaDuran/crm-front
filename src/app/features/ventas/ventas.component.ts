@@ -6,7 +6,9 @@ import {
   FormGroup,
   FormArray,
   Validators,
+  AbstractControl,
 } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -18,12 +20,33 @@ import { SalesService } from '../../core/services/sales.service';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { ProductsService } from '../../core/services/products.service';
 import { BancosService } from '../../core/services/bancos.service';
+import { NotificacionesService } from '../../core/services/notificaciones.service';
+
+interface DetalleResumen {
+  producto_id: number;
+  codigo: string;
+  nombre: string;
+  cantidad: number;
+  precio_unitario: number;
+  descuento: number;
+  impuesto: number;
+  subtotal: number;
+  totalConImpuesto: number;
+}
+
+interface TotalesVenta {
+  baseGrava: number;
+  descuento: number;
+  impuesto: number;
+  total: number;
+}
 
 @Component({
   selector: 'app-ventas',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     ReactiveFormsModule,
     MatTableModule,
     MatFormFieldModule,
@@ -43,14 +66,29 @@ export class VentasComponent implements OnInit {
   private products = inject(ProductsService);
   private bancosSvc = inject(BancosService);
   private cdr = inject(ChangeDetectorRef);
+  private noti = inject(NotificacionesService);
 
   ventas: any[] = [];
+  ventasFiltradas: any[] = [];
   clientes: any[] = [];
   vendedores: any[] = [];
   productos: any[] = [];
+  productosConStock: any[] = [];
+  productosSinStock: any[] = [];
   bancos: any[] = [];
 
-  displayedColumns = ['codigo', 'fecha', 'cliente', 'total', 'observacion'];
+  mostrarFormulario = false;
+  ventaSeleccionada: any = null;
+  busqueda = '';
+  guardando = false;
+  ventaGuardada: any = null;
+
+  displayedColumns = ['codigo', 'fecha', 'cliente', 'total', 'estado', 'acciones'];
+  detalleColumns = ['producto', 'cantidad', 'precio', 'subtotal'];
+  resumenColumns = ['item', 'codigo', 'producto', 'precio', 'cantidad', 'descuento', 'impuesto', 'subtotal', 'totalConImpuesto', 'op'];
+
+  detallesResumen: DetalleResumen[] = [];
+  totales: TotalesVenta = { baseGrava: 0, descuento: 0, impuesto: 0, total: 0 };
 
   form = this.fb.group({
     cliente_id: [null as number | null, Validators.required],
@@ -67,7 +105,18 @@ export class VentasComponent implements OnInit {
     almacen: ['PRINCIPAL'],
     modo: [1],
     forma: [1],
+    numero_cuotas: [1],
+    periodo_cuotas: [3],
+    tasa_mora: [0],
     detalles: this.fb.array<FormGroup>([]),
+  });
+
+  nuevoDetalle = this.fb.group({
+    producto_id: [null as number | null, Validators.required],
+    cantidad: [1, [Validators.required, Validators.min(0.01)]],
+    precio_unitario: [0, [Validators.required, Validators.min(0.01)]],
+    descuento: [0],
+    impuesto: [0],
   });
 
   get detalles() {
@@ -77,27 +126,30 @@ export class VentasComponent implements OnInit {
   ngOnInit() {
     this.cargarVentas();
     this.cargarCatalogos();
-    this.agregarDetalle();
   }
 
   cargarVentas() {
     this.sales.getAll().subscribe((res: any) => {
       this.ventas = res ?? [];
+      this.ventasFiltradas = [...this.ventas];
       this.cdr.detectChanges();
     });
   }
 
   cargarCatalogos() {
     this.thirds.getAll().subscribe((res: any) => {
-      const list = res.data ?? res ?? [];
-      this.clientes = list.filter((t: any) => t.tipo_terceros === 1);
+      const list = Array.isArray(res) ? res : (res?.data || []);
+      console.log('Terceros cargados:', list.length, list);
+      this.clientes = list.filter((t: any) => Number(t.tipo_terceros) === 1 || Number(t.tipo_terceros) === 10);
       this.vendedores = list.filter(
-        (t: any) => t.tipo_terceros === 4 || t.tipo_terceros === 1,
+        (t: any) => Number(t.tipo_terceros) === 4,
       );
       this.cdr.detectChanges();
     });
     this.products.getAll().subscribe((res: any) => {
       this.productos = res.data ?? res ?? [];
+      this.productosConStock = this.productos.filter((p) => Number(p.stock) > 0);
+      this.productosSinStock = this.productos.filter((p) => Number(p.stock) <= 0);
       this.cdr.detectChanges();
     });
     this.bancosSvc.getAll().subscribe((res: any) => {
@@ -106,20 +158,177 @@ export class VentasComponent implements OnInit {
     });
   }
 
-  agregarDetalle() {
-    const detalle = this.fb.group({
-      producto_id: [null as number | null, Validators.required],
-      cantidad: [1, [Validators.required, Validators.min(0.01)]],
-      precio_unitario: [0, [Validators.required, Validators.min(0.01)]],
-      descuento: [0],
-      impuesto: [0],
-      codigos: [''],
+  filtrar() {
+    const q = this.busqueda.toLowerCase().trim();
+    if (!q) {
+      this.ventasFiltradas = [...this.ventas];
+      return;
+    }
+    this.ventasFiltradas = this.ventas.filter((v) => {
+      const cliente = this.nombreCliente(v.cliente_id).toLowerCase();
+      return (
+        String(v.codigo || '').toLowerCase().includes(q) ||
+        cliente.includes(q) ||
+        String(v.observacion || '').toLowerCase().includes(q)
+      );
     });
-    this.detalles.push(detalle);
+  }
+
+  nuevaVenta() {
+    this.ventaSeleccionada = null;
+    this.ventaGuardada = null;
+    this.mostrarFormulario = true;
+    this.detallesResumen = [];
+    this.totales = { baseGrava: 0, descuento: 0, impuesto: 0, total: 0 };
+    this.form.reset({
+      cliente_id: null,
+      vendedor_id: null,
+      fecha: new Date().toISOString().split('T')[0],
+      numero_factura: '',
+      codigo_guia_venta: '',
+      banco_id: null,
+      descuento: 0,
+      retencion: 0,
+      flete: 0,
+      observacion: '',
+      concepto: 'Venta de mercancía',
+      almacen: 'PRINCIPAL',
+      modo: 1,
+      forma: 1,
+      numero_cuotas: 1,
+      periodo_cuotas: 3,
+      tasa_mora: 0,
+    });
+    this.detalles.clear();
+    this.nuevoDetalle.reset({
+      producto_id: null,
+      cantidad: 1,
+      precio_unitario: 0,
+      descuento: 0,
+      impuesto: 0,
+    });
+  }
+
+  verDetalle(venta: any) {
+    this.sales.getOne(venta.id).subscribe((res: any) => {
+      this.ventaSeleccionada = res;
+      this.mostrarFormulario = true;
+      this.cdr.detectChanges();
+    });
+  }
+
+  volverAlListado() {
+    this.mostrarFormulario = false;
+    this.ventaSeleccionada = null;
+    this.cargarVentas();
+  }
+
+  sugerirPrecioNuevoDetalle() {
+    const productoId = this.nuevoDetalle.get('producto_id')?.value;
+    if (!productoId) return;
+    const producto = this.productos.find((p) => p.id === productoId);
+    if (producto) {
+      const precio =
+        Number(producto.pvp1) ||
+        Number(producto.pvp) ||
+        Number(producto.ultimo_precio) ||
+        0;
+      if (precio > 0 && !this.nuevoDetalle.get('precio_unitario')?.dirty) {
+        this.nuevoDetalle.get('precio_unitario')?.setValue(precio);
+      }
+      const impuesto = Number(producto.impuesto) || 0;
+      this.nuevoDetalle.get('impuesto')?.setValue(impuesto);
+    }
+  }
+
+  agregarDetalle() {
+    this.nuevoDetalle.markAllAsTouched();
+    if (this.nuevoDetalle.invalid) {
+      this.noti.error('Completa producto, precio y cantidad para agregar');
+      return;
+    }
+
+    const v = this.nuevoDetalle.value;
+    const producto = this.productos.find((p) => p.id === v.producto_id);
+    if (!producto) {
+      this.noti.error('Producto no encontrado');
+      return;
+    }
+
+    const grupo = this.fb.group({
+      producto_id: [v.producto_id, Validators.required],
+      cantidad: [v.cantidad, [Validators.required, Validators.min(0.01)]],
+      precio_unitario: [v.precio_unitario, [Validators.required, Validators.min(0.01)]],
+      descuento: [v.descuento || 0],
+      impuesto: [v.impuesto || 0],
+    });
+    this.detalles.push(grupo);
+
+    this.nuevoDetalle.reset({
+      producto_id: null,
+      cantidad: 1,
+      precio_unitario: 0,
+      descuento: 0,
+      impuesto: 0,
+    });
+
+    this.recalcularTotales();
+    this.noti.success(`${producto.nombre} agregado al detalle`);
   }
 
   eliminarDetalle(index: number) {
     this.detalles.removeAt(index);
+    this.recalcularTotales();
+  }
+
+  recalcularTotales() {
+    const retencion = Number(this.form.get('retencion')?.value) || 0;
+
+    this.detallesResumen = this.detalles.controls.map((d) => {
+      const producto = this.productos.find((p) => p.id === d.get('producto_id')?.value);
+      const cantidad = Number(d.get('cantidad')?.value) || 0;
+      const precio = Number(d.get('precio_unitario')?.value) || 0;
+      const descuento = Number(d.get('descuento')?.value) || 0;
+      const impuesto = Number(d.get('impuesto')?.value) || 0;
+
+      const bruto = cantidad * precio;
+      const valorDescuento = (bruto * descuento) / 100;
+      const neto = bruto - valorDescuento;
+      const valorImpuesto = (neto * impuesto) / 100;
+
+      return {
+        producto_id: d.get('producto_id')?.value,
+        codigo: producto?.codigo || '',
+        nombre: producto?.nombre || '',
+        cantidad,
+        precio_unitario: precio,
+        descuento,
+        impuesto,
+        subtotal: Number(neto.toFixed(2)),
+        totalConImpuesto: Number((neto + valorImpuesto).toFixed(2)),
+      };
+    });
+
+    let baseGrava = 0;
+    let totalDescuento = 0;
+    let totalImpuesto = 0;
+
+    this.detallesResumen.forEach((d) => {
+      baseGrava += d.subtotal;
+      totalDescuento += ((d.cantidad * d.precio_unitario) - d.subtotal) || 0;
+      totalImpuesto += (d.totalConImpuesto - d.subtotal);
+    });
+
+    const total = baseGrava + totalImpuesto - retencion;
+
+    this.totales = {
+      baseGrava: Number(baseGrava.toFixed(2)),
+      descuento: Number(totalDescuento.toFixed(2)),
+      impuesto: Number(totalImpuesto.toFixed(2)),
+      total: Number(total.toFixed(2)),
+    };
+
+    this.cdr.detectChanges();
   }
 
   productoSeleccionado(index: number) {
@@ -138,24 +347,99 @@ export class VentasComponent implements OnInit {
     }
   }
 
+  esContado() {
+    return Number(this.form.get('modo')?.value) === 1;
+  }
+
+  onModoChange() {
+    const esCont = this.esContado();
+    const bancoControl = this.form.get('banco_id');
+    const cuotasControl = this.form.get('numero_cuotas');
+    const periodoControl = this.form.get('periodo_cuotas');
+    const tasaControl = this.form.get('tasa_mora');
+
+    if (esCont) {
+      bancoControl?.setValidators(Validators.required);
+      bancoControl?.enable();
+    } else {
+      bancoControl?.setValue(null);
+      bancoControl?.clearValidators();
+      bancoControl?.setErrors(null);
+      bancoControl?.disable();
+    }
+    bancoControl?.updateValueAndValidity();
+    cuotasControl?.updateValueAndValidity();
+    periodoControl?.updateValueAndValidity();
+    tasaControl?.updateValueAndValidity();
+    this.cdr.detectChanges();
+  }
+
+  // === Helpers de validación inline ===
+
+  esInvalido(control: AbstractControl | null): boolean {
+    return !!control && control.invalid && (control.touched || control.dirty);
+  }
+
+  mensajeError(control: AbstractControl | null): string | null {
+    if (!control || !control.invalid || (!control.touched && !control.dirty)) return null;
+    if (control.errors?.['required']) return 'Este campo es obligatorio';
+    if (control.errors?.['min']) return `Valor mínimo: ${control.errors['min'].min}`;
+    if (control.errors?.['minlength']) return `Mínimo ${control.errors['minlength'].requiredLength} caracteres`;
+    return 'Valor inválido';
+  }
+
+  validarFormulario(): string[] {
+    const errores: string[] = [];
+    if (this.esInvalido(this.form.get('cliente_id'))) errores.push('Selecciona un cliente');
+    if (this.esInvalido(this.form.get('fecha'))) errores.push('Selecciona una fecha');
+
+    if (this.detalles.length === 0) {
+      errores.push('Agrega al menos un producto');
+    }
+    return errores;
+  }
+
   guardar() {
-    if (this.form.invalid) return;
+    this.form.markAllAsTouched();
+
+    if (this.form.invalid || this.detalles.length === 0) {
+      const errores = this.validarFormulario();
+      errores.forEach((e) => this.noti.error(e));
+      return;
+    }
+
+    this.guardando = true;
     const body = { ...this.form.value, detalles: this.detalles.value };
     this.sales.create(body as any).subscribe({
-      next: () => {
-        this.cargarVentas();
-        this.form.reset();
-        this.detalles.clear();
-        this.agregarDetalle();
+      next: (res: any) => {
+        this.guardando = false;
+        this.ventaGuardada = res;
+        this.noti.success(`Venta ${res.codigo} registrada correctamente`);
+        this.volverAlListado();
       },
       error: (err) => {
-        alert(err.error?.message || 'Error al guardar la venta');
+        this.guardando = false;
+        this.noti.error(err.error?.message || 'Error al guardar la venta');
+        this.cdr.detectChanges();
       },
     });
   }
 
   nombreCliente(id: number) {
     const c = this.clientes.find((x) => x.id === id);
-    return c?.nombre || id;
+    return c?.nombre || String(id || '');
+  }
+
+  anular(venta: any) {
+    if (!confirm(`¿Anular la venta ${venta.codigo || venta.id}? Esto devolverá el stock y generará un asiento de reversión.`)) return;
+    this.sales.anular(venta.id).subscribe({
+      next: (res: any) => {
+        this.noti.success(res.mensaje || 'Venta anulada correctamente');
+        this.cargarVentas();
+      },
+      error: (err) => {
+        this.noti.error(err.error?.message || 'Error al anular la venta');
+      },
+    });
   }
 }

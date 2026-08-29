@@ -43,4 +43,8 @@ export class SalesService {
   create(body: CreateSale): Observable<any> {
     return this.api.post('ventas', body);
   }
+
+  anular(id: number): Observable<any> {
+    return this.api.post(`ventas/${id}/anular`, {});
+  }
 }

@@ -1,0 +1,206 @@
+<div class="facturacion-header mb-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="page-title">Facturación Electrónica DIAN</h1>
+      <p class="text-gray-500 mt-1">Configuración y emisión de facturas electrónicas</p>
+    </div>
+    <div class="flex gap-2">
+      <button mat-raised-button color="primary" (click)="abrirFormConfig()">
+        <mat-icon>settings</mat-icon>
+        {{ configurado ? 'Editar configuración' : 'Configurar DIAN' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Alertas -->
+<div *ngIf="!configurado && !cargando" class="mb-6 bg-amber-50 border border-amber-300 text-amber-800 rounded-lg p-4 flex items-center gap-3">
+  <mat-icon class="text-amber-600">warning</mat-icon>
+  <div>
+    <strong>No hay configuración activa.</strong>
+    Debe configurar los datos de la resolución DIAN antes de emitir facturas electrónicas.
+  </div>
+</div>
+
+<div *ngIf="rangoAgotado" class="mb-6 bg-red-50 border border-red-300 text-red-800 rounded-lg p-4 flex items-center gap-3">
+  <mat-icon class="text-red-600">error</mat-icon>
+  <div>
+    <strong>Rango de consecutivos agotado.</strong>
+    No quedan consecutivos disponibles en el rango autorizado por la DIAN.
+  </div>
+</div>
+
+<div *ngIf="vencida" class="mb-6 bg-red-50 border border-red-300 text-red-800 rounded-lg p-4 flex items-center gap-3">
+  <mat-icon class="text-red-600">event_busy</mat-icon>
+  <div>
+    <strong>Resolución vencida.</strong>
+    La fecha de vencimiento de la resolución ha pasado. Solicite una nueva resolución ante la DIAN.
+  </div>
+</div>
+
+<div *ngIf="vencimientoCercano && !vencida" class="mb-6 bg-orange-50 border border-orange-300 text-orange-800 rounded-lg p-4 flex items-center gap-3">
+  <mat-icon class="text-orange-600">schedule</mat-icon>
+  <div>
+    <strong>Vencimiento próximo.</strong>
+    La resolución vence el {{ estado?.fecha_vencimiento | date: 'dd/MM/yyyy' }}. Considere tramitar una nueva resolución.
+  </div>
+</div>
+
+<!-- Cards de estado -->
+<div class="grid grid-cols-3 gap-4 mb-6">
+  <mat-card class="p-4">
+    <p class="text-sm text-gray-600">Estado configuración</p>
+    <p class="text-2xl font-extrabold" [class.text-green-600]="configurado" [class.text-red-600]="!configurado">
+      {{ configurado ? 'Activo' : 'Sin configurar' }}
+    </p>
+    <p *ngIf="configurado" class="text-sm text-gray-500 mt-1">
+      Resolución: {{ estado?.resolucion || config?.resolucion }} — Prefijo: {{ estado?.prefijo || config?.prefijo }}
+    </p>
+  </mat-card>
+
+  <mat-card class="p-4">
+    <p class="text-sm text-gray-600">Consecutivos disponibles</p>
+    <p class="text-2xl font-extrabold" [class.text-blue-700]="consecutivosDisponibles > 0" [class.text-red-600]="consecutivosDisponibles <= 0">
+      {{ consecutivosDisponibles }}
+    </p>
+    <p class="text-sm text-gray-500 mt-1">
+      Usados: {{ consecutivosUsados }} — Último: {{ estado?.ultimo_consecutivo ?? config?.ultimo_consecutivo ?? 0 }}
+    </p>
+  </mat-card>
+
+  <mat-card class="p-4">
+    <p class="text-sm text-gray-600">Vencimiento resolución</p>
+    <p class="text-2xl font-extrabold" [class.text-red-600]="vencida" [class.text-orange-600]="vencimientoCercano && !vencida" [class.text-green-600]="configurado && !vencida && !vencimientoCercano">
+      {{ (estado?.fecha_vencimiento || config?.fecha_vencimiento) ? ((estado?.fecha_vencimiento || config?.fecha_vencimiento) | date: 'dd/MM/yyyy') : '—' }}
+    </p>
+    <p class="text-sm text-gray-500 mt-1">
+      Rango: {{ estado?.rango_inicio ?? config?.rango_inicio }} - {{ estado?.rango_fin ?? config?.rango_fin }}
+    </p>
+  </mat-card>
+</div>
+
+<!-- Formulario de configuración -->
+<mat-card class="p-4 mb-6" *ngIf="mostrarFormConfig">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="section-title mb-0">Configuración DIAN</h2>
+    <button mat-stroked-button color="warn" (click)="cerrarFormConfig()">
+      <mat-icon>close</mat-icon>
+      Cancelar
+    </button>
+  </div>
+
+  <form [formGroup]="configForm" (ngSubmit)="guardarConfig()">
+    <div class="grid grid-cols-2 gap-4">
+      <mat-form-field class="blue-input" subscriptSizing="dynamic">
+        <mat-label>API URL</mat-label>
+        <input matInput formControlName="api_url" placeholder="https://api.dian.gov.co/..." />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input" subscriptSizing="dynamic">
+        <mat-label>Token</mat-label>
+        <input matInput formControlName="token" type="password" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input" subscriptSizing="dynamic">
+        <mat-label>Resolución</mat-label>
+        <input matInput formControlName="resolucion" placeholder="18764000000000" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input" subscriptSizing="dynamic">
+        <mat-label>Prefijo</mat-label>
+        <input matInput formControlName="prefijo" placeholder="FE" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input" subscriptSizing="dynamic">
+        <mat-label>Rango inicio</mat-label>
+        <input matInput type="number" formControlName="rango_inicio" min="1" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input" subscriptSizing="dynamic">
+        <mat-label>Rango fin</mat-label>
+        <input matInput type="number" formControlName="rango_fin" min="1" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input" subscriptSizing="dynamic">
+        <mat-label>Fecha resolución</mat-label>
+        <input matInput type="date" formControlName="fecha_resolucion" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input" subscriptSizing="dynamic">
+        <mat-label>Fecha vencimiento</mat-label>
+        <input matInput type="date" formControlName="fecha_vencimiento" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input col-span-2" subscriptSizing="dynamic">
+        <mat-label>Company Link (opcional)</mat-label>
+        <input matInput formControlName="company_link" />
+      </mat-form-field>
+    </div>
+
+    <div class="flex justify-end mt-4">
+      <button type="submit" mat-raised-button color="primary" [disabled]="configForm.invalid || guardandoConfig">
+        <mat-icon *ngIf="!guardandoConfig">save</mat-icon>
+        <span *ngIf="guardandoConfig">Guardando...</span>
+        <span *ngIf="!guardandoConfig">Guardar configuración</span>
+      </button>
+    </div>
+  </form>
+</mat-card>
+
+<!-- Formulario de emisión -->
+<mat-card class="p-4 mb-6">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h2 class="section-title mb-0">Emitir factura electrónica</h2>
+      <p class="text-sm text-gray-500">Ingrese el ID de la venta para emitir la factura electrónica ante la DIAN</p>
+    </div>
+  </div>
+
+  <form [formGroup]="emitirForm" class="form-row items-end" (ngSubmit)="emitir()">
+    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+      <mat-label>ID de la venta</mat-label>
+      <input matInput type="number" formControlName="venta_id" min="1" />
+    </mat-form-field>
+
+    <button type="submit" mat-raised-button color="accent" [disabled]="emitirForm.invalid || emitiendo || !configurado || rangoAgotado">
+      <mat-icon *ngIf="!emitiendo">send</mat-icon>
+      <span *ngIf="emitiendo">Emitiendo...</span>
+      <span *ngIf="!emitiendo">Emitir factura</span>
+    </button>
+  </form>
+</mat-card>
+
+<!-- Resultado de la última emisión -->
+<mat-card class="p-4 mb-6" *ngIf="ultimoResultado">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h2 class="section-title mb-0">Resultado de la emisión</h2>
+      <p class="text-sm text-gray-500">Venta #{{ ultimoResultado.venta_id }}</p>
+    </div>
+    <button mat-stroked-button color="warn" (click)="ultimoResultado = null">
+      <mat-icon>close</mat-icon>
+      Cerrar
+    </button>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    <div class="border rounded p-3">
+      <p class="text-sm text-gray-500">Número de factura</p>
+      <p class="text-lg font-bold text-blue-700">{{ ultimoResultado.numero_factura }}</p>
+    </div>
+
+    <div class="border rounded p-3">
+      <p class="text-sm text-gray-500">CUFE</p>
+      <p class="text-sm font-mono text-gray-800 break-all">{{ ultimoResultado.cufe }}</p>
+    </div>
+
+    <div class="border rounded p-3 col-span-2">
+      <p class="text-sm text-gray-500">Documento PDF</p>
+      <a *ngIf="ultimoResultado.pdf_link" [href]="ultimoResultado.pdf_link" target="_blank" class="text-blue-600 underline flex items-center gap-1">
+        <mat-icon class="text-blue-600">picture_as_pdf</mat-icon>
+        Descargar PDF
+      </a>
+      <span *ngIf="!ultimoResultado.pdf_link" class="text-gray-400">No disponible</span>
+    </div>
+  </div>
+</mat-card>

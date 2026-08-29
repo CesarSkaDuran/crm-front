@@ -1,0 +1,17 @@
+:host {
+  display: block;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.field-action {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  height: 56px;
+}

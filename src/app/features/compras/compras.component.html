@@ -1,105 +1,231 @@
-<div class="compras-header mb-6">
-  <h1 class="page-title">Compras</h1>
-  <p class="text-gray-500 mt-1">Registra las compras de mercancía y sus detalles</p>
+<!-- Vista de listado -->
+<div *ngIf="!mostrarFormulario">
+  <div class="compras-header mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="page-title">Compras</h1>
+      <p class="text-gray-500 mt-1">Listado de entradas de mercancía</p>
+    </div>
+    <button mat-raised-button color="primary" class="fuse-mat-button-rounded" (click)="nuevaCompra()">
+      <mat-icon>add</mat-icon>
+      Nueva entrada
+    </button>
+  </div>
+
+  <mat-card class="p-4">
+    <div class="flex items-center gap-4 mb-4">
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>search</mat-icon>
+        <mat-label>Buscar</mat-label>
+        <input matInput [(ngModel)]="busqueda" (ngModelChange)="filtrar()" placeholder="Código, proveedor..." />
+      </mat-form-field>
+    </div>
+
+    <table mat-table [dataSource]="comprasFiltradas" class="w-full">
+      <ng-container matColumnDef="codigo">
+        <th mat-header-cell *matHeaderCellDef>Código</th>
+        <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="fecha">
+        <th mat-header-cell *matHeaderCellDef>Fecha</th>
+        <td mat-cell *matCellDef="let row">{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="proveedor">
+        <th mat-header-cell *matHeaderCellDef>Proveedor</th>
+        <td mat-cell *matCellDef="let row">{{ nombreProveedor(row.proveedor_id) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="total">
+        <th mat-header-cell *matHeaderCellDef>Total</th>
+        <td mat-cell *matCellDef="let row" class="text-right">{{ row.total | number: '1.2-2' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let row">
+          <span *ngIf="row.estado === 1" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Aprobada</span>
+          <span *ngIf="row.estado === 0" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Anulada</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef>Acciones</th>
+        <td mat-cell *matCellDef="let row">
+          <button mat-icon-button color="primary" (click)="verDetalle(row)" title="Ver detalle">
+            <mat-icon>visibility</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="anular(row)"
+            [disabled]="row.estado === 0" title="Anular compra">
+            <mat-icon>cancel</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+    <div *ngIf="comprasFiltradas.length === 0" class="text-center py-8 text-gray-400">
+      No hay compras registradas
+    </div>
+  </mat-card>
 </div>
 
-<mat-card class="p-4 mb-6">
-  <h2 class="section-title">Información de la compra</h2>
+<!-- Vista de detalle -->
+<div *ngIf="mostrarFormulario && compraSeleccionada">
+  <div class="compras-header mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="page-title">Detalle de entrada</h1>
+      <p class="text-gray-500 mt-1">{{ compraSeleccionada.codigo }}</p>
+    </div>
+    <button mat-stroked-button (click)="volverAlListado()">
+      <mat-icon>arrow_back</mat-icon>
+      Volver
+    </button>
+  </div>
+
+  <mat-card class="p-4 mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div>
+        <label class="text-xs text-gray-500">Fecha</label>
+        <p>{{ compraSeleccionada.fecha | date: 'dd/MM/yyyy' }}</p>
+      </div>
+      <div>
+        <label class="text-xs text-gray-500">Proveedor</label>
+        <p>{{ nombreProveedor(compraSeleccionada.proveedor_id) }}</p>
+      </div>
+      <div>
+        <label class="text-xs text-gray-500">Total</label>
+        <p class="font-semibold">{{ compraSeleccionada.total | number: '1.2-2' }}</p>
+      </div>
+      <div>
+        <label class="text-xs text-gray-500">Estado</label>
+        <p>
+          <span *ngIf="compraSeleccionada.estado === 1" class="text-green-600">Aprobada</span>
+          <span *ngIf="compraSeleccionada.estado === 0" class="text-red-600">Anulada</span>
+        </p>
+      </div>
+    </div>
+    <div *ngIf="compraSeleccionada.observacion" class="mt-4">
+      <label class="text-xs text-gray-500">Observación</label>
+      <p>{{ compraSeleccionada.observacion }}</p>
+    </div>
+  </mat-card>
+
+  <mat-card class="p-4">
+    <h3 class="section-title mb-4">Productos de la entrada</h3>
+    <table mat-table [dataSource]="compraSeleccionada.detalles" class="w-full">
+      <ng-container matColumnDef="producto">
+        <th mat-header-cell *matHeaderCellDef>Producto</th>
+        <td mat-cell *matCellDef="let d">{{ d.producto?.nombre || d.producto_id }}</td>
+      </ng-container>
+      <ng-container matColumnDef="cantidad">
+        <th mat-header-cell *matHeaderCellDef>Cantidad</th>
+        <td mat-cell *matCellDef="let d" class="text-right">{{ d.cantidad }}</td>
+      </ng-container>
+      <ng-container matColumnDef="costo">
+        <th mat-header-cell *matHeaderCellDef>Costo unit.</th>
+        <td mat-cell *matCellDef="let d" class="text-right">{{ d.costo_unitario | number: '1.2-2' }}</td>
+      </ng-container>
+      <ng-container matColumnDef="subtotal">
+        <th mat-header-cell *matHeaderCellDef>Subtotal</th>
+        <td mat-cell *matCellDef="let d" class="text-right">{{ d.subtotal | number: '1.2-2' }}</td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="detalleColumns"></tr>
+      <tr mat-row *matRowDef="let d; columns: detalleColumns;"></tr>
+    </table>
+  </mat-card>
+</div>
+
+<!-- Vista de creación -->
+<div *ngIf="mostrarFormulario && !compraSeleccionada">
+  <div class="compras-header mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="page-title">Nueva entrada</h1>
+      <p class="text-gray-500 mt-1">Registra una nueva entrada de mercancía</p>
+    </div>
+    <button mat-stroked-button (click)="volverAlListado()">
+      <mat-icon>arrow_back</mat-icon>
+      Volver al listado
+    </button>
+  </div>
 
   <form [formGroup]="form" (ngSubmit)="guardar()">
-    <div class="form-row mb-4">
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>business</mat-icon>
-        <mat-label>Proveedor</mat-label>
-        <mat-select formControlName="proveedor_id" required>
-          <mat-option *ngFor="let t of proveedores" [value]="t.id">{{ t.nombre }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+    <mat-card class="p-4 mb-6">
+      <h2 class="section-title">Información de la entrada</h2>
 
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always">
-        <mat-icon matPrefix>event</mat-icon>
-        <mat-label>Fecha</mat-label>
-        <input matInput type="date" formControlName="fecha" required />
-      </mat-form-field>
-
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>receipt</mat-icon>
-        <mat-label>Número de factura</mat-label>
-        <input matInput formControlName="numero_factura" />
-      </mat-form-field>
-
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>local_shipping</mat-icon>
-        <mat-label>Código guía</mat-label>
-        <input matInput formControlName="codigo_guia_compra" />
-      </mat-form-field>
-    </div>
-
-    <div class="form-row mb-4">
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>percent</mat-icon>
-        <mat-label>Descuento (%)</mat-label>
-        <input matInput type="number" formControlName="descuento" />
-      </mat-form-field>
-
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>money_off</mat-icon>
-        <mat-label>Retención (%)</mat-label>
-        <input matInput type="number" formControlName="retencion" />
-      </mat-form-field>
-
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>local_shipping</mat-icon>
-        <mat-label>Flete</mat-label>
-        <input matInput type="number" formControlName="flete" />
-      </mat-form-field>
-
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>payment</mat-icon>
-        <mat-label>Modo</mat-label>
-        <mat-select formControlName="modo" (selectionChange)="onModoChange()">
-          <mat-option [value]="1">Contado</mat-option>
-          <mat-option [value]="2">Crédito</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field *ngIf="esContado()" class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>account_balance</mat-icon>
-        <mat-label>Banco / Caja</mat-label>
-        <mat-select formControlName="banco_id" [required]="esContado()">
-          <mat-option *ngFor="let b of bancos" [value]="b.id">{{ b.nombre }} — $ {{ b.monto | number: '1.2-2' }}</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>edit_note</mat-icon>
-        <mat-label>Observación</mat-label>
-        <input matInput formControlName="observacion" />
-      </mat-form-field>
-    </div>
-
-    <h3 class="section-title">Productos</h3>
-
-    <div formArrayName="detalles">
-      <div *ngFor="let detalle of detalles.controls; let i = index" [formGroupName]="i" class="form-row mb-3">
-        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-          <mat-icon matPrefix>inventory_2</mat-icon>
-          <mat-label>Producto</mat-label>
-          <mat-select formControlName="producto_id" (selectionChange)="productoSeleccionado(i)" required>
-            <mat-option *ngFor="let p of productos" [value]="p.id">({{ p.codigo }}) {{ p.nombre }}</mat-option>
-          </mat-select>
+      <div class="form-row mb-4">
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always">
+          <mat-icon matPrefix>event</mat-icon>
+          <mat-label>Fecha</mat-label>
+          <input matInput type="date" formControlName="fecha" required />
+          <mat-error *ngIf="mensajeError(form.get('fecha'))">{{ mensajeError(form.get('fecha')) }}</mat-error>
         </mat-form-field>
 
         <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-          <mat-icon matPrefix>exposure</mat-icon>
-          <mat-label>Cantidad</mat-label>
-          <input matInput type="number" formControlName="cantidad" required />
+          <mat-icon matPrefix>business</mat-icon>
+          <mat-label>Proveedor *</mat-label>
+          <mat-select formControlName="proveedor_id" required>
+            <mat-option *ngFor="let t of proveedores" [value]="t.id">{{ t.nombre }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="mensajeError(form.get('proveedor_id'))">{{ mensajeError(form.get('proveedor_id')) }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>label</mat-icon>
+          <mat-label>Concepto *</mat-label>
+          <input matInput formControlName="concepto" required />
+          <mat-error *ngIf="mensajeError(form.get('concepto'))">{{ mensajeError(form.get('concepto')) }}</mat-error>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row mb-4">
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>receipt</mat-icon>
+          <mat-label>Número de factura de compra</mat-label>
+          <input matInput formControlName="numero_factura" />
+        </mat-form-field>
+
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>local_shipping</mat-icon>
+          <mat-label>Código guía</mat-label>
+          <input matInput formControlName="codigo_guia_compra" />
+        </mat-form-field>
+
+        <mat-form-field class="blue-input flex-2" subscriptSizing="dynamic">
+          <mat-icon matPrefix>edit_note</mat-icon>
+          <mat-label>Observación</mat-label>
+          <input matInput formControlName="observacion" />
+        </mat-form-field>
+      </div>
+    </mat-card>
+
+    <mat-card class="p-4 mb-6">
+      <h3 class="section-title">Agregar producto</h3>
+
+      <div [formGroup]="nuevoDetalle" class="form-row items-end mb-4">
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>inventory_2</mat-icon>
+          <mat-label>Producto *</mat-label>
+          <mat-select formControlName="producto_id" (selectionChange)="sugerirCostoNuevoDetalle()" required>
+            <mat-option *ngFor="let p of productos" [value]="p.id">({{ p.codigo }}) {{ p.nombre }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="mensajeError(nuevoDetalle.get('producto_id'))">{{ mensajeError(nuevoDetalle.get('producto_id')) }}</mat-error>
         </mat-form-field>
 
         <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
           <mat-icon matPrefix>attach_money</mat-icon>
-          <mat-label>Costo unitario</mat-label>
+          <mat-label>Costo unitario *</mat-label>
           <input matInput type="number" formControlName="costo_unitario" required />
+          <mat-error *ngIf="mensajeError(nuevoDetalle.get('costo_unitario'))">{{ mensajeError(nuevoDetalle.get('costo_unitario')) }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>exposure</mat-icon>
+          <mat-label>Cantidad *</mat-label>
+          <input matInput type="number" formControlName="cantidad" required />
+          <mat-error *ngIf="mensajeError(nuevoDetalle.get('cantidad'))">{{ mensajeError(nuevoDetalle.get('cantidad')) }}</mat-error>
         </mat-form-field>
 
         <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
@@ -114,57 +240,178 @@
           <input matInput type="number" formControlName="impuesto" />
         </mat-form-field>
 
-        <div class="field-action flex-none">
-          <button type="button" mat-icon-button color="warn" (click)="eliminarDetalle(i)">
-            <mat-icon>delete</mat-icon>
+        <button type="button" mat-raised-button color="primary" class="fuse-mat-button-rounded mb-3" (click)="agregarDetalle()">
+          <mat-icon>add</mat-icon>
+          Agregar
+        </button>
+      </div>
+
+      <h3 class="section-title">Detalle de Compra</h3>
+
+      <table mat-table [dataSource]="detallesResumen" class="w-full mb-4" *ngIf="detallesResumen.length > 0">
+        <ng-container matColumnDef="item">
+          <th mat-header-cell *matHeaderCellDef>Item</th>
+          <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="codigo">
+          <th mat-header-cell *matHeaderCellDef>Código</th>
+          <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="producto">
+          <th mat-header-cell *matHeaderCellDef>Producto</th>
+          <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="precio">
+          <th mat-header-cell *matHeaderCellDef>Costo</th>
+          <td mat-cell *matCellDef="let row" class="text-right">{{ row.costo_unitario | number: '1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="cantidad">
+          <th mat-header-cell *matHeaderCellDef>Cantidad</th>
+          <td mat-cell *matCellDef="let row" class="text-right">{{ row.cantidad }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="descuento">
+          <th mat-header-cell *matHeaderCellDef>Descuento</th>
+          <td mat-cell *matCellDef="let row" class="text-right">{{ row.descuento }}%</td>
+        </ng-container>
+
+        <ng-container matColumnDef="impuesto">
+          <th mat-header-cell *matHeaderCellDef>Impuesto</th>
+          <td mat-cell *matCellDef="let row" class="text-right">{{ row.impuesto }}%</td>
+        </ng-container>
+
+        <ng-container matColumnDef="subtotal">
+          <th mat-header-cell *matHeaderCellDef>Subtotal</th>
+          <td mat-cell *matCellDef="let row" class="text-right">{{ row.subtotal | number: '1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="totalConFlete">
+          <th mat-header-cell *matHeaderCellDef>Val con Flete</th>
+          <td mat-cell *matCellDef="let row" class="text-right">{{ row.valorConFlete | number: '1.2-2' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="op">
+          <th mat-header-cell *matHeaderCellDef>Op.</th>
+          <td mat-cell *matCellDef="let row; let i = index">
+            <button type="button" mat-icon-button color="warn" (click)="eliminarDetalle(i)" title="Eliminar">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="resumenColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: resumenColumns;"></tr>
+      </table>
+
+      <div *ngIf="detallesResumen.length === 0" class="text-center py-6 text-gray-400 border rounded mb-4">
+        No se han agregado productos a la entrada
+      </div>
+
+      <div class="flex flex-col md:flex-row gap-6 items-start">
+        <div class="flex-1 form-row items-end" *ngIf="detallesResumen.length > 0">
+          <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+            <mat-icon matPrefix>local_shipping</mat-icon>
+            <mat-label>Flete *</mat-label>
+            <input matInput type="number" formControlName="flete" (input)="recalcularTotales()" />
+          </mat-form-field>
+
+          <button type="button" mat-raised-button color="primary" class="fuse-mat-button-rounded mb-3" (click)="prorratearFlete()">
+            Calcular flete
           </button>
         </div>
+
+        <div class="w-full md:w-80 bg-gray-50 rounded p-4 border border-gray-200" *ngIf="detallesResumen.length > 0">
+          <div class="flex justify-between mb-2 text-sm">
+            <span class="text-gray-600">Sub-Total:</span>
+            <span class="font-medium">{{ totales.baseGrava | number: '1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between mb-2 text-sm">
+            <span class="text-gray-600">Descuento:</span>
+            <span class="font-medium">{{ totales.descuento | number: '1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between mb-2 text-sm">
+            <span class="text-gray-600">Impuesto:</span>
+            <span class="font-medium">{{ totales.impuesto | number: '1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between mb-2 text-sm">
+            <span class="text-gray-600">Flete:</span>
+            <span class="font-medium">{{ totales.flete | number: '1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between pt-2 border-t border-gray-200">
+            <span class="font-semibold text-gray-800">Total:</span>
+            <span class="font-bold text-lg text-primary">{{ totales.total | number: '1.2-2' }}</span>
+          </div>
+          <div class="flex justify-between mt-2 text-sm">
+            <span class="text-gray-600">Con flete:</span>
+            <span class="font-medium">{{ totales.totalConFlete | number: '1.2-2' }}</span>
+          </div>
+        </div>
       </div>
-    </div>
+    </mat-card>
+
+    <mat-card class="p-4 mb-6">
+      <h3 class="section-title">Forma de pago</h3>
+      <div class="form-row mb-4">
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>payment</mat-icon>
+          <mat-label>Modo</mat-label>
+          <mat-select formControlName="modo" (selectionChange)="onModoChange()">
+            <mat-option [value]="1">Contado</mat-option>
+            <mat-option [value]="2">Crédito</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field *ngIf="esContado()" class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>account_balance</mat-icon>
+          <mat-label>Banco / Caja *</mat-label>
+          <mat-select formControlName="banco_id">
+            <mat-option *ngFor="let b of bancos" [value]="b.id">{{ b.nombre }} — $ {{ b.monto | number: '1.2-2' }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="esContado() && mensajeError(form.get('banco_id'))">{{ mensajeError(form.get('banco_id')) }}</mat-error>
+        </mat-form-field>
+
+        <mat-form-field *ngIf="!esContado()" class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>schedule</mat-icon>
+          <mat-label>Nº de cuotas</mat-label>
+          <input matInput type="number" formControlName="numero_cuotas" min="1" />
+        </mat-form-field>
+
+        <mat-form-field *ngIf="!esContado()" class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>calendar_today</mat-icon>
+          <mat-label>Periodo</mat-label>
+          <mat-select formControlName="periodo_cuotas">
+            <mat-option [value]="1">Semanal</mat-option>
+            <mat-option [value]="2">Quincenal</mat-option>
+            <mat-option [value]="3">Mensual</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field *ngIf="!esContado()" class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>percent</mat-icon>
+          <mat-label>Tasa de mora (%)</mat-label>
+          <input matInput type="number" formControlName="tasa_mora" min="0" />
+        </mat-form-field>
+      </div>
+
+      <div *ngIf="!esContado()" class="text-sm text-gray-500 bg-yellow-50 border border-yellow-200 rounded p-3">
+        <mat-icon class="text-yellow-600 align-middle mr-1" style="font-size: 18px; width: 18px; height: 18px;">info</mat-icon>
+        Esta compra se registrará a crédito. Se generará una obligación por pagar en cuentas por pagar.
+      </div>
+    </mat-card>
 
     <div class="form-actions">
-      <button type="button" mat-stroked-button color="primary" class="fuse-mat-button-rounded" (click)="agregarDetalle()">
-        <mat-icon>add</mat-icon>
-        Agregar producto
-      </button>
-      <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded">
+      <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded" [disabled]="guardando">
         <mat-icon>save</mat-icon>
-        Guardar compra
+        {{ guardando ? 'Guardando...' : 'Crear Entrada' }}
+      </button>
+      <button type="button" mat-stroked-button color="warn" (click)="volverAlListado()">
+        <mat-icon>cancel</mat-icon>
+        Cancelar
       </button>
     </div>
   </form>
-</mat-card>
-
-<mat-card class="p-4">
-  <h2 class="section-title">Compras registradas</h2>
-
-  <table mat-table [dataSource]="compras" class="w-full">
-    <ng-container matColumnDef="codigo">
-      <th mat-header-cell *matHeaderCellDef>Código</th>
-      <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="fecha">
-      <th mat-header-cell *matHeaderCellDef>Fecha</th>
-      <td mat-cell *matCellDef="let row">{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="proveedor">
-      <th mat-header-cell *matHeaderCellDef>Proveedor</th>
-      <td mat-cell *matCellDef="let row">{{ nombreProveedor(row.proveedor_id) }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="total">
-      <th mat-header-cell *matHeaderCellDef>Total</th>
-      <td mat-cell *matCellDef="let row">{{ row.total | number: '1.2-2' }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="observacion">
-      <th mat-header-cell *matHeaderCellDef>Observación</th>
-      <td mat-cell *matCellDef="let row">{{ row.observacion }}</td>
-    </ng-container>
-
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-  </table>
-</mat-card>
+</div>

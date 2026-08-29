@@ -1,12 +1,37 @@
 <div class="categorias-header mb-6">
-  <h1 class="page-title">Categorías</h1>
-  <p class="text-gray-500 mt-1">Categorías de productos y servicios</p>
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="page-title">Categorías</h1>
+      <p class="text-gray-500 mt-1">Categorías jerárquicas de productos y servicios</p>
+    </div>
+    <div class="flex gap-2">
+      <button mat-stroked-button (click)="cambiarVista('arbol')" [color]="vista === 'arbol' ? 'primary' : ''">
+        <mat-icon>account_tree</mat-icon>
+        Árbol
+      </button>
+      <button mat-stroked-button (click)="cambiarVista('lista')" [color]="vista === 'lista' ? 'primary' : ''">
+        <mat-icon>list</mat-icon>
+        Lista
+      </button>
+      <button mat-raised-button color="primary" (click)="abrirForm()">
+        <mat-icon>add</mat-icon>
+        Nueva categoría
+      </button>
+    </div>
+  </div>
 </div>
 
-<mat-card class="p-4 mb-6">
-  <h2 class="section-title mb-4">
-    {{ editandoId ? 'Editar' : 'Nueva' }} categoría
-  </h2>
+<!-- Formulario crear/editar -->
+<mat-card class="p-4 mb-6" *ngIf="mostrandoForm">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="section-title mb-0">
+      {{ editandoId ? 'Editar' : 'Nueva' }} categoría
+    </h2>
+    <button mat-stroked-button color="warn" (click)="cancelar()">
+      <mat-icon>close</mat-icon>
+      Cancelar
+    </button>
+  </div>
 
   <form [formGroup]="form" (ngSubmit)="guardar()" class="form-row items-end">
     <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
@@ -22,47 +47,137 @@
     </mat-form-field>
 
     <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+      <mat-label>Categoría padre</mat-label>
+      <mat-select formControlName="padre_id" (selectionChange)="onPadreChange()">
+        <mat-option [value]="null">— Sin padre (raíz) —</mat-option>
+        <mat-option *ngFor="let r of raices" [value]="r.id">{{ r.nombre }}</mat-option>
+        <mat-option *ngFor="let h of hijosDisponibles" [value]="h.id" [disabled]="editandoId === h.id">
+          ↳ {{ h.nombre }}
+        </mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
       <mat-label>Descripción</mat-label>
       <input matInput formControlName="descripcion" />
     </mat-form-field>
 
-    <button type="submit" mat-raised-button color="primary">
-      <mat-icon>save</mat-icon>
-      {{ editandoId ? 'Actualizar' : 'Guardar' }}
-    </button>
-    <button *ngIf="editandoId" type="button" mat-stroked-button color="warn" (click)="cancelar()">
-      <mat-icon>close</mat-icon>
-      Cancelar
+    <button type="submit" mat-raised-button color="primary" [disabled]="form.invalid || guardando">
+      <mat-icon *ngIf="!guardando">save</mat-icon>
+      <span *ngIf="guardando">Guardando...</span>
+      <span *ngIf="!guardando">{{ editandoId ? 'Actualizar' : 'Guardar' }}</span>
     </button>
   </form>
 </mat-card>
 
-<mat-card class="p-4">
-  <h2 class="section-title mb-4">Categorías registradas</h2>
+<!-- Vista Árbol jerárquico -->
+<mat-card class="p-4 mb-6" *ngIf="vista === 'arbol'">
+  <h2 class="section-title mb-4">Árbol de categorías</h2>
 
-  <table mat-table [dataSource]="lista" class="w-full">
+  <div *ngIf="cargando" class="p-8 text-center text-gray-500">Cargando...</div>
+
+  <div *ngIf="!cargando && arbol.length === 0" class="p-8 text-center text-gray-500">
+    No hay categorías registradas
+  </div>
+
+  <ng-container *ngIf="!cargando && arbol.length > 0">
+    <ng-container *ngTemplateOutlet="arbolTemplate; context: { nodos: arbol, nivel: 0 }"></ng-container>
+  </ng-container>
+</mat-card>
+
+<!-- Template recursivo para el árbol -->
+<ng-template #arbolTemplate let-nodos="nodos" let-nivel="nivel">
+  <div *ngFor="let nodo of nodos; trackBy: trackById"
+       [style.padding-left.px]="nivel * 24"
+       class="border-b border-gray-100 last:border-b-0">
+
+    <div class="flex items-center justify-between py-2 hover:bg-gray-50 rounded px-2">
+      <div class="flex items-center gap-2 flex-1 min-w-0">
+        <!-- Botón expandir/colapsar -->
+        <button mat-icon-button *ngIf="nodo.hijos && nodo.hijos.length > 0"
+                (click)="toggleExpand(nodo)" class="!w-8 !h-8">
+          <mat-icon>{{ estaExpandido(nodo) ? 'expand_more' : 'chevron_right' }}</mat-icon>
+        </button>
+        <span *ngIf="!nodo.hijos || nodo.hijos.length === 0" class="!w-8 inline-block"></span>
+
+        <mat-icon class="text-gray-400" style="font-size: 20px; width: 20px; height: 20px;">
+          {{ nodo.tipo === 1 ? 'inventory_2' : 'build' }}
+        </mat-icon>
+
+        <span class="font-medium text-gray-800 truncate">{{ nodo.nombre }}</span>
+
+        <span class="text-xs px-2 py-0.5 rounded-full"
+              [class.bg-blue-100]="nodo.tipo === 1"
+              [class.text-blue-700]="nodo.tipo === 1"
+              [class.bg-purple-100]="nodo.tipo === 2"
+              [class.text-purple-700]="nodo.tipo === 2">
+          {{ nombreTipo(nodo.tipo) }}
+        </span>
+
+        <span class="text-xs text-gray-400" *ngIf="nodo.total_productos_acum !== undefined">
+          {{ nodo.total_productos_acum }} productos
+        </span>
+      </div>
+
+      <div class="flex items-center gap-1">
+        <span class="text-xs" [class]="estadoColor(nodo.estado)">{{ estadoLabel(nodo.estado) }}</span>
+        <button mat-icon-button color="primary" (click)="editar(nodo)" title="Editar">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="eliminar(nodo)" title="Eliminar">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Hijos recursivos -->
+    <div *ngIf="nodo.hijos && nodo.hijos.length > 0 && estaExpandido(nodo)">
+      <ng-container *ngTemplateOutlet="arbolTemplate; context: { nodos: nodo.hijos, nivel: nivel + 1 }"></ng-container>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Vista Lista plana -->
+<mat-card class="p-4 mb-6" *ngIf="vista === 'lista'">
+  <h2 class="section-title mb-4">Lista de categorías</h2>
+
+  <div *ngIf="cargando" class="p-8 text-center text-gray-500">Cargando...</div>
+
+  <table mat-table [dataSource]="listaPlana" class="w-full" *ngIf="!cargando">
     <ng-container matColumnDef="nombre">
       <th mat-header-cell *matHeaderCellDef>Nombre</th>
-      <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="tipo">
-      <th mat-header-cell *matHeaderCellDef>Tipo</th>
-      <td mat-cell *matCellDef="let row">{{ nombreTipo(row.tipo) }}</td>
+      <td mat-cell *matCellDef="let row" class="font-medium">{{ row.nombre }}</td>
     </ng-container>
 
     <ng-container matColumnDef="descripcion">
       <th mat-header-cell *matHeaderCellDef>Descripción</th>
-      <td mat-cell *matCellDef="let row">{{ row.descripcion }}</td>
+      <td mat-cell *matCellDef="let row">{{ row.descripcion || '—' }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="padre">
+      <th mat-header-cell *matHeaderCellDef>Padre</th>
+      <td mat-cell *matCellDef="let row">{{ nombrePadre(row) }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="total_productos">
+      <th mat-header-cell *matHeaderCellDef>Productos</th>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.total_productos ?? 0 }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="estado">
+      <th mat-header-cell *matHeaderCellDef>Estado</th>
+      <td mat-cell *matCellDef="let row" [class]="estadoColor(row.estado)">
+        {{ estadoLabel(row.estado) }}
+      </td>
     </ng-container>
 
     <ng-container matColumnDef="acciones">
       <th mat-header-cell *matHeaderCellDef>Acciones</th>
       <td mat-cell *matCellDef="let row">
-        <button mat-icon-button color="primary" (click)="editar(row)">
+        <button mat-icon-button color="primary" (click)="editar(row)" title="Editar">
           <mat-icon>edit</mat-icon>
         </button>
-        <button mat-icon-button color="warn" (click)="eliminar(row)">
+        <button mat-icon-button color="warn" (click)="eliminar(row)" title="Eliminar">
           <mat-icon>delete</mat-icon>
         </button>
       </td>
@@ -72,7 +187,7 @@
     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
   </table>
 
-  <div *ngIf="lista.length === 0" class="p-8 text-center text-gray-500">
+  <div *ngIf="!cargando && listaPlana.length === 0" class="p-8 text-center text-gray-500">
     No hay categorías registradas
   </div>
 </mat-card>

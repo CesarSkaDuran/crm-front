@@ -12,8 +12,31 @@ export interface CreateProduct {
   stock?: number;
   promedio?: number;
   ultimo_precio?: number;
+  pvp1?: number;
+  pvp2?: number;
+  pvp3?: number;
+  pvp4?: number;
+  pvp5?: number;
+  costo_flete?: number;
+  flete?: number;
+  categoria_id?: number | null;
+  categoria?: string;
+  grupo?: string;
+  stock_min?: number;
+  impuesto?: number;
+  unidad_medida?: string;
+  cod_barra?: string;
+  codigo_prov?: string;
+  referencia?: string;
+  peso?: number;
+  descuento?: number;
+  comision?: number;
   cuenta_inventarios_id?: number;
+  cuenta_costos_id?: number;
+  cuenta_ingresos_id?: number;
   cuenta_ventas_id?: number;
+  imagen1?: string;
+  imagen2?: string;
   estado?: number;
 }
 

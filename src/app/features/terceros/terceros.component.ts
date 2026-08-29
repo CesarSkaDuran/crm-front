@@ -15,6 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { AccountsService } from '../../core/services/accounts.service';
+import { TiposDocumentoService } from '../../core/services/tipos-documento.service';
 
 @Component({
   selector: 'app-terceros',
@@ -38,10 +39,12 @@ export class TercerosComponent implements OnInit {
   private fb = inject(FormBuilder);
   private thirds = inject(ThirdsService);
   private accounts = inject(AccountsService);
+  private tiposDocumentoSvc = inject(TiposDocumentoService);
   private cdr = inject(ChangeDetectorRef);
 
   lista: any[] = [];
   cuentas: any[] = [];
+  tiposDocumento: any[] = [];
   editandoId: number | null = null;
   search = '';
 
@@ -50,13 +53,8 @@ export class TercerosComponent implements OnInit {
     { id: 2, nombre: 'Proveedor' },
     { id: 3, nombre: 'Empleado' },
     { id: 4, nombre: 'Vendedor' },
-  ];
-
-  tiposDocumento = [
-    { id: 1, nombre: 'Cédula de ciudadanía' },
-    { id: 2, nombre: 'NIT' },
-    { id: 3, nombre: 'Cédula de extranjería' },
-    { id: 4, nombre: 'Pasaporte' },
+    { id: 5, nombre: 'Otro' },
+    { id: 8, nombre: 'Persona natural' },
   ];
 
   naturalezas = [
@@ -75,12 +73,11 @@ export class TercerosComponent implements OnInit {
   ];
 
   form = this.fb.group({
-    codigo: ['', Validators.required],
     nombre: ['', Validators.required],
     apellido: [''],
     tipo_terceros: [1],
     tipo_naturaleza: [1],
-    tipo_documento: [1],
+    tipo_documento: [null as number | null],
     documento: [''],
     dv: [''],
     email: [''],
@@ -92,12 +89,20 @@ export class TercerosComponent implements OnInit {
 
   ngOnInit() {
     this.cargarCuentas();
+    this.cargarTiposDocumento();
     this.cargar();
   }
 
   cargarCuentas() {
     this.accounts.getAll().subscribe((res: any) => {
       this.cuentas = res.data ?? res ?? [];
+      this.cdr.detectChanges();
+    });
+  }
+
+  cargarTiposDocumento() {
+    this.tiposDocumentoSvc.getAll().subscribe((res: any) => {
+      this.tiposDocumento = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
   }
@@ -131,7 +136,11 @@ export class TercerosComponent implements OnInit {
 
   editar(row: any) {
     this.editandoId = row.id;
-    this.form.patchValue(row);
+    const copia = { ...row };
+    if (Number(copia.tipo_terceros) === 10) {
+      copia.tipo_terceros = 1;
+    }
+    this.form.patchValue(copia);
   }
 
   cancelar() {
@@ -139,7 +148,7 @@ export class TercerosComponent implements OnInit {
     this.form.reset({
       tipo_terceros: 1,
       tipo_naturaleza: 1,
-      tipo_documento: 1,
+      tipo_documento: null,
     });
   }
 
@@ -155,6 +164,12 @@ export class TercerosComponent implements OnInit {
   }
 
   nombreTipo(id: number) {
+    if (id === 10) return 'Cliente';
     return this.tiposTercero.find((t) => t.id === id)?.nombre || id;
+  }
+
+  nombreTipoDocumento(id: number) {
+    const t = this.tiposDocumento.find((x: any) => x.id === id || x.codigo === String(id));
+    return t?.nombre || id;
   }
 }
