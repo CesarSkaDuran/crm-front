@@ -16,6 +16,10 @@ import { MatCardModule } from '@angular/material/card';
 import { ProductsService } from '../../core/services/products.service';
 import { AccountsService } from '../../core/services/accounts.service';
 import { CategoriasService } from '../../core/services/categorias.service';
+import { ExcelExportService } from '../../core/services/excel-export.service';
+import { CurrencyService } from '../../core/services/currency.service';
+import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
+import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
 
 @Component({
   selector: 'app-productos',
@@ -31,6 +35,8 @@ import { CategoriasService } from '../../core/services/categorias.service';
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    CurrencyFormatPipe,
+    CurrencyInputDirective,
   ],
   templateUrl: './productos.component.html',
   styleUrl: './productos.component.scss',
@@ -38,16 +44,21 @@ import { CategoriasService } from '../../core/services/categorias.service';
 export class ProductosComponent implements OnInit {
   private fb = inject(FormBuilder);
   private products = inject(ProductsService);
+  private excel = inject(ExcelExportService);
   private accounts = inject(AccountsService);
   private categorias = inject(CategoriasService);
   private cdr = inject(ChangeDetectorRef);
+  private currency = inject(CurrencyService);
 
   lista: any[] = [];
   cuentas: any[] = [];
-  categoriasList: any[] = [];
+  categoriasList: any[] = [];        // lista plana para búsqueda por nombre
+  categoriasHojas: any[] = [];       // solo hojas con ruta jerárquica para el select
+  filtroCategoriaId: number | null = null;
   editandoId: number | null = null;
   creandoCategoria = false;
   search = '';
+  currencySymbol = '$';
 
   nuevaCategoriaForm = this.fb.group({
     nombre: ['', Validators.required],
@@ -66,7 +77,8 @@ export class ProductosComponent implements OnInit {
     'nombre',
     'tipo',
     'stock',
-    'promedio',
+    'ultimo_precio',
+    'margen',
     'pvp1',
     'acciones',
   ];
@@ -80,6 +92,8 @@ export class ProductosComponent implements OnInit {
     categoria: [''],
     categoria_id: [null as number | null],
     stock_min: [0],
+    ultimo_precio: [0],
+    margen: [30],
     pvp1: [0],
     pvp2: [0],
     pvp3: [0],
@@ -93,25 +107,69 @@ export class ProductosComponent implements OnInit {
   });
 
   ngOnInit() {
+    this.currency.load().then((moneda) => {
+      this.currencySymbol = moneda?.simbolo || '$';
+      this.cdr.detectChanges();
+    });
     this.cargarCuentas();
     this.cargarCategorias();
     this.cargar();
     this.form.get('tipo')?.valueChanges.subscribe(() => this.sugerirCuentas());
-    this.form.get('categoria')?.valueChanges.subscribe(() => this.sugerirCuentas());
+    this.form.get('categoria_id')?.valueChanges.subscribe((id) => {
+      // Sincronizar campo categoria (texto) con el nombre de la categoría
+      const cat = id ? this.categoriasList.find((c) => c.id === id) : null;
+      this.form.patchValue({ categoria: cat?.nombre ?? '' }, { emitEvent: false });
+      this.sugerirCuentas();
+    });
+    this.form.get('ultimo_precio')?.valueChanges.subscribe(() => this.recalcularDesdePrecioCompra());
+    this.form.get('margen')?.valueChanges.subscribe(() => this.recalcularDesdeMargen());
+    this.form.get('pvp1')?.valueChanges.subscribe(() => {
+      this.recalcularMargenDesdePvp1();
+      this.recalcularPvp4();
+    });
   }
 
   cargarCategorias() {
-    this.categorias.getAll().subscribe((res: any) => {
-      this.categoriasList = res.data ?? res ?? [];
+    // Cargamos el árbol para tener la jerarquía completa
+    this.categorias.getTree().subscribe((res: any) => {
+      const arbol = res ?? [];
+      this.categoriasList = [];
+      this.categoriasHojas = [];
+      this.aplanarCategorias(arbol, '');
       this.cdr.detectChanges();
     });
+  }
+
+  /**
+   * Aplana el árbol de categorías. Guarda:
+   * - categoriasList: todas (para buscar nombre por id)
+   * - categoriasHojas: solo las que NO tienen hijos, con ruta jerárquica
+   */
+  private aplanarCategorias(nodos: any[], rutaPadre: string) {
+    for (const nodo of nodos) {
+      const ruta = rutaPadre ? `${rutaPadre} > ${nodo.nombre}` : nodo.nombre;
+      this.categoriasList.push({ ...nodo, ruta });
+      if (nodo.hijos && nodo.hijos.length > 0) {
+        this.aplanarCategorias(nodo.hijos, ruta);
+      } else {
+        // Es hoja
+        this.categoriasHojas.push({ ...nodo, ruta });
+      }
+    }
   }
 
   sugerirCuentas() {
     if (this.editandoId) return;
     const tipo = this.form.get('tipo')?.value ?? 1;
-    const categoria = this.form.get('categoria_id')?.value ?? '';
-    this.products.sugerirCuentas(Number(tipo), String(categoria)).subscribe((res: any) => {
+    const categoriaId = this.form.get('categoria_id')?.value ?? null;
+    // Enviamos el NOMBRE de la categoría (no el ID) porque el backend usa
+    // ese valor como palabra clave de búsqueda contra nombre/código de
+    // cuentas del PUC. Enviar el ID numérico causaba matches accidentales
+    // (ej. categoria_id=1 coincidía con cuentas cuyo código empieza en "1").
+    const categoriaNombre = categoriaId
+      ? this.categoriasList.find((c) => c.id === categoriaId)?.nombre ?? ''
+      : '';
+    this.products.sugerirCuentas(Number(tipo), categoriaNombre).subscribe((res: any) => {
       this.form.patchValue(res, { emitEvent: false });
       this.cdr.detectChanges();
     });
@@ -124,6 +182,43 @@ export class ProductosComponent implements OnInit {
     this.form.get('pvp4')?.setValue(pvp4);
   }
 
+  /**
+   * Cálculo bidireccional:
+   *   PVP1 = Precio Compra / (1 - (Margen / 100))
+   *   Margen = (1 - (Precio Compra / PVP1)) * 100
+   * - Si cambia precio_compra o margen → recalcula pvp1
+   * - Si cambia pvp1 → recalcula margen
+   */
+  recalcularDesdePrecioCompra() {
+    const precio = Number(this.form.get('ultimo_precio')?.value) || 0;
+    const margen = Number(this.form.get('margen')?.value) || 0;
+    if (precio > 0 && margen >= 0 && margen < 100) {
+      const pvp1 = Math.round((precio / (1 - margen / 100)) * 100) / 100;
+      this.form.get('pvp1')?.setValue(pvp1, { emitEvent: false });
+      this.recalcularPvp4();
+    }
+  }
+
+  recalcularDesdeMargen() {
+    const precio = Number(this.form.get('ultimo_precio')?.value) || 0;
+    const margen = Number(this.form.get('margen')?.value) || 0;
+    if (precio > 0 && margen >= 0 && margen < 100) {
+      const pvp1 = Math.round((precio / (1 - margen / 100)) * 100) / 100;
+      this.form.get('pvp1')?.setValue(pvp1, { emitEvent: false });
+      this.recalcularPvp4();
+    }
+  }
+
+  recalcularMargenDesdePvp1() {
+    const precio = Number(this.form.get('ultimo_precio')?.value) || 0;
+    const pvp1 = Number(this.form.get('pvp1')?.value) || 0;
+    if (precio > 0 && pvp1 > 0) {
+      // Margen sobre el precio de venta: (1 - precioCompra/pvp) * 100
+      const margen = Math.round((1 - precio / pvp1) * 10000) / 100;
+      this.form.get('margen')?.setValue(margen, { emitEvent: false });
+    }
+  }
+
   cargarCuentas() {
     this.accounts.getAll().subscribe((res: any) => {
       this.cuentas = res.data ?? res ?? [];
@@ -132,10 +227,45 @@ export class ProductosComponent implements OnInit {
   }
 
   cargar() {
-    this.products.getAll({ search: this.search }).subscribe((res: any) => {
+    const params: any = { search: this.search };
+    if (this.filtroCategoriaId) {
+      params.categoria_id = this.filtroCategoriaId;
+    }
+    this.products.getAll(params).subscribe((res: any) => {
       this.lista = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
+  }
+
+  filtrarPorCategoria() {
+    this.cargar();
+  }
+
+  limpiarFiltroCategoria() {
+    this.filtroCategoriaId = null;
+    this.cargar();
+  }
+
+  exportarExcel() {
+    if (this.lista.length === 0) {
+      alert('No hay productos para exportar');
+      return;
+    }
+    const data = this.lista.map((p) => ({
+      'Código': p.codigo,
+      'Nombre': p.nombre,
+      'Stock': Number(p.stock),
+      'Precio Compra': Number(p.ultimo_precio),
+      'Margen %': Number(p.margen),
+      'PVP1': Number(p.pvp1),
+      'PVP2': Number(p.pvp2),
+      'PVP3': Number(p.pvp3),
+      'PVP4': Number(p.pvp4),
+      'PVP5': Number(p.pvp5),
+      'Saldo Inventario': Number(p.saldo_inventario),
+      'Promedio': Number(p.promedio),
+    }));
+    this.excel.export(data, 'Productos', 'Productos');
   }
 
   guardar() {
@@ -165,7 +295,7 @@ export class ProductosComponent implements OnInit {
   cancelar() {
     this.editandoId = null;
     this.form.reset(
-      { tipo: 1, stock_min: 0, pvp1: 0, pvp2: 0, pvp3: 0, pvp4: 0, pvp5: 0, costo_flete: 0, impuesto: 0, categoria_id: null },
+      { tipo: 1, stock_min: 0, ultimo_precio: 0, margen: 30, pvp1: 0, pvp2: 0, pvp3: 0, pvp4: 0, pvp5: 0, costo_flete: 0, impuesto: 0, categoria_id: null },
       { emitEvent: false },
     );
     this.sugerirCuentas();

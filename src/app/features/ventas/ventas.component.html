@@ -5,10 +5,16 @@
       <h1 class="page-title">Ventas</h1>
       <p class="text-gray-500 mt-1">Listado de ventas registradas</p>
     </div>
-    <button mat-raised-button color="primary" class="fuse-mat-button-rounded" (click)="nuevaVenta()">
-      <mat-icon>add</mat-icon>
-      Nueva venta
-    </button>
+    <div class="flex gap-2">
+      <button mat-stroked-button color="primary" class="fuse-mat-button-rounded" (click)="exportarExcel()" matTooltip="Exportar a Excel">
+        <mat-icon>file_download</mat-icon>
+        Excel
+      </button>
+      <button mat-raised-button color="primary" class="fuse-mat-button-rounded" (click)="nuevaVenta()">
+        <mat-icon>add</mat-icon>
+        Nueva venta
+      </button>
+    </div>
   </div>
 
   <mat-card class="p-4">
@@ -38,7 +44,7 @@
 
       <ng-container matColumnDef="total">
         <th mat-header-cell *matHeaderCellDef>Total</th>
-        <td mat-cell *matCellDef="let row" class="text-right">{{ row.total | number: '1.2-2' }}</td>
+        <td mat-cell *matCellDef="let row" class="text-right">{{ row.total | currencyFormat:currencySymbol }}</td>
       </ng-container>
 
       <ng-container matColumnDef="estado">
@@ -97,7 +103,7 @@
       </div>
       <div>
         <label class="text-xs text-gray-500">Total</label>
-        <p class="font-semibold">{{ ventaSeleccionada.total | number: '1.2-2' }}</p>
+        <p class="font-semibold">{{ ventaSeleccionada.total | currencyFormat:currencySymbol }}</p>
       </div>
       <div>
         <label class="text-xs text-gray-500">Estado</label>
@@ -126,11 +132,11 @@
       </ng-container>
       <ng-container matColumnDef="precio">
         <th mat-header-cell *matHeaderCellDef>Precio unit.</th>
-        <td mat-cell *matCellDef="let d" class="text-right">{{ d.precio_unitario | number: '1.2-2' }}</td>
+        <td mat-cell *matCellDef="let d" class="text-right">{{ d.precio_unitario | currencyFormat:currencySymbol }}</td>
       </ng-container>
       <ng-container matColumnDef="subtotal">
         <th mat-header-cell *matHeaderCellDef>Subtotal</th>
-        <td mat-cell *matCellDef="let d" class="text-right">{{ d.subtotal | number: '1.2-2' }}</td>
+        <td mat-cell *matCellDef="let d" class="text-right">{{ d.subtotal | currencyFormat:currencySymbol }}</td>
       </ng-container>
       <tr mat-header-row *matHeaderRowDef="detalleColumns"></tr>
       <tr mat-row *matRowDef="let d; columns: detalleColumns;"></tr>
@@ -230,7 +236,7 @@
         <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
           <mat-icon matPrefix>attach_money</mat-icon>
           <mat-label>Precio unitario *</mat-label>
-          <input matInput type="number" formControlName="precio_unitario" required />
+          <input matInput type="text" inputmode="decimal" formControlName="precio_unitario" [appCurrencyInput]="currencySymbol" required />
           <mat-error *ngIf="mensajeError(nuevoDetalle.get('precio_unitario'))">{{ mensajeError(nuevoDetalle.get('precio_unitario')) }}</mat-error>
         </mat-form-field>
 
@@ -279,7 +285,7 @@
 
         <ng-container matColumnDef="precio">
           <th mat-header-cell *matHeaderCellDef>Precio</th>
-          <td mat-cell *matCellDef="let row" class="text-right">{{ row.precio_unitario | number: '1.2-2' }}</td>
+          <td mat-cell *matCellDef="let row" class="text-right">{{ row.precio_unitario | currencyFormat:currencySymbol }}</td>
         </ng-container>
 
         <ng-container matColumnDef="cantidad">
@@ -299,12 +305,12 @@
 
         <ng-container matColumnDef="subtotal">
           <th mat-header-cell *matHeaderCellDef>Subtotal</th>
-          <td mat-cell *matCellDef="let row" class="text-right">{{ row.subtotal | number: '1.2-2' }}</td>
+          <td mat-cell *matCellDef="let row" class="text-right">{{ row.subtotal | currencyFormat:currencySymbol }}</td>
         </ng-container>
 
         <ng-container matColumnDef="totalConImpuesto">
           <th mat-header-cell *matHeaderCellDef>Total</th>
-          <td mat-cell *matCellDef="let row" class="text-right">{{ row.totalConImpuesto | number: '1.2-2' }}</td>
+          <td mat-cell *matCellDef="let row" class="text-right">{{ row.totalConImpuesto | currencyFormat:currencySymbol }}</td>
         </ng-container>
 
         <ng-container matColumnDef="op">
@@ -329,7 +335,7 @@
           <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
             <mat-icon matPrefix>local_shipping</mat-icon>
             <mat-label>Flete</mat-label>
-            <input matInput type="number" formControlName="flete" />
+            <input matInput type="text" inputmode="decimal" formControlName="flete" [appCurrencyInput]="currencySymbol" />
           </mat-form-field>
 
           <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
@@ -342,19 +348,19 @@
         <div class="w-full md:w-80 bg-gray-50 rounded p-4 border border-gray-200" *ngIf="detallesResumen.length > 0">
           <div class="flex justify-between mb-2 text-sm">
             <span class="text-gray-600">Sub-Total:</span>
-            <span class="font-medium">{{ totales.baseGrava | number: '1.2-2' }}</span>
+            <span class="font-medium">{{ totales.baseGrava | currencyFormat:currencySymbol }}</span>
           </div>
           <div class="flex justify-between mb-2 text-sm">
             <span class="text-gray-600">Descuento:</span>
-            <span class="font-medium">{{ totales.descuento | number: '1.2-2' }}</span>
+            <span class="font-medium">{{ totales.descuento | currencyFormat:currencySymbol }}</span>
           </div>
           <div class="flex justify-between mb-2 text-sm">
             <span class="text-gray-600">Impuesto:</span>
-            <span class="font-medium">{{ totales.impuesto | number: '1.2-2' }}</span>
+            <span class="font-medium">{{ totales.impuesto | currencyFormat:currencySymbol }}</span>
           </div>
           <div class="flex justify-between pt-2 border-t border-gray-200">
             <span class="font-semibold text-gray-800">Total:</span>
-            <span class="font-bold text-lg text-primary">{{ totales.total | number: '1.2-2' }}</span>
+            <span class="font-bold text-lg text-primary">{{ totales.total | currencyFormat:currencySymbol }}</span>
           </div>
         </div>
       </div>

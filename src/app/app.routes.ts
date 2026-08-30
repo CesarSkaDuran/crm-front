@@ -19,8 +19,12 @@ import { InformesComponent } from './features/informes/informes.component';
 import { Configuracion } from './features/configuracion/configuracion';
 import { Categorias } from './features/configuracion/categorias/categorias';
 import { TiposDocumentoComponent } from './features/configuracion/tipos-documento/tipos-documento';
+import { Maestros } from './features/configuracion/maestros/maestros';
+import { MonedasComponent } from './features/configuracion/monedas/monedas';
 import { InventarioFisicoComponent } from './features/inventario-fisico/inventario-fisico.component';
 import { FacturacionElectronicaComponent } from './features/facturacion-electronica/facturacion-electronica.component';
+import { MigracionComponent } from './features/migracion/migracion.component';
+import { UsuariosComponent } from './features/configuracion/usuarios/usuarios.component';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
@@ -49,8 +53,12 @@ export const routes: Routes = [
       { path: 'configuracion', component: Configuracion },
       { path: 'configuracion/categorias', component: Categorias },
       { path: 'configuracion/tipos-documento', component: TiposDocumentoComponent },
+      { path: 'configuracion/maestros', component: Maestros },
+      { path: 'configuracion/monedas', component: MonedasComponent },
+      { path: 'configuracion/usuarios', component: UsuariosComponent },
       { path: 'inventario-fisico', component: InventarioFisicoComponent },
       { path: 'facturacion-electronica', component: FacturacionElectronicaComponent },
+      { path: 'migracion', component: MigracionComponent },
     ]
   },
   { path: '**', redirectTo: 'login' },

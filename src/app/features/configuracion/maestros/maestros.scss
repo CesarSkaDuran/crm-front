@@ -1,0 +1,15 @@
+:host {
+  display: block;
+}
+
+.master-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.master-icon {
+  color: var(--countable-primary, #006064);
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}

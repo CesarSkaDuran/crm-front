@@ -5,10 +5,16 @@
       <h1 class="page-title">Compras</h1>
       <p class="text-gray-500 mt-1">Listado de entradas de mercancía</p>
     </div>
-    <button mat-raised-button color="primary" class="fuse-mat-button-rounded" (click)="nuevaCompra()">
-      <mat-icon>add</mat-icon>
-      Nueva entrada
-    </button>
+    <div class="flex gap-2">
+      <button mat-stroked-button color="primary" class="fuse-mat-button-rounded" (click)="exportarExcel()" matTooltip="Exportar a Excel">
+        <mat-icon>file_download</mat-icon>
+        Excel
+      </button>
+      <button mat-raised-button color="primary" class="fuse-mat-button-rounded" (click)="nuevaCompra()">
+        <mat-icon>add</mat-icon>
+        Nueva entrada
+      </button>
+    </div>
   </div>
 
   <mat-card class="p-4">
@@ -38,7 +44,15 @@
 
       <ng-container matColumnDef="total">
         <th mat-header-cell *matHeaderCellDef>Total</th>
-        <td mat-cell *matCellDef="let row" class="text-right">{{ row.total | number: '1.2-2' }}</td>
+        <td mat-cell *matCellDef="let row" class="text-right">{{ row.total | currencyFormat:currencySymbol }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="modo">
+        <th mat-header-cell *matHeaderCellDef>Modo</th>
+        <td mat-cell *matCellDef="let row">
+          <span *ngIf="row.modo === 2" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">{{ nombreModo(row.modo) }}</span>
+          <span *ngIf="row.modo === 1" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">{{ nombreModo(row.modo) }}</span>
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="estado">
@@ -86,7 +100,7 @@
   </div>
 
   <mat-card class="p-4 mb-6">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
       <div>
         <label class="text-xs text-gray-500">Fecha</label>
         <p>{{ compraSeleccionada.fecha | date: 'dd/MM/yyyy' }}</p>
@@ -96,8 +110,15 @@
         <p>{{ nombreProveedor(compraSeleccionada.proveedor_id) }}</p>
       </div>
       <div>
+        <label class="text-xs text-gray-500">Modo</label>
+        <p>
+          <span *ngIf="compraSeleccionada.modo === 2" class="text-blue-600 font-semibold">Crédito</span>
+          <span *ngIf="compraSeleccionada.modo === 1" class="text-gray-600 font-semibold">Contado</span>
+        </p>
+      </div>
+      <div>
         <label class="text-xs text-gray-500">Total</label>
-        <p class="font-semibold">{{ compraSeleccionada.total | number: '1.2-2' }}</p>
+        <p class="font-semibold">{{ compraSeleccionada.total | currencyFormat:currencySymbol }}</p>
       </div>
       <div>
         <label class="text-xs text-gray-500">Estado</label>
@@ -126,11 +147,11 @@
       </ng-container>
       <ng-container matColumnDef="costo">
         <th mat-header-cell *matHeaderCellDef>Costo unit.</th>
-        <td mat-cell *matCellDef="let d" class="text-right">{{ d.costo_unitario | number: '1.2-2' }}</td>
+        <td mat-cell *matCellDef="let d" class="text-right">{{ d.costo_unitario | currencyFormat:currencySymbol }}</td>
       </ng-container>
       <ng-container matColumnDef="subtotal">
         <th mat-header-cell *matHeaderCellDef>Subtotal</th>
-        <td mat-cell *matCellDef="let d" class="text-right">{{ d.subtotal | number: '1.2-2' }}</td>
+        <td mat-cell *matCellDef="let d" class="text-right">{{ d.subtotal | currencyFormat:currencySymbol }}</td>
       </ng-container>
       <tr mat-header-row *matHeaderRowDef="detalleColumns"></tr>
       <tr mat-row *matRowDef="let d; columns: detalleColumns;"></tr>
@@ -217,9 +238,15 @@
         <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
           <mat-icon matPrefix>attach_money</mat-icon>
           <mat-label>Costo unitario *</mat-label>
-          <input matInput type="number" formControlName="costo_unitario" required />
+          <input matInput type="text" inputmode="decimal" formControlName="costo_unitario" [appCurrencyInput]="currencySymbol" (input)="onCostoUnitarioChange()" required />
           <mat-error *ngIf="mensajeError(nuevoDetalle.get('costo_unitario'))">{{ mensajeError(nuevoDetalle.get('costo_unitario')) }}</mat-error>
         </mat-form-field>
+
+        <div *ngIf="nuevoPvpPreview" class="flex-1 p-3 rounded bg-blue-50 border border-blue-200 text-sm">
+          <span class="text-blue-600">Nuevo PVP sugerido: </span>
+          <span class="font-semibold text-blue-800">{{ nuevoPvpPreview.pvp1 | currencyFormat:currencySymbol }}</span>
+          <span class="text-blue-400 text-xs ml-2">(margen {{ nuevoPvpPreview.margen }}%)</span>
+        </div>
 
         <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
           <mat-icon matPrefix>exposure</mat-icon>
@@ -266,7 +293,7 @@
 
         <ng-container matColumnDef="precio">
           <th mat-header-cell *matHeaderCellDef>Costo</th>
-          <td mat-cell *matCellDef="let row" class="text-right">{{ row.costo_unitario | number: '1.2-2' }}</td>
+          <td mat-cell *matCellDef="let row" class="text-right">{{ row.costo_unitario | currencyFormat:currencySymbol }}</td>
         </ng-container>
 
         <ng-container matColumnDef="cantidad">
@@ -286,12 +313,12 @@
 
         <ng-container matColumnDef="subtotal">
           <th mat-header-cell *matHeaderCellDef>Subtotal</th>
-          <td mat-cell *matCellDef="let row" class="text-right">{{ row.subtotal | number: '1.2-2' }}</td>
+          <td mat-cell *matCellDef="let row" class="text-right">{{ row.subtotal | currencyFormat:currencySymbol }}</td>
         </ng-container>
 
         <ng-container matColumnDef="totalConFlete">
           <th mat-header-cell *matHeaderCellDef>Val con Flete</th>
-          <td mat-cell *matCellDef="let row" class="text-right">{{ row.valorConFlete | number: '1.2-2' }}</td>
+          <td mat-cell *matCellDef="let row" class="text-right">{{ row.valorConFlete | currencyFormat:currencySymbol }}</td>
         </ng-container>
 
         <ng-container matColumnDef="op">
@@ -316,7 +343,7 @@
           <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
             <mat-icon matPrefix>local_shipping</mat-icon>
             <mat-label>Flete *</mat-label>
-            <input matInput type="number" formControlName="flete" (input)="recalcularTotales()" />
+            <input matInput type="text" inputmode="decimal" formControlName="flete" [appCurrencyInput]="currencySymbol" (input)="recalcularTotales()" />
           </mat-form-field>
 
           <button type="button" mat-raised-button color="primary" class="fuse-mat-button-rounded mb-3" (click)="prorratearFlete()">
@@ -327,27 +354,27 @@
         <div class="w-full md:w-80 bg-gray-50 rounded p-4 border border-gray-200" *ngIf="detallesResumen.length > 0">
           <div class="flex justify-between mb-2 text-sm">
             <span class="text-gray-600">Sub-Total:</span>
-            <span class="font-medium">{{ totales.baseGrava | number: '1.2-2' }}</span>
+            <span class="font-medium">{{ totales.baseGrava | currencyFormat:currencySymbol }}</span>
           </div>
           <div class="flex justify-between mb-2 text-sm">
             <span class="text-gray-600">Descuento:</span>
-            <span class="font-medium">{{ totales.descuento | number: '1.2-2' }}</span>
+            <span class="font-medium">{{ totales.descuento | currencyFormat:currencySymbol }}</span>
           </div>
           <div class="flex justify-between mb-2 text-sm">
             <span class="text-gray-600">Impuesto:</span>
-            <span class="font-medium">{{ totales.impuesto | number: '1.2-2' }}</span>
+            <span class="font-medium">{{ totales.impuesto | currencyFormat:currencySymbol }}</span>
           </div>
           <div class="flex justify-between mb-2 text-sm">
             <span class="text-gray-600">Flete:</span>
-            <span class="font-medium">{{ totales.flete | number: '1.2-2' }}</span>
+            <span class="font-medium">{{ totales.flete | currencyFormat:currencySymbol }}</span>
           </div>
           <div class="flex justify-between pt-2 border-t border-gray-200">
             <span class="font-semibold text-gray-800">Total:</span>
-            <span class="font-bold text-lg text-primary">{{ totales.total | number: '1.2-2' }}</span>
+            <span class="font-bold text-lg text-primary">{{ totales.total | currencyFormat:currencySymbol }}</span>
           </div>
           <div class="flex justify-between mt-2 text-sm">
             <span class="text-gray-600">Con flete:</span>
-            <span class="font-medium">{{ totales.totalConFlete | number: '1.2-2' }}</span>
+            <span class="font-medium">{{ totales.totalConFlete | currencyFormat:currencySymbol }}</span>
           </div>
         </div>
       </div>

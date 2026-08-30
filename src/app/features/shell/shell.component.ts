@@ -90,6 +90,12 @@ const MENU: MenuGroup[] = [
     link: '/facturacion-electronica'
   },
   {
+    id: 'migracion',
+    title: 'Migración de datos',
+    icon: 'cloud_upload',
+    link: '/migracion'
+  },
+  {
     id: 'configuracion',
     title: 'Configuración',
     icon: 'settings',

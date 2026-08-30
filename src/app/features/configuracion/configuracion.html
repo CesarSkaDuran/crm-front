@@ -13,11 +13,23 @@
     <div class="space-y-2">
       <a
         *ngFor="let item of seccion.items"
-        [routerLink]="item.link"
+        [routerLink]="item.ready === false ? null : item.link"
+        [class.opacity-60]="item.ready === false"
+        [class.pointer-events-none]="item.ready === false"
         class="config-link flex items-center gap-3 p-2 rounded-lg transition"
       >
         <mat-icon class="config-item-icon text-lg">{{ item.icon }}</mat-icon>
-        <span class="text-sm">{{ item.title }}</span>
+        <span class="text-sm flex-1">{{ item.title }}</span>
+        <mat-icon
+          *ngIf="item.ready === false"
+          class="text-orange-500 text-base"
+          matTooltip="En construcción"
+        >construction</mat-icon>
+        <mat-icon
+          *ngIf="item.ready !== false"
+          class="text-green-500 text-base"
+          matTooltip="Disponible"
+        >check_circle</mat-icon>
       </a>
     </div>
   </mat-card>

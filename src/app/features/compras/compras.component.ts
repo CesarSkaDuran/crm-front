@@ -21,6 +21,10 @@ import { ThirdsService } from '../../core/services/thirds.service';
 import { ProductsService } from '../../core/services/products.service';
 import { BancosService } from '../../core/services/bancos.service';
 import { NotificacionesService } from '../../core/services/notificaciones.service';
+import { ExcelExportService } from '../../core/services/excel-export.service';
+import { CurrencyService } from '../../core/services/currency.service';
+import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
+import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
 
 interface DetalleResumen {
   producto_id: number;
@@ -57,6 +61,8 @@ interface TotalesCompra {
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    CurrencyFormatPipe,
+    CurrencyInputDirective,
   ],
   templateUrl: './compras.component.html',
   styleUrl: './compras.component.scss',
@@ -69,12 +75,15 @@ export class ComprasComponent implements OnInit {
   private bancosService = inject(BancosService);
   private cdr = inject(ChangeDetectorRef);
   private noti = inject(NotificacionesService);
+  private excel = inject(ExcelExportService);
+  private currency = inject(CurrencyService);
 
   compras: any[] = [];
   comprasFiltradas: any[] = [];
   proveedores: any[] = [];
   productos: any[] = [];
   bancos: any[] = [];
+  currencySymbol = '$';
 
   mostrarFormulario = false;
   compraSeleccionada: any = null;
@@ -82,7 +91,9 @@ export class ComprasComponent implements OnInit {
   guardando = false;
   compraGuardada: any = null;
 
-  displayedColumns = ['codigo', 'fecha', 'proveedor', 'total', 'estado', 'acciones'];
+  displayedColumns = ['codigo', 'fecha', 'proveedor', 'total', 'modo', 'estado', 'acciones'];
+
+  // 1 = contado, 2 = crédito
   detalleColumns = ['producto', 'cantidad', 'costo', 'subtotal'];
   resumenColumns = ['item', 'codigo', 'producto', 'precio', 'cantidad', 'descuento', 'impuesto', 'subtotal', 'totalConFlete', 'op'];
 
@@ -122,6 +133,10 @@ export class ComprasComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.currency.load().then((m) => {
+      this.currencySymbol = m?.simbolo || '$';
+      this.cdr.detectChanges();
+    });
     this.cargarCompras();
     this.cargarCatalogos();
   }
@@ -229,6 +244,37 @@ export class ComprasComponent implements OnInit {
       }
       const impuesto = Number(producto.impuesto) || 0;
       this.nuevoDetalle.get('impuesto')?.setValue(impuesto);
+      // Mostrar vista previa del nuevo PVP si el producto tiene margen
+      this.calcularNuevoPvpVistaPrevia(producto, costo);
+    }
+  }
+
+  /**
+   * Cuando el usuario cambia el costo unitario en la compra,
+   * recalcula el PVP del producto manteniendo el margen.
+   */
+  onCostoUnitarioChange() {
+    const productoId = this.nuevoDetalle.get('producto_id')?.value;
+    const costo = Number(this.nuevoDetalle.get('costo_unitario')?.value) || 0;
+    if (!productoId || costo <= 0) {
+      this.nuevoPvpPreview = null;
+      return;
+    }
+    const producto = this.productos.find((p) => p.id === productoId);
+    if (producto) {
+      this.calcularNuevoPvpVistaPrevia(producto, costo);
+    }
+  }
+
+  nuevoPvpPreview: { pvp1: number; margen: number } | null = null;
+
+  calcularNuevoPvpVistaPrevia(producto: any, costo: number) {
+    const margen = Number(producto.margen) || 0;
+    if (costo > 0 && margen > 0) {
+      const nuevoPvp1 = Math.round(costo * (1 + margen / 100) * 100) / 100;
+      this.nuevoPvpPreview = { pvp1: nuevoPvp1, margen };
+    } else {
+      this.nuevoPvpPreview = null;
     }
   }
 
@@ -464,6 +510,31 @@ export class ComprasComponent implements OnInit {
   nombreProveedor(id: number) {
     const p = this.proveedores.find((x) => x.id === id);
     return p?.nombre || String(id || '');
+  }
+
+  nombreModo(modo: number): string {
+    switch (Number(modo)) {
+      case 2:
+        return 'Crédito';
+      case 1:
+      default:
+        return 'Contado';
+    }
+  }
+
+  exportarExcel() {
+    if (this.comprasFiltradas.length === 0) {
+      this.noti.error('No hay compras para exportar');
+      return;
+    }
+    const data = this.comprasFiltradas.map((c) => ({
+      'Código': c.codigo,
+      'Fecha': c.fecha,
+      'Proveedor': this.nombreProveedor(c.proveedor_id),
+      'Total': Number(c.total),
+      'Estado': c.estado === 1 ? 'Activa' : 'Anulada',
+    }));
+    this.excel.export(data, 'Compras', 'Compras');
   }
 
   anular(compra: any) {

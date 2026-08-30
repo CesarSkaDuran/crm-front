@@ -34,7 +34,7 @@
       <mat-form-field class="blue-input" subscriptSizing="dynamic">
         <mat-icon matPrefix>attach_money</mat-icon>
         <mat-label>Valor</mat-label>
-        <input matInput type="number" formControlName="valor" required />
+        <input matInput type="text" inputmode="decimal" [appCurrencyInput]="currencySymbol" formControlName="valor" required />
       </mat-form-field>
     </div>
 
@@ -114,7 +114,7 @@
     <h2 class="section-title mb-0">Movimientos</h2>
     <div class="text-right">
       <p class="text-sm text-gray-600">Total</p>
-      <p class="text-2xl font-extrabold text-gray-800">{{ totalValor | number: '1.2-2' }}</p>
+      <p class="text-2xl font-extrabold text-gray-800">{{ totalValor | currencyFormat:currencySymbol }}</p>
     </div>
   </div>
 
@@ -153,7 +153,7 @@
       <td mat-cell *matCellDef="let row" class="text-right"
           [class.text-green-600]="row.tipo === 1"
           [class.text-red-600]="row.tipo === 2">
-        {{ row.tipo === 1 ? '+' : '-' }}{{ row.valor | number: '1.2-2' }}
+        {{ row.tipo === 1 ? '+' : '-' }}{{ row.valor | currencyFormat:currencySymbol }}
       </td>
     </ng-container>
 

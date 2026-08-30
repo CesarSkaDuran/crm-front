@@ -12,6 +12,9 @@ import { TesoreriaService } from '../../core/services/tesoreria.service';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { AccountsService } from '../../core/services/accounts.service';
 import { BancosService } from '../../core/services/bancos.service';
+import { CurrencyService } from '../../core/services/currency.service';
+import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
+import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
 
 @Component({
   selector: 'app-tesoreria',
@@ -26,6 +29,8 @@ import { BancosService } from '../../core/services/bancos.service';
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    CurrencyFormatPipe,
+    CurrencyInputDirective,
   ],
   templateUrl: './tesoreria.component.html',
   styleUrl: './tesoreria.component.scss',
@@ -36,7 +41,10 @@ export class TesoreriaComponent implements OnInit {
   private thirds = inject(ThirdsService);
   private accounts = inject(AccountsService);
   private bancosSvc = inject(BancosService);
+  private currency = inject(CurrencyService);
   private cdr = inject(ChangeDetectorRef);
+
+  currencySymbol = '$';
 
   movimientos: any[] = [];
   terceros: any[] = [];
@@ -80,6 +88,10 @@ export class TesoreriaComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.currency.load().then((m) => {
+      this.currencySymbol = m?.simbolo || '$';
+      this.cdr.detectChanges();
+    });
     this.cargarCatalogos();
     this.cargar();
   }

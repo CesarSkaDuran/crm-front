@@ -41,8 +41,9 @@
         <mat-label>Categoría</mat-label>
         <mat-select formControlName="categoria_id">
           <mat-option [value]="null">— Sin categoría —</mat-option>
-          <mat-option *ngFor="let c of categoriasList" [value]="c.id">{{ c.nombre }}{{ c.nombre_padre ? ' (' + c.nombre_padre + ')' : '' }}</mat-option>
+          <mat-option *ngFor="let c of categoriasHojas" [value]="c.id">{{ c.ruta }}</mat-option>
         </mat-select>
+        <mat-hint>Solo categorías hoja</mat-hint>
       </mat-form-field>
 
       <button type="button" mat-icon-button color="primary" (click)="abrirNuevaCategoria()" title="Crear categoría">
@@ -84,10 +85,30 @@
     <div class="form-row mb-3">
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>attach_money</mat-icon>
-        <mat-label>PVP 1 (base)</mat-label>
-        <input matInput type="number" formControlName="pvp1" (input)="recalcularPvp4()" />
+        <mat-label>Precio de compra</mat-label>
+        <input matInput type="text" inputmode="decimal" formControlName="ultimo_precio" [appCurrencyInput]="currencySymbol" />
       </mat-form-field>
 
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>percent</mat-icon>
+        <mat-label>% Margen</mat-label>
+        <input matInput type="number" formControlName="margen" step="0.01" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>attach_money</mat-icon>
+        <mat-label>PVP 1 (base)</mat-label>
+        <input matInput type="text" inputmode="decimal" formControlName="pvp1" [appCurrencyInput]="currencySymbol" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>attach_money</mat-icon>
+        <mat-label>PVP 4 (auto: PVP1+IVA)</mat-label>
+        <input matInput type="text" formControlName="pvp4" [appCurrencyInput]="currencySymbol" readonly />
+      </mat-form-field>
+    </div>
+
+    <div class="form-row mb-3">
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>attach_money</mat-icon>
         <mat-label>PVP 2</mat-label>
@@ -98,12 +119,6 @@
         <mat-icon matPrefix>attach_money</mat-icon>
         <mat-label>PVP 3</mat-label>
         <input matInput type="number" formControlName="pvp3" />
-      </mat-form-field>
-
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>attach_money</mat-icon>
-        <mat-label>PVP 4 (auto: PVP1+IVA)</mat-label>
-        <input matInput type="number" formControlName="pvp4" />
       </mat-form-field>
 
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
@@ -180,11 +195,28 @@
 <mat-card class="p-4">
   <div class="flex items-center justify-between mb-4 gap-4">
     <h2 class="section-title mb-0">Productos registrados</h2>
-    <mat-form-field class="blue-input w-72" subscriptSizing="dynamic">
-      <mat-icon matPrefix>search</mat-icon>
-      <mat-label>Buscar</mat-label>
-      <input matInput [(ngModel)]="search" [ngModelOptions]="{ standalone: true }" (keyup.enter)="cargar()" />
-    </mat-form-field>
+    <div class="flex items-center gap-2">
+      <button mat-stroked-button color="primary" class="fuse-mat-button-rounded" (click)="exportarExcel()" matTooltip="Exportar a Excel">
+        <mat-icon>file_download</mat-icon>
+        Excel
+      </button>
+      <mat-form-field class="blue-input w-72" subscriptSizing="dynamic">
+        <mat-icon matPrefix>search</mat-icon>
+        <mat-label>Buscar</mat-label>
+        <input matInput [(ngModel)]="search" [ngModelOptions]="{ standalone: true }" (keyup.enter)="cargar()" />
+      </mat-form-field>
+      <mat-form-field class="blue-input w-72" subscriptSizing="dynamic">
+        <mat-icon matPrefix>filter_list</mat-icon>
+        <mat-label>Filtrar por categoría</mat-label>
+        <mat-select [(value)]="filtroCategoriaId" (selectionChange)="filtrarPorCategoria()">
+          <mat-option [value]="null">Todas</mat-option>
+          <mat-option *ngFor="let c of categoriasHojas" [value]="c.id">{{ c.ruta }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <button *ngIf="filtroCategoriaId" mat-stroked-button color="warn" (click)="limpiarFiltroCategoria()">
+        <mat-icon>clear</mat-icon>
+      </button>
+    </div>
   </div>
 
   <table mat-table [dataSource]="lista" class="w-full">
@@ -208,14 +240,19 @@
       <td mat-cell *matCellDef="let row" class="text-right">{{ row.stock | number: '1.2-2' }}</td>
     </ng-container>
 
-    <ng-container matColumnDef="promedio">
-      <th mat-header-cell *matHeaderCellDef>Costo promedio</th>
-      <td mat-cell *matCellDef="let row" class="text-right">{{ row.promedio | number: '1.2-2' }}</td>
+    <ng-container matColumnDef="ultimo_precio">
+      <th mat-header-cell *matHeaderCellDef>Precio compra</th>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.ultimo_precio | currencyFormat:currencySymbol }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="margen">
+      <th mat-header-cell *matHeaderCellDef>Margen %</th>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.margen | number: '1.2-2' }}%</td>
     </ng-container>
 
     <ng-container matColumnDef="pvp1">
       <th mat-header-cell *matHeaderCellDef>Precio venta</th>
-      <td mat-cell *matCellDef="let row" class="text-right">{{ row.pvp1 | number: '1.2-2' }}</td>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.pvp1 | currencyFormat:currencySymbol }}</td>
     </ng-container>
 
     <ng-container matColumnDef="acciones">

@@ -15,6 +15,9 @@ import { CarteraService } from '../../core/services/cartera.service';
 import { BancosService } from '../../core/services/bancos.service';
 import { AccountingService } from '../../core/services/accounting.service';
 import { ThirdsService } from '../../core/services/thirds.service';
+import { CurrencyService } from '../../core/services/currency.service';
+import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
+import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
 import {
   CarteraResumenItem,
   CarteraDetalleResponse,
@@ -46,6 +49,8 @@ import {
     MatSelectModule,
     MatChipsModule,
     MatCheckboxModule,
+    CurrencyFormatPipe,
+    CurrencyInputDirective,
   ],
   templateUrl: './cartera.component.html',
   styleUrl: './cartera.component.scss',
@@ -57,6 +62,9 @@ export class CarteraComponent implements OnInit {
   private thirdsService = inject(ThirdsService);
   private fb = inject(FormBuilder);
   private cdr = inject(ChangeDetectorRef);
+  private currency = inject(CurrencyService);
+
+  currencySymbol = '$';
 
   // Listado principal
   lista: CarteraResumenItem[] = [];
@@ -137,6 +145,10 @@ export class CarteraComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.currency.load().then((m) => {
+      this.currencySymbol = m?.simbolo || '$';
+      this.cdr.detectChanges();
+    });
     this.cargar();
     this.bancosService.getAll().subscribe((res: any) => {
       this.bancos = res.data ?? res ?? [];

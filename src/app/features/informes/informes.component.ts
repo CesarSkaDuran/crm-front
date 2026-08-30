@@ -321,13 +321,25 @@ export class InformesComponent implements OnInit {
     this.resultado = null;
 
     const req: LibroMayorQuery | LibroRangoQuery | LibroTercerosQuery | BalanceGeneralQuery | PygQuery = {};
-    if (params.cuenta_id) (req as LibroMayorQuery | LibroTercerosQuery).cuenta_id = params.cuenta_id;
-    if (params.tercero_id) (req as LibroTercerosQuery).tercero_id = params.tercero_id;
-    if (params.desde_id) (req as LibroRangoQuery).desde_id = params.desde_id;
-    if (params.hasta_id) (req as LibroRangoQuery).hasta_id = params.hasta_id;
-    if (params.modo) (req as LibroMayorQuery | LibroRangoQuery | LibroTercerosQuery).modo = params.modo;
     if (params.date) (req as LibroMayorQuery | LibroRangoQuery | LibroTercerosQuery | PygQuery).date = params.date;
     if (params.date2) req.date2 = params.date2;
+
+    // Solo incluir parámetros específicos según el tipo de informe.
+    // Si se envían propiedades no esperadas (ej. cuenta_id a balance), el
+    // ValidationPipe del backend con forbidNonWhitelisted rechaza el request.
+    if (tipo === 'libro' || tipo === 'rango' || tipo === 'terceros') {
+      if (params.modo) (req as LibroMayorQuery | LibroRangoQuery | LibroTercerosQuery).modo = params.modo;
+    }
+    if (tipo === 'libro' || tipo === 'terceros') {
+      if (params.cuenta_id) (req as LibroMayorQuery | LibroTercerosQuery).cuenta_id = params.cuenta_id;
+    }
+    if (tipo === 'terceros') {
+      if (params.tercero_id) (req as LibroTercerosQuery).tercero_id = params.tercero_id;
+    }
+    if (tipo === 'rango') {
+      if (params.desde_id) (req as LibroRangoQuery).desde_id = params.desde_id;
+      if (params.hasta_id) (req as LibroRangoQuery).hasta_id = params.hasta_id;
+    }
 
     let call$: Observable<LibroResponse | BalanceGeneralResponse | PygResponse>;
     if (tipo === 'libro') {

@@ -21,6 +21,10 @@ import { ThirdsService } from '../../core/services/thirds.service';
 import { ProductsService } from '../../core/services/products.service';
 import { BancosService } from '../../core/services/bancos.service';
 import { NotificacionesService } from '../../core/services/notificaciones.service';
+import { ExcelExportService } from '../../core/services/excel-export.service';
+import { CurrencyService } from '../../core/services/currency.service';
+import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
+import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
 
 interface DetalleResumen {
   producto_id: number;
@@ -55,6 +59,8 @@ interface TotalesVenta {
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    CurrencyFormatPipe,
+    CurrencyInputDirective,
   ],
   templateUrl: './ventas.component.html',
   styleUrl: './ventas.component.scss',
@@ -67,10 +73,13 @@ export class VentasComponent implements OnInit {
   private bancosSvc = inject(BancosService);
   private cdr = inject(ChangeDetectorRef);
   private noti = inject(NotificacionesService);
+  private excel = inject(ExcelExportService);
+  private currency = inject(CurrencyService);
 
   ventas: any[] = [];
   ventasFiltradas: any[] = [];
   clientes: any[] = [];
+  currencySymbol = '$';
   vendedores: any[] = [];
   productos: any[] = [];
   productosConStock: any[] = [];
@@ -124,6 +133,10 @@ export class VentasComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.currency.load().then((m) => {
+      this.currencySymbol = m?.simbolo || '$';
+      this.cdr.detectChanges();
+    });
     this.cargarVentas();
     this.cargarCatalogos();
   }
@@ -428,6 +441,21 @@ export class VentasComponent implements OnInit {
   nombreCliente(id: number) {
     const c = this.clientes.find((x) => x.id === id);
     return c?.nombre || String(id || '');
+  }
+
+  exportarExcel() {
+    if (this.ventasFiltradas.length === 0) {
+      this.noti.error('No hay ventas para exportar');
+      return;
+    }
+    const data = this.ventasFiltradas.map((v) => ({
+      'Código': v.codigo,
+      'Fecha': v.fecha,
+      'Cliente': this.nombreCliente(v.cliente_id),
+      'Total': Number(v.total),
+      'Estado': v.estado === 1 ? 'Activa' : 'Anulada',
+    }));
+    this.excel.export(data, 'Ventas', 'Ventas');
   }
 
   anular(venta: any) {

@@ -1,0 +1,38 @@
+:host {
+  display: block;
+}
+
+.form-grid {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.form-grid .field {
+  min-width: 0;
+}
+
+.field-codigo { width: 150px; }
+.field-nombre { flex: 1 1 240px; min-width: 240px; }
+.field-simbolo { width: 130px; }
+.field-tasa { width: 160px; }
+.field-orden { width: 130px; }
+
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 0 8px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}

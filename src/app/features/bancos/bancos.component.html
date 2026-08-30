@@ -35,13 +35,13 @@
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>attach_money</mat-icon>
         <mat-label>Monto</mat-label>
-        <input matInput type="number" formControlName="monto" />
+        <input matInput type="text" inputmode="decimal" [appCurrencyInput]="currencySymbol" formControlName="monto" />
       </mat-form-field>
 
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>today</mat-icon>
         <mat-label>Monto del día</mat-label>
-        <input matInput type="number" formControlName="monto_dia" />
+        <input matInput type="text" inputmode="decimal" [appCurrencyInput]="currencySymbol" formControlName="monto_dia" />
       </mat-form-field>
 
       <div class="field-action flex-none">
@@ -62,7 +62,7 @@
     <h2 class="section-title mb-0">Bancos registrados</h2>
     <div class="text-right">
       <p class="text-sm text-gray-600">Saldo total</p>
-      <p class="text-2xl font-extrabold text-gray-800">{{ totalMonto | number: '1.2-2' }}</p>
+      <p class="text-2xl font-extrabold text-gray-800">{{ totalMonto | currencyFormat:currencySymbol }}</p>
     </div>
   </div>
 
@@ -84,12 +84,12 @@
 
     <ng-container matColumnDef="monto">
       <th mat-header-cell *matHeaderCellDef>Monto</th>
-      <td mat-cell *matCellDef="let row" class="text-right">{{ row.monto | number: '1.2-2' }}</td>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.monto | currencyFormat:currencySymbol }}</td>
     </ng-container>
 
     <ng-container matColumnDef="monto_dia">
       <th mat-header-cell *matHeaderCellDef>Monto del día</th>
-      <td mat-cell *matCellDef="let row" class="text-right">{{ row.monto_dia | number: '1.2-2' }}</td>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.monto_dia | currencyFormat:currencySymbol }}</td>
     </ng-container>
 
     <ng-container matColumnDef="acciones">

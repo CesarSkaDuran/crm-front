@@ -21,7 +21,7 @@
 <div class="grid grid-cols-3 gap-4 mb-6">
   <mat-card class="p-4">
     <p class="text-sm text-gray-600">Total por cobrar</p>
-    <p class="text-2xl font-extrabold text-blue-700">{{ totalSaldo | number: '1.2-2' }}</p>
+    <p class="text-2xl font-extrabold text-blue-700">{{ totalSaldo | currencyFormat:currencySymbol }}</p>
   </mat-card>
   <mat-card class="p-4">
     <p class="text-sm text-gray-600">Clientes con saldo</p>
@@ -58,7 +58,7 @@
 
     <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
       <mat-label>Monto total</mat-label>
-      <input matInput type="number" formControlName="monto_total" min="1" />
+      <input matInput type="text" inputmode="decimal" [appCurrencyInput]="currencySymbol" formControlName="monto_total" />
     </mat-form-field>
 
     <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
@@ -98,7 +98,7 @@
   <div class="flex items-center justify-between mb-4">
     <div>
       <h2 class="section-title mb-0">Cuotas vencidas</h2>
-      <p class="text-sm text-gray-500">Total vencido: {{ vencidas.total_vencido | number: '1.2-2' }}</p>
+      <p class="text-sm text-gray-500">Total vencido: {{ vencidas.total_vencido | currencyFormat:currencySymbol }}</p>
     </div>
   </div>
 
@@ -115,7 +115,7 @@
 
     <ng-container matColumnDef="saldo">
       <th mat-header-cell *matHeaderCellDef>Saldo</th>
-      <td mat-cell *matCellDef="let row" class="text-right">{{ row.saldo | number: '1.2-2' }}</td>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.saldo | currencyFormat:currencySymbol }}</td>
     </ng-container>
 
     <ng-container matColumnDef="fecha_pago_oportuno">
@@ -130,12 +130,12 @@
 
     <ng-container matColumnDef="interes_mora">
       <th mat-header-cell *matHeaderCellDef>Interés</th>
-      <td mat-cell *matCellDef="let row" class="text-right">{{ row.interes_mora | number: '1.2-2' }}</td>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.interes_mora | currencyFormat:currencySymbol }}</td>
     </ng-container>
 
     <ng-container matColumnDef="total_pagar">
       <th mat-header-cell *matHeaderCellDef>Total a pagar</th>
-      <td mat-cell *matCellDef="let row" class="text-right font-bold">{{ row.total_pagar | number: '1.2-2' }}</td>
+      <td mat-cell *matCellDef="let row" class="text-right font-bold">{{ row.total_pagar | currencyFormat:currencySymbol }}</td>
     </ng-container>
 
     <tr mat-header-row *matHeaderRowDef="['nombre','numero_cuota','saldo','fecha_pago_oportuno','dias_mora','interes_mora','total_pagar']"></tr>
@@ -166,7 +166,7 @@
 
     <ng-container matColumnDef="saldo_total">
       <th mat-header-cell *matHeaderCellDef>Saldo total</th>
-      <td mat-cell *matCellDef="let row" class="text-right font-bold text-blue-700">{{ row.saldo_total | number: '1.2-2' }}</td>
+      <td mat-cell *matCellDef="let row" class="text-right font-bold text-blue-700">{{ row.saldo_total | currencyFormat:currencySymbol }}</td>
     </ng-container>
 
     <ng-container matColumnDef="cuotas_vencidas">
@@ -203,10 +203,10 @@
     <div>
       <h2 class="section-title mb-0">{{ detalle.tercero?.nombre }}</h2>
       <p class="text-sm text-gray-500">
-        Saldo: {{ detalle.resumen?.saldo_total | number: '1.2-2' }} |
+        Saldo: {{ detalle.resumen?.saldo_total | currencyFormat:currencySymbol }} |
         Créditos activos: {{ detalle.resumen?.creditos_activos }} |
-        Cupo: {{ detalle.resumen?.cupo | number: '1.2-2' }} |
-        Disponible: {{ detalle.resumen?.cupo_disponible | number: '1.2-2' }}
+        Cupo: {{ detalle.resumen?.cupo | currencyFormat:currencySymbol }} |
+        Disponible: {{ detalle.resumen?.cupo_disponible | currencyFormat:currencySymbol }}
       </p>
     </div>
     <button mat-stroked-button color="warn" (click)="cerrarDetalle()">
@@ -238,10 +238,10 @@
       </div>
     </div>
     <div class="grid grid-cols-4 gap-2 text-sm">
-      <div><span class="text-gray-500">Monto:</span> {{ cr.monto_total | number: '1.2-2' }}</div>
-      <div><span class="text-gray-500">Saldo:</span> <strong>{{ cr.saldo | number: '1.2-2' }}</strong></div>
+      <div><span class="text-gray-500">Monto:</span> {{ cr.monto_total | currencyFormat:currencySymbol }}</div>
+      <div><span class="text-gray-500">Saldo:</span> <strong>{{ cr.saldo | currencyFormat:currencySymbol }}</strong></div>
       <div><span class="text-gray-500">Cuotas:</span> {{ cr.cuotas_pagadas }}/{{ cr.numero_cuotas }}</div>
-      <div><span class="text-gray-500">Valor cuota:</span> {{ cr.valor_cuota | number: '1.2-2' }}</div>
+      <div><span class="text-gray-500">Valor cuota:</span> {{ cr.valor_cuota | currencyFormat:currencySymbol }}</div>
     </div>
   </div>
 </mat-card>
@@ -252,8 +252,8 @@
     <div>
       <h2 class="section-title mb-0">Crédito #{{ creditoSeleccionado.id }}</h2>
       <p class="text-sm text-gray-500">
-        Saldo: {{ creditoSeleccionado.saldo | number: '1.2-2' }} |
-        Pago mínimo: {{ creditoSeleccionado.pago_minimo | number: '1.2-2' }} |
+        Saldo: {{ creditoSeleccionado.saldo | currencyFormat:currencySymbol }} |
+        Pago mínimo: {{ creditoSeleccionado.pago_minimo | currencyFormat:currencySymbol }} |
         {{ periodoLabel(creditoSeleccionado.periodo) }}
       </p>
     </div>
@@ -277,12 +277,12 @@
 
     <ng-container matColumnDef="valor">
       <th mat-header-cell *matHeaderCellDef>Valor</th>
-      <td mat-cell *matCellDef="let row" class="text-right">{{ row.valor | number: '1.2-2' }}</td>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.valor | currencyFormat:currencySymbol }}</td>
     </ng-container>
 
     <ng-container matColumnDef="saldo">
       <th mat-header-cell *matHeaderCellDef>Saldo</th>
-      <td mat-cell *matCellDef="let row" class="text-right font-bold">{{ row.saldo | number: '1.2-2' }}</td>
+      <td mat-cell *matCellDef="let row" class="text-right font-bold">{{ row.saldo | currencyFormat:currencySymbol }}</td>
     </ng-container>
 
     <ng-container matColumnDef="fecha_pago_oportuno">
@@ -297,7 +297,7 @@
 
     <ng-container matColumnDef="total_pagar">
       <th mat-header-cell *matHeaderCellDef>Total a pagar</th>
-      <td mat-cell *matCellDef="let row" class="text-right">{{ row.total_pagar | number: '1.2-2' }}</td>
+      <td mat-cell *matCellDef="let row" class="text-right">{{ row.total_pagar | currencyFormat:currencySymbol }}</td>
     </ng-container>
 
     <ng-container matColumnDef="estado">
@@ -328,7 +328,7 @@
     <div>
       <h2 class="section-title mb-0">Registrar cobro</h2>
       <p class="text-sm text-gray-500">
-        Crédito #{{ cobroCredito.id }} — Saldo: {{ cobroCredito.saldo | number: '1.2-2' }} — Pago mínimo: {{ cobroCredito.pago_minimo | number: '1.2-2' }}
+        Crédito #{{ cobroCredito.id }} — Saldo: {{ cobroCredito.saldo | currencyFormat:currencySymbol }} — Pago mínimo: {{ cobroCredito.pago_minimo | currencyFormat:currencySymbol }}
       </p>
     </div>
     <button mat-stroked-button color="warn" (click)="cerrarCobro()">
@@ -353,13 +353,13 @@
     <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
       <mat-label>Banco / Caja</mat-label>
       <mat-select formControlName="banco_id">
-        <mat-option *ngFor="let b of bancos" [value]="b.id">{{ b.nombre }} — $ {{ b.monto | number: '1.2-2' }}</mat-option>
+        <mat-option *ngFor="let b of bancos" [value]="b.id">{{ b.nombre }} — {{ b.monto | currencyFormat:currencySymbol }}</mat-option>
       </mat-select>
     </mat-form-field>
 
     <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
       <mat-label>Valor</mat-label>
-      <input matInput type="number" formControlName="valor" min="1" />
+      <input matInput type="text" inputmode="decimal" [appCurrencyInput]="currencySymbol" formControlName="valor" />
     </mat-form-field>
 
     <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
@@ -384,7 +384,7 @@
   <div class="flex items-center justify-between mb-4">
     <div>
       <h2 class="section-title mb-0">Posfechar cuota #{{ cuotaAPosfechar.numero_cuota }}</h2>
-      <p class="text-sm text-gray-500">Saldo: {{ cuotaAPosfechar.saldo | number: '1.2-2' }} — Vence: {{ cuotaAPosfechar.fecha_pago_oportuno | date: 'dd/MM/yyyy' }}</p>
+      <p class="text-sm text-gray-500">Saldo: {{ cuotaAPosfechar.saldo | currencyFormat:currencySymbol }} — Vence: {{ cuotaAPosfechar.fecha_pago_oportuno | date: 'dd/MM/yyyy' }}</p>
     </div>
     <button mat-stroked-button color="warn" (click)="cerrarPosfechar()">
       <mat-icon>close</mat-icon>

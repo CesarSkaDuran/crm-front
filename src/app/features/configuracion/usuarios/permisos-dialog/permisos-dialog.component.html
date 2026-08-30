@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>Permisos de {{ user.nombre }} {{ user.apellido || '' }}</h2>
+
+<mat-dialog-content>
+  <p class="text-sm text-gray-500 mb-4">Módulo de permisos en construcción. Selecciona los permisos que tendrá el usuario.</p>
+
+  <form [formGroup]="form">
+    <mat-accordion>
+      @for (m of modulos; track m.nombre) {
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>{{ m.nombre }}</mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <div class="grid grid-cols-2 gap-2">
+            @for (p of m.permisos; track p.key) {
+              <mat-checkbox [formControlName]="p.key">{{ p.label }}</mat-checkbox>
+            }
+          </div>
+        </mat-expansion-panel>
+      }
+    </mat-accordion>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="cerrar()">Cancelar</button>
+  <button mat-raised-button color="primary" (click)="guardar()">
+    <mat-icon>save</mat-icon>
+    Guardar permisos
+  </button>
+</mat-dialog-actions>

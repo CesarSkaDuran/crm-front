@@ -12,8 +12,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { KardexService } from '../../core/services/kardex.service';
 import { ProductsService } from '../../core/services/products.service';
+import { ExcelExportService } from '../../core/services/excel-export.service';
 
 @Component({
   selector: 'app-kardex',
@@ -28,6 +30,7 @@ import { ProductsService } from '../../core/services/products.service';
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    MatTooltipModule,
   ],
   templateUrl: './kardex.component.html',
   styleUrl: './kardex.component.scss',
@@ -37,6 +40,7 @@ export class KardexComponent implements OnInit {
   private kardex = inject(KardexService);
   private products = inject(ProductsService);
   private cdr = inject(ChangeDetectorRef);
+  private excel = inject(ExcelExportService);
 
   movimientos: any[] = [];
   productos: any[] = [];
@@ -95,5 +99,26 @@ export class KardexComponent implements OnInit {
   nombreProducto(id: number) {
     const p = this.productos.find((x) => x.id === id);
     return p?.nombre || id;
+  }
+
+  exportarExcel() {
+    if (this.movimientos.length === 0) {
+      alert('No hay movimientos para exportar');
+      return;
+    }
+    const data = this.movimientos.map((m) => ({
+      'Consecutivo': m.consecutivo,
+      'Fecha': m.fecha,
+      'Producto': this.nombreProducto(m.producto_id),
+      'Tipo': m.tipo_documento,
+      'Entradas': Number(m.entradas),
+      'Salidas': Number(m.salidas),
+      'Valor Unitario': Number(m.valor_unitario),
+      'Total': Number(m.total),
+      'Cantidad Actual': Number(m.cantidad_actual),
+      'Saldo Actual': Number(m.saldo_actual),
+      'Promedio': Number(m.promedio_actual),
+    }));
+    this.excel.export(data, 'Kardex', 'Kardex');
   }
 }

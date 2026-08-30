@@ -14,6 +14,9 @@ import { CuentasPorPagarService } from '../../core/services/cuentas-por-pagar.se
 import { BancosService } from '../../core/services/bancos.service';
 import { AccountingService } from '../../core/services/accounting.service';
 import { ThirdsService } from '../../core/services/thirds.service';
+import { CurrencyService } from '../../core/services/currency.service';
+import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
+import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
 import {
   CarteraResumenItem,
   CarteraDetalleResponse,
@@ -45,6 +48,8 @@ import {
     MatSelectModule,
     MatChipsModule,
     MatCheckboxModule,
+    CurrencyFormatPipe,
+    CurrencyInputDirective,
   ],
   templateUrl: './cuentas-por-pagar.component.html',
   styleUrl: './cuentas-por-pagar.component.scss',
@@ -54,6 +59,7 @@ export class CuentasPorPagarComponent implements OnInit {
   private bancosService = inject(BancosService);
   private accountingService = inject(AccountingService);
   private thirdsService = inject(ThirdsService);
+  private currency = inject(CurrencyService);
   private fb = inject(FormBuilder);
   private cdr = inject(ChangeDetectorRef);
 
@@ -86,6 +92,8 @@ export class CuentasPorPagarComponent implements OnInit {
   creandoCredito = false;
   mostrandoFormCredito = false;
   cuotaAPosfechar: CuotaCredito | null = null;
+
+  currencySymbol = '$';
 
   // Crédito seleccionado para pago
   pagoCredito: CreditoDetalleResponse | null = null;
@@ -136,6 +144,10 @@ export class CuentasPorPagarComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.currency.load().then((m) => {
+      this.currencySymbol = m?.simbolo || '$';
+      this.cdr.detectChanges();
+    });
     this.cargar();
     this.bancosService.getAll().subscribe((res: any) => {
       this.bancos = res.data ?? res ?? [];

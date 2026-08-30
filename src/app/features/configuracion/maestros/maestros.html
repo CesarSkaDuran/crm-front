@@ -1,0 +1,24 @@
+<div class="mb-6">
+  <h1 class="page-title">Maestros</h1>
+  <p class="text-gray-500 mt-1">Catálogos y reglas de negocio de la empresa</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <mat-card *ngFor="let m of masters" class="p-4 master-card">
+    <div class="flex items-center gap-3 mb-2">
+      <mat-icon class="master-icon">{{ m.icon }}</mat-icon>
+      <h2 class="text-lg font-semibold">{{ m.title }}</h2>
+    </div>
+    <p class="text-sm text-gray-500 mb-4">{{ m.description }}</p>
+    <a
+      [routerLink]="m.ready ? m.link : null"
+      [class.opacity-60]="!m.ready"
+      [class.pointer-events-none]="!m.ready"
+      mat-stroked-button
+      color="primary"
+    >
+      <mat-icon>{{ m.ready ? 'settings' : 'construction' }}</mat-icon>
+      <span class="ml-2">{{ m.ready ? 'Gestionar' : 'Próximamente' }}</span>
+    </a>
+  </mat-card>
+</div>

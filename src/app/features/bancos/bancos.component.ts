@@ -10,6 +10,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { BancosService } from '../../core/services/bancos.service';
 import { AccountsService } from '../../core/services/accounts.service';
+import { CurrencyService } from '../../core/services/currency.service';
+import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
+import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
 
 @Component({
   selector: 'app-bancos',
@@ -24,6 +27,8 @@ import { AccountsService } from '../../core/services/accounts.service';
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    CurrencyFormatPipe,
+    CurrencyInputDirective,
   ],
   templateUrl: './bancos.component.html',
   styleUrl: './bancos.component.scss',
@@ -33,8 +38,10 @@ export class BancosComponent implements OnInit {
   private bancos = inject(BancosService);
   private accounts = inject(AccountsService);
   private cdr = inject(ChangeDetectorRef);
+  private currency = inject(CurrencyService);
 
   lista: any[] = [];
+  currencySymbol = '$';
   cuentas: any[] = [];
   editandoId: number | null = null;
 
@@ -66,6 +73,10 @@ export class BancosComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.currency.load().then((m) => {
+      this.currencySymbol = m?.simbolo || '$';
+      this.cdr.detectChanges();
+    });
     this.cargarCuentas();
     this.cargar();
   }
