@@ -1,0 +1,29 @@
+<mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+  <mat-icon matPrefix>{{ icon }}</mat-icon>
+  <mat-label>{{ label }}</mat-label>
+  <input
+    matInput
+    #inputRef
+    [placeholder]="'Buscar ' + label.toLowerCase() + '...'"
+    [(ngModel)]="selected"
+    (ngModelChange)="onSearchChange($event)"
+    [matAutocomplete]="auto"
+    [disabled]="disabled"
+    [required]="required"
+    (blur)="onBlur()"
+    (focus)="onFocus(inputRef)"
+  />
+  <mat-autocomplete
+    #auto="matAutocomplete"
+    [displayWith]="displayFn"
+    (optionSelected)="onSelection($event.option.value)"
+  >
+    <mat-option [value]="null" *ngIf="!required" (onSelectionChange)="onSelection(null)">— Sin cuenta —</mat-option>
+    <mat-option *ngFor="let c of filtered" [value]="c">
+      ({{ c.codigo }}) {{ c.nombre }}
+    </mat-option>
+    <mat-option *ngIf="filtered.length === 0" disabled>
+      Sin resultados para "{{ selected }}"
+    </mat-option>
+  </mat-autocomplete>
+</mat-form-field>

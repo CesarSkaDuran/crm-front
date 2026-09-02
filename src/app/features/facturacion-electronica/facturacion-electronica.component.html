@@ -4,7 +4,15 @@
       <h1 class="page-title">Facturación Electrónica DIAN</h1>
       <p class="text-gray-500 mt-1">Configuración y emisión de facturas electrónicas</p>
     </div>
-    <div class="flex gap-2">
+    <div class="flex gap-4 items-center">
+      <mat-slide-toggle
+        [checked]="activa"
+        (change)="toggleActiva()"
+        [disabled]="toggleCargando"
+        color="primary"
+      >
+        {{ activa ? 'Activada' : 'Desactivada' }}
+      </mat-slide-toggle>
       <button mat-raised-button color="primary" (click)="abrirFormConfig()">
         <mat-icon>settings</mat-icon>
         {{ configurado ? 'Editar configuración' : 'Configurar DIAN' }}

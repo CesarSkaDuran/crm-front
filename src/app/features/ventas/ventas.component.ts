@@ -16,6 +16,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { SalesService } from '../../core/services/sales.service';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { ProductsService } from '../../core/services/products.service';
@@ -23,6 +24,7 @@ import { BancosService } from '../../core/services/bancos.service';
 import { NotificacionesService } from '../../core/services/notificaciones.service';
 import { ExcelExportService } from '../../core/services/excel-export.service';
 import { CurrencyService } from '../../core/services/currency.service';
+import { FacturacionElectronicaService } from '../../core/services/facturacion-electronica.service';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
 import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
 
@@ -59,6 +61,7 @@ interface TotalesVenta {
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    MatCheckboxModule,
     CurrencyFormatPipe,
     CurrencyInputDirective,
   ],
@@ -75,6 +78,7 @@ export class VentasComponent implements OnInit {
   private noti = inject(NotificacionesService);
   private excel = inject(ExcelExportService);
   private currency = inject(CurrencyService);
+  private factElectronica = inject(FacturacionElectronicaService);
 
   ventas: any[] = [];
   ventasFiltradas: any[] = [];
@@ -91,6 +95,9 @@ export class VentasComponent implements OnInit {
   busqueda = '';
   guardando = false;
   ventaGuardada: any = null;
+  facturacionElectronicaConfigurada = false;
+  facturacionElectronicaActiva = false;
+  emitiendoFactura = false;
 
   displayedColumns = ['codigo', 'fecha', 'cliente', 'total', 'estado', 'acciones'];
   detalleColumns = ['producto', 'cantidad', 'precio', 'subtotal'];
@@ -117,6 +124,7 @@ export class VentasComponent implements OnInit {
     numero_cuotas: [1],
     periodo_cuotas: [3],
     tasa_mora: [0],
+    emitir_factura_electronica: [false],
     detalles: this.fb.array<FormGroup>([]),
   });
 
@@ -139,6 +147,21 @@ export class VentasComponent implements OnInit {
     });
     this.cargarVentas();
     this.cargarCatalogos();
+    this.verificarFacturacionElectronica();
+  }
+
+  verificarFacturacionElectronica() {
+    this.factElectronica.getConfig().subscribe({
+      next: (res: any) => {
+        this.facturacionElectronicaConfigurada = !!res?.configurado;
+        this.facturacionElectronicaActiva = !!res?.activa;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.facturacionElectronicaConfigurada = false;
+        this.facturacionElectronicaActiva = false;
+      },
+    });
   }
 
   cargarVentas() {
@@ -211,6 +234,7 @@ export class VentasComponent implements OnInit {
       numero_cuotas: 1,
       periodo_cuotas: 3,
       tasa_mora: 0,
+      emitir_factura_electronica: false,
     });
     this.detalles.clear();
     this.nuevoDetalle.reset({
@@ -423,12 +447,36 @@ export class VentasComponent implements OnInit {
 
     this.guardando = true;
     const body = { ...this.form.value, detalles: this.detalles.value };
+    const emitirElectronica = !!this.form.value.emitir_factura_electronica;
     this.sales.create(body as any).subscribe({
       next: (res: any) => {
-        this.guardando = false;
         this.ventaGuardada = res;
         this.noti.success(`Venta ${res.codigo} registrada correctamente`);
-        this.volverAlListado();
+
+        if (emitirElectronica && res?.id) {
+          this.emitiendoFactura = true;
+          this.factElectronica.emitir({ venta_id: res.id }).subscribe({
+            next: (r: any) => {
+              this.emitiendoFactura = false;
+              this.guardando = false;
+              this.noti.success(
+                `Factura electrónica emitida: ${r.numero_factura || ''} (CUFE: ${r.cufe || 'N/A'})`,
+              );
+              this.volverAlListado();
+            },
+            error: (err) => {
+              this.emitiendoFactura = false;
+              this.guardando = false;
+              this.noti.error(
+                err.error?.message || 'La venta se guardó pero falló la emisión electrónica',
+              );
+              this.volverAlListado();
+            },
+          });
+        } else {
+          this.guardando = false;
+          this.volverAlListado();
+        }
       },
       error: (err) => {
         this.guardando = false;

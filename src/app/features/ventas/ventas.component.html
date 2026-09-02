@@ -215,6 +215,13 @@
           <mat-label>Observación</mat-label>
           <input matInput formControlName="observacion" />
         </mat-form-field>
+
+        <div class="flex items-center gap-2" *ngIf="facturacionElectronicaActiva">
+          <mat-checkbox formControlName="emitir_factura_electronica">
+            <mat-icon class="align-middle text-orange-500">receipt_long</mat-icon>
+            Emitir factura electrónica (DIAN)
+          </mat-checkbox>
+        </div>
       </div>
     </mat-card>
 

@@ -18,7 +18,7 @@
 </div>
 
 <!-- Resumen -->
-<div class="grid grid-cols-3 gap-4 mb-6">
+<div class="grid grid-cols-4 gap-4 mb-6">
   <mat-card class="p-4">
     <p class="text-sm text-gray-600">Total inventarios</p>
     <p class="text-2xl font-extrabold text-blue-700">{{ lista.length }}</p>
@@ -26,6 +26,10 @@
   <mat-card class="p-4">
     <p class="text-sm text-gray-600">Inventario pendiente</p>
     <p class="text-2xl font-extrabold text-orange-600">{{ pendiente ? pendiente.codigo : 'Ninguno' }}</p>
+  </mat-card>
+  <mat-card class="p-4">
+    <p class="text-sm text-gray-600">Productos contados</p>
+    <p class="text-2xl font-extrabold text-blue-700">{{ productosContados }}/{{ totalProductos }}</p>
   </mat-card>
   <mat-card class="p-4">
     <p class="text-sm text-gray-600">Valor inventario (sistema)</p>
@@ -44,10 +48,16 @@
         Productos: {{ valorizacion.total_productos }}
       </p>
     </div>
-    <button mat-stroked-button color="warn" (click)="toggleValorizacion()">
-      <mat-icon>close</mat-icon>
-      Cerrar
-    </button>
+    <div class="flex gap-2">
+      <button mat-stroked-button color="primary" (click)="exportarValorizacionExcel()">
+        <mat-icon>table_view</mat-icon>
+        Excel
+      </button>
+      <button mat-stroked-button color="warn" (click)="toggleValorizacion()">
+        <mat-icon>close</mat-icon>
+        Cerrar
+      </button>
+    </div>
   </div>
 
   <table mat-table [dataSource]="valorizacion.data" class="w-full">
@@ -85,6 +95,54 @@
   </div>
 </mat-card>
 
+<!-- Resultado de finalización (asiento generado) -->
+<mat-card class="p-4 mb-6" *ngIf="resultadoFinalizar" style="border-left: 4px solid #16a34a;">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h2 class="section-title mb-0 text-green-700">
+        <mat-icon class="align-middle">check_circle</mat-icon>
+        Inventario finalizado correctamente
+      </h2>
+      <p class="text-sm text-gray-600 mt-1">
+        Código: {{ resultadoFinalizar.inventario?.codigo || resultadoFinalizar.codigo || '—' }}
+      </p>
+    </div>
+    <button mat-stroked-button color="warn" (click)="cerrarResultadoFinalizar()">
+      <mat-icon>close</mat-icon>
+      Cerrar
+    </button>
+  </div>
+
+  <div class="grid grid-cols-3 gap-4 mb-4" *ngIf="resultadoFinalizar.totales">
+    <div class="bg-gray-50 rounded p-3">
+      <p class="text-xs text-gray-500">Ajustes realizados</p>
+      <p class="text-lg font-bold">{{ resultadoFinalizar.numero_ajustes || 0 }}</p>
+    </div>
+    <div class="bg-gray-50 rounded p-3">
+      <p class="text-xs text-gray-500">Faltantes</p>
+      <p class="text-lg font-bold text-red-600">{{ resultadoFinalizar.totales?.faltantes | number: '1.2-2' }}</p>
+    </div>
+    <div class="bg-gray-50 rounded p-3">
+      <p class="text-xs text-gray-500">Sobrantes</p>
+      <p class="text-lg font-bold text-green-600">{{ resultadoFinalizar.totales?.sobrantes | number: '1.2-2' }}</p>
+    </div>
+  </div>
+
+  <div *ngIf="resultadoFinalizar.asiento" class="bg-blue-50 rounded p-3">
+    <p class="text-sm font-bold text-blue-700">
+      <mat-icon class="align-middle">receipt</mat-icon>
+      Asiento contable generado: {{ resultadoFinalizar.asiento.consecutivo || resultadoFinalizar.asiento.codigo || '—' }}
+    </p>
+    <p class="text-xs text-gray-500 mt-1">
+      Revise el comprobante en el módulo de Contabilidad para ver el detalle.
+    </p>
+  </div>
+
+  <div *ngIf="!resultadoFinalizar.totales && !resultadoFinalizar.asiento" class="text-sm text-gray-500">
+    {{ resultadoFinalizar.mensaje || 'Inventario finalizado sin diferencias.' }}
+  </div>
+</mat-card>
+
 <!-- Inventario pendiente: registro de conteos -->
 <mat-card class="p-4 mb-6" *ngIf="pendiente">
   <div class="flex items-center justify-between mb-4">
@@ -98,9 +156,20 @@
         <span [class.text-red-600]="totalDiferencia < 0" [class.text-green-600]="totalDiferencia > 0">
           {{ totalDiferencia | number: '1.2-2' }}
         </span>
+        |
+        Progreso: {{ productosContados }}/{{ totalProductos }}
       </p>
     </div>
-    <div class="flex gap-2">
+    <div class="flex gap-2 flex-wrap">
+      <button mat-stroked-button (click)="exportarConteosExcel()" *ngIf="pendiente.estado === 1">
+        <mat-icon>table_view</mat-icon>
+        Excel
+      </button>
+      <button mat-stroked-button color="primary" (click)="guardarParcial()" [disabled]="guardandoParcial"
+        *ngIf="pendiente.estado === 1">
+        <mat-icon>save</mat-icon>
+        {{ guardandoParcial ? 'Guardando...' : 'Guardar parcial' }}
+      </button>
       <button mat-raised-button color="accent" (click)="consolidar()" [disabled]="consolidando"
         *ngIf="pendiente.estado === 1">
         <mat-icon>fact_check</mat-icon>
@@ -127,7 +196,16 @@
     </mat-form-field>
   </div>
 
-  <table mat-table [dataSource]="pendiente.detalles ?? []" class="w-full">
+  <!-- Buscador de productos -->
+  <div class="mb-4" *ngIf="pendiente.estado === 1">
+    <mat-form-field class="blue-input w-full" subscriptSizing="dynamic">
+      <mat-icon matPrefix>search</mat-icon>
+      <mat-label>Buscar producto por código o nombre</mat-label>
+      <input matInput [(ngModel)]="busquedaConteo" placeholder="Escriba para filtrar..." />
+    </mat-form-field>
+  </div>
+
+  <table mat-table [dataSource]="detallesFiltrados" class="w-full">
     <ng-container matColumnDef="codigo_producto">
       <th mat-header-cell *matHeaderCellDef>Código</th>
       <td mat-cell *matCellDef="let row">{{ row.codigo_producto }}</td>
@@ -176,8 +254,8 @@
     <tr mat-row *matRowDef="let row; columns: detallesColumns;"></tr>
   </table>
 
-  <div *ngIf="(pendiente.detalles ?? []).length === 0" class="p-8 text-center text-gray-500">
-    No hay productos en este inventario
+  <div *ngIf="detallesFiltrados.length === 0" class="p-8 text-center text-gray-500">
+    {{ (pendiente.detalles ?? []).length === 0 ? 'No hay productos en este inventario' : 'No se encontraron productos con ese filtro' }}
   </div>
 </mat-card>
 
@@ -185,9 +263,20 @@
 <mat-card class="p-4 mb-6">
   <div class="flex items-center justify-between mb-4">
     <h2 class="section-title mb-0">Historial de inventarios</h2>
+    <div class="flex gap-2">
+      <mat-form-field class="blue-input" subscriptSizing="dynamic" style="width: 250px;">
+        <mat-icon matPrefix>search</mat-icon>
+        <mat-label>Buscar</mat-label>
+        <input matInput [(ngModel)]="busquedaHistorial" placeholder="Código, fecha, estado..." />
+      </mat-form-field>
+      <button mat-stroked-button (click)="exportarHistorialExcel()" [disabled]="lista.length === 0">
+        <mat-icon>table_view</mat-icon>
+        Excel
+      </button>
+    </div>
   </div>
 
-  <table mat-table [dataSource]="lista" class="w-full">
+  <table mat-table [dataSource]="listaFiltrada" class="w-full">
     <ng-container matColumnDef="codigo">
       <th mat-header-cell *matHeaderCellDef>Código</th>
       <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
@@ -226,11 +315,11 @@
     <ng-container matColumnDef="acciones">
       <th mat-header-cell *matHeaderCellDef>Acciones</th>
       <td mat-cell *matCellDef="let row">
-        <button mat-icon-button color="primary" (click)="verDetalle(row)" title="Ver detalle">
+        <button mat-icon-button color="primary" (click)="verDetalle(row)" matTooltip="Ver detalle">
           <mat-icon>visibility</mat-icon>
         </button>
         <button mat-icon-button color="warn" (click)="anular(row.id)"
-          [disabled]="row.estado === 0 || row.estado === 3" title="Anular">
+          [disabled]="row.estado === 0 || row.estado === 3" matTooltip="Anular">
           <mat-icon>cancel</mat-icon>
         </button>
       </td>
@@ -240,8 +329,8 @@
     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
   </table>
 
-  <div *ngIf="lista.length === 0" class="p-8 text-center text-gray-500">
-    No hay inventarios físicos registrados
+  <div *ngIf="listaFiltrada.length === 0" class="p-8 text-center text-gray-500">
+    {{ lista.length === 0 ? 'No hay inventarios físicos registrados' : 'No se encontraron inventarios con ese filtro' }}
   </div>
 </mat-card>
 
@@ -258,11 +347,25 @@
       <p class="text-sm text-gray-500" *ngIf="detalle.observacion">
         Observación: {{ detalle.observacion }}
       </p>
+      <p class="text-sm text-gray-500 mt-1">
+        Valor sistema: {{ detalle.valor_sistema | number: '1.2-2' }} |
+        Valor conteo: {{ detalle.valor_conteo | number: '1.2-2' }} |
+        Diferencia:
+        <span [class.text-red-600]="detalle.diferencia < 0" [class.text-green-600]="detalle.diferencia > 0">
+          {{ detalle.diferencia | number: '1.2-2' }}
+        </span>
+      </p>
     </div>
-    <button mat-stroked-button color="warn" (click)="cerrarDetalle()">
-      <mat-icon>close</mat-icon>
-      Cerrar
-    </button>
+    <div class="flex gap-2">
+      <button mat-stroked-button (click)="exportarDetalleExcel()" [disabled]="!detalle.detalles?.length">
+        <mat-icon>table_view</mat-icon>
+        Excel
+      </button>
+      <button mat-stroked-button color="warn" (click)="cerrarDetalle()">
+        <mat-icon>close</mat-icon>
+        Cerrar
+      </button>
+    </div>
   </div>
 
   <table mat-table [dataSource]="detalle.detalles ?? []" class="w-full">

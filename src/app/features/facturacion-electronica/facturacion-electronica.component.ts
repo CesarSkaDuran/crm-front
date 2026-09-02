@@ -8,6 +8,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { FacturacionElectronicaService } from '../../core/services/facturacion-electronica.service';
 import {
   FacturacionElectronicaConfig,
@@ -30,6 +31,7 @@ import {
     MatInputModule,
     MatChipsModule,
     MatSnackBarModule,
+    MatSlideToggleModule,
   ],
   templateUrl: './facturacion-electronica.component.html',
   styleUrl: './facturacion-electronica.component.scss',
@@ -44,6 +46,8 @@ export class FacturacionElectronicaComponent implements OnInit {
   config: FacturacionElectronicaConfig | null = null;
   estado: EstadoFacturacion | null = null;
   cargando = false;
+  activa = false;
+  toggleCargando = false;
 
   // Formularios
   configForm: FormGroup;
@@ -80,8 +84,9 @@ export class FacturacionElectronicaComponent implements OnInit {
   cargar() {
     this.cargando = true;
     this.facturacionService.getConfig().subscribe({
-      next: (res) => {
+      next: (res: any) => {
         this.config = res;
+        this.activa = !!res?.activa;
         this.cargando = false;
         this.cargarEstado();
         this.rellenarFormConfig(res);
@@ -89,8 +94,26 @@ export class FacturacionElectronicaComponent implements OnInit {
       },
       error: () => {
         this.config = null;
+        this.activa = false;
         this.cargando = false;
         this.cargarEstado();
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  toggleActiva() {
+    this.toggleCargando = true;
+    this.facturacionService.toggle().subscribe({
+      next: (res: any) => {
+        this.activa = res.activa;
+        this.toggleCargando = false;
+        this.snackBar.open(res.mensaje, 'Cerrar', { duration: 3000 });
+        this.cargar();
+      },
+      error: (err) => {
+        this.toggleCargando = false;
+        this.snackBar.open(err.error?.message || 'Error al cambiar estado', 'Cerrar', { duration: 3000 });
         this.cdr.detectChanges();
       },
     });

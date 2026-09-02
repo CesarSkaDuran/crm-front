@@ -1,0 +1,14 @@
+<mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+  <mat-icon *ngIf="icon" matPrefix>{{ icon }}</mat-icon>
+  <mat-label>{{ label }}</mat-label>
+  <input
+    matInput
+    type="text"
+    [(ngModel)]="displayValue"
+    (input)="onInput($event)"
+    (blur)="onBlur()"
+    [placeholder]="placeholder"
+    [required]="required"
+    inputmode="numeric"
+  />
+</mat-form-field>

@@ -16,6 +16,7 @@ import { MatCardModule } from '@angular/material/card';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { AccountsService } from '../../core/services/accounts.service';
 import { TiposDocumentoService } from '../../core/services/tipos-documento.service';
+import { CuentaSelectComponent } from '../../shared/components/cuenta-select/cuenta-select.component';
 
 @Component({
   selector: 'app-terceros',
@@ -31,6 +32,7 @@ import { TiposDocumentoService } from '../../core/services/tipos-documento.servi
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    CuentaSelectComponent,
   ],
   templateUrl: './terceros.component.html',
   styleUrl: './terceros.component.scss',

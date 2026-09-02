@@ -155,29 +155,23 @@
     </div>
 
     <div class="form-row">
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>account_balance</mat-icon>
-        <mat-label>Cuenta inventarios</mat-label>
-        <mat-select formControlName="cuenta_inventarios_id">
-          <mat-option *ngFor="let c of cuentas" [value]="c.id">({{ c.codigo }}) {{ c.nombre }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+      <app-cuenta-select
+        label="Cuenta inventarios"
+        [cuentas]="cuentas"
+        formControlName="cuenta_inventarios_id"
+      ></app-cuenta-select>
 
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>account_balance</mat-icon>
-        <mat-label>Cuenta costos</mat-label>
-        <mat-select formControlName="cuenta_costos_id">
-          <mat-option *ngFor="let c of cuentas" [value]="c.id">({{ c.codigo }}) {{ c.nombre }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+      <app-cuenta-select
+        label="Cuenta costos"
+        [cuentas]="cuentas"
+        formControlName="cuenta_costos_id"
+      ></app-cuenta-select>
 
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>account_balance</mat-icon>
-        <mat-label>Cuenta ingresos</mat-label>
-        <mat-select formControlName="cuenta_ingresos_id">
-          <mat-option *ngFor="let c of cuentas" [value]="c.id">({{ c.codigo }}) {{ c.nombre }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+      <app-cuenta-select
+        label="Cuenta ingresos"
+        [cuentas]="cuentas"
+        formControlName="cuenta_ingresos_id"
+      ></app-cuenta-select>
 
       <div class="field-action flex-none">
         <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded" [disabled]="form.invalid">

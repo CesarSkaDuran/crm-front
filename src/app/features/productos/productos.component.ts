@@ -20,6 +20,7 @@ import { ExcelExportService } from '../../core/services/excel-export.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
 import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
+import { CuentaSelectComponent } from '../../shared/components/cuenta-select/cuenta-select.component';
 
 @Component({
   selector: 'app-productos',
@@ -37,6 +38,7 @@ import { CurrencyInputDirective } from '../../shared/directives/currency-input.d
     MatCardModule,
     CurrencyFormatPipe,
     CurrencyInputDirective,
+    CuentaSelectComponent,
   ],
   templateUrl: './productos.component.html',
   styleUrl: './productos.component.scss',

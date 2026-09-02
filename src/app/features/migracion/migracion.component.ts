@@ -8,6 +8,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ImportService, ImportResult } from '../../core/services/import.service';
 import { ProductsService } from '../../core/services/products.service';
 import { ThirdsService } from '../../core/services/thirds.service';
+import { AccountsService } from '../../core/services/accounts.service';
 
 interface TipoImportacion {
   id: string;
@@ -35,15 +36,24 @@ export class MigracionComponent {
   private importSvc = inject(ImportService);
   private products = inject(ProductsService);
   private thirds = inject(ThirdsService);
+  private accounts = inject(AccountsService);
   private snackBar = inject(MatSnackBar);
   private cdr = inject(ChangeDetectorRef);
 
   tipos: (TipoImportacion & { icono: string })[] = [
     {
+      id: 'plan-cuentas',
+      nombre: 'Plan de Cuentas Contable',
+      icono: 'account_tree',
+      columnas: ['codigo', 'nombre', 'naturaleza', 'clasificacion', 'tipo', 'estado'],
+      camposRequeridos: ['codigo', 'nombre'],
+      plantilla: 'plantilla-plan-cuentas',
+    },
+    {
       id: 'productos',
       nombre: 'Productos',
       icono: 'inventory_2',
-      columnas: ['codigo', 'nombre', 'descripcion', 'stock', 'ultimo_precio', 'margen', 'pvp1', 'pvp2', 'pvp3', 'impuesto'],
+      columnas: ['codigo', 'nombre', 'categoria', 'grupo', 'descripcion', 'cod_barra', 'referencia', 'unidad_medida', 'stock', 'stock_min', 'ultimo_precio', 'margen', 'pvp1', 'pvp2', 'pvp3', 'impuesto', 'descuento', 'comision', 'peso', 'tipo'],
       camposRequeridos: ['codigo', 'nombre'],
       plantilla: 'plantilla-productos',
     },
@@ -125,14 +135,62 @@ export class MigracionComponent {
     if (!t) return;
 
     this.importando = true;
+
+    if (t.id === 'productos') {
+      // Usar endpoint de importación masiva (más rápido y transaccional)
+      try {
+        const res = await this.products.importar(this.resultado.datos).toPromise();
+        this.importando = false;
+        const msg = `Importación completa: ${res?.creados || 0} creados, ${res?.actualizados || 0} actualizados, ${res?.errores?.length || 0} errores`;
+        this.snackBar.open(msg, 'Cerrar', { duration: 6000 });
+        if (res?.errores?.length) {
+          console.warn('Errores de importación:', res.errores);
+        }
+        this.resultado = null;
+        this.cdr.detectChanges();
+      } catch (err: any) {
+        this.importando = false;
+        this.snackBar.open(
+          err?.error?.message || 'Error en la importación masiva',
+          'Cerrar',
+          { duration: 5000 },
+        );
+        this.cdr.detectChanges();
+      }
+      return;
+    }
+
+    if (t.id === 'plan-cuentas') {
+      // Usar endpoint de importación masiva de plan de cuentas
+      try {
+        const res = await this.accounts.importar(this.resultado.datos).toPromise();
+        this.importando = false;
+        const msg = `Importación completa: ${res?.creados || 0} creados, ${res?.actualizados || 0} actualizados, ${res?.errores?.length || 0} errores`;
+        this.snackBar.open(msg, 'Cerrar', { duration: 6000 });
+        if (res?.errores?.length) {
+          console.warn('Errores de importación:', res.errores);
+        }
+        this.resultado = null;
+        this.cdr.detectChanges();
+      } catch (err: any) {
+        this.importando = false;
+        this.snackBar.open(
+          err?.error?.message || 'Error en la importación del plan de cuentas',
+          'Cerrar',
+          { duration: 5000 },
+        );
+        this.cdr.detectChanges();
+      }
+      return;
+    }
+
+    // Para terceros, mantener el método fila por fila
     let exito = 0;
     let fallo = 0;
 
     for (const row of this.resultado.datos) {
       try {
-        if (t.id === 'productos') {
-          await this.products.create(row).toPromise();
-        } else if (t.id === 'terceros') {
+        if (t.id === 'terceros') {
           await this.thirds.create(row).toPromise();
         }
         exito++;

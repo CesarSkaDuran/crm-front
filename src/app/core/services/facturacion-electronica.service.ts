@@ -28,4 +28,8 @@ export class FacturacionElectronicaService {
   emitir(dto: EmitirFacturaDto): Observable<EmitirFacturaResponse> {
     return this.api.post('facturacion-electronica/emitir', dto);
   }
+
+  toggle(): Observable<{ activa: boolean; mensaje: string }> {
+    return this.api.post('facturacion-electronica/toggle', {});
+  }
 }

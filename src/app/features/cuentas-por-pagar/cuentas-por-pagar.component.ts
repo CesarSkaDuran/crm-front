@@ -206,11 +206,17 @@ export class CuentasPorPagarComponent implements OnInit {
 
   abrirPago(credito: any) {
     this.pagoCredito = credito;
+    // Preseleccionar tipo de comprobante: buscar "Comprobante de depósito" (tipo=6)
+    // o "Comprobante de contabilidad" (tipo=3), o el primer tipo disponible
+    const tipoDefault =
+      this.tipos.find((t) => Number(t.tipo) === 6) ||
+      this.tipos.find((t) => Number(t.tipo) === 3) ||
+      this.tipos[0];
     this.pagoForm.reset({
       credito_id: credito.id,
       cuota_id: null,
       fecha: new Date().toISOString().split('T')[0],
-      tipo_comprobante_id: '',
+      tipo_comprobante_id: tipoDefault?.id ?? '',
       banco_id: '',
       valor: credito.pago_minimo ?? credito.saldo,
       descripcion: '',

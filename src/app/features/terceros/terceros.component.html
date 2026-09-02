@@ -87,13 +87,11 @@
         <input matInput formControlName="direccion" />
       </mat-form-field>
 
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>account_balance</mat-icon>
-        <mat-label>Cuenta contable</mat-label>
-        <mat-select formControlName="cuenta_contable_id">
-          <mat-option *ngFor="let c of cuentas" [value]="c.id">({{ c.codigo }}) {{ c.nombre }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+      <app-cuenta-select
+        label="Cuenta contable"
+        [cuentas]="cuentas"
+        formControlName="cuenta_contable_id"
+      ></app-cuenta-select>
 
       <div class="field-action flex-none">
         <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded" [disabled]="form.invalid">

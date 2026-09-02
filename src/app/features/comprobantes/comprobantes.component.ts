@@ -16,6 +16,8 @@ import { MatCardModule } from '@angular/material/card';
 import { AccountingService } from '../../core/services/accounting.service';
 import { AccountsService } from '../../core/services/accounts.service';
 import { ThirdsService } from '../../core/services/thirds.service';
+import { CuentaSelectComponent } from '../../shared/components/cuenta-select/cuenta-select.component';
+import { CurrencyInputComponent } from '../../shared/components/currency-input/currency-input.component';
 
 @Component({
   selector: 'app-comprobantes',
@@ -30,6 +32,8 @@ import { ThirdsService } from '../../core/services/thirds.service';
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    CuentaSelectComponent,
+    CurrencyInputComponent,
   ],
   templateUrl: './comprobantes.component.html',
   styleUrl: './comprobantes.component.scss',
@@ -84,15 +88,21 @@ export class ComprobantesComponent implements OnInit {
 
   cargarCatalogos() {
     this.accounting.getTipos().subscribe((res: any) => {
-      this.tipos = res.data ?? [];
+      this.tipos = res.data ?? res ?? [];
+      // Preseleccionar "Comprobante de contabilidad" (tipo=3) por defecto
+      const tipoDefault = this.tipos.find((t) => Number(t.tipo) === 3) || this.tipos[0];
+      if (tipoDefault && !this.lineaForm.get('tipo')?.value) {
+        this.lineaForm.patchValue({ tipo: tipoDefault.id }, { emitEvent: false });
+        this.tipoSeleccionado();
+      }
       this.cdr.detectChanges();
     });
     this.accounts.getAll().subscribe((res: any) => {
-      this.cuentas = res.data ?? [];
+      this.cuentas = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
     this.thirds.getAll().subscribe((res: any) => {
-      this.terceros = res.data ?? [];
+      this.terceros = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
   }
@@ -114,15 +124,19 @@ export class ComprobantesComponent implements OnInit {
     const tercero = this.terceros.find((t) => t.id === raw.tercero_id);
     const naturaleza = cuenta?.naturaleza || 'D';
 
-    this.lineas.push({
-      cuenta_contable_id: raw.cuenta_contable_id,
-      tercero_id: raw.tercero_id,
-      descripcion: raw.descripcion,
-      valor: Number(raw.valor),
-      naturaleza,
-      cuenta,
-      tercero,
-    });
+    // Crear nueva referencia del arreglo para que Angular detecte el cambio
+    this.lineas = [
+      ...this.lineas,
+      {
+        cuenta_contable_id: raw.cuenta_contable_id,
+        tercero_id: raw.tercero_id,
+        descripcion: raw.descripcion,
+        valor: Number(raw.valor),
+        naturaleza,
+        cuenta,
+        tercero,
+      },
+    ];
 
     this.lineaForm.patchValue({
       cuenta_contable_id: null,
@@ -133,7 +147,7 @@ export class ComprobantesComponent implements OnInit {
   }
 
   eliminarLinea(index: number) {
-    this.lineas.splice(index, 1);
+    this.lineas = this.lineas.filter((_, i) => i !== index);
   }
 
   restaurar() {

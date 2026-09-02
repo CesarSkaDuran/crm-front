@@ -47,13 +47,13 @@
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field class="blue-input" subscriptSizing="dynamic">
-        <mat-icon matPrefix>account_tree</mat-icon>
-        <mat-label>Cuenta contrapartida (PUC)</mat-label>
-        <mat-select formControlName="cuenta_contrapartida_id" required>
-          <mat-option *ngFor="let c of cuentas" [value]="c.id">({{ c.codigo }}) {{ c.nombre }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+      <app-cuenta-select
+        label="Cuenta contrapartida (PUC)"
+        icon="account_tree"
+        [cuentas]="cuentas"
+        [required]="true"
+        formControlName="cuenta_contrapartida_id"
+      ></app-cuenta-select>
 
       <mat-form-field class="blue-input" subscriptSizing="dynamic">
         <mat-icon matPrefix>person</mat-icon>
@@ -79,7 +79,7 @@
 
 <mat-card class="p-4 mb-6">
   <h2 class="section-title">Filtros</h2>
-  <form [formGroup]="filters" (ngSubmit)="cargar()">
+  <form [formGroup]="filters" (ngSubmit)="onFilterSubmit()">
     <div class="form-row">
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>search</mat-icon>
@@ -113,7 +113,7 @@
   <div class="flex items-center justify-between mb-4">
     <h2 class="section-title mb-0">Movimientos</h2>
     <div class="text-right">
-      <p class="text-sm text-gray-600">Total</p>
+      <p class="text-sm text-gray-600">Total página</p>
       <p class="text-2xl font-extrabold text-gray-800">{{ totalValor | currencyFormat:currencySymbol }}</p>
     </div>
   </div>
@@ -176,4 +176,14 @@
   <div *ngIf="movimientos.length === 0" class="p-8 text-center text-gray-500">
     No hay movimientos registrados
   </div>
+
+  <mat-paginator
+    *ngIf="total > 0"
+    [length]="total"
+    [pageSize]="pageSize"
+    [pageIndex]="pageIndex"
+    [pageSizeOptions]="pageSizeOptions"
+    (page)="onPageChange($event)"
+    showFirstLastButtons
+  ></mat-paginator>
 </mat-card>

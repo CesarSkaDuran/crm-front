@@ -67,4 +67,8 @@ export class ProductsService {
   delete(id: number): Observable<any> {
     return this.api.delete(`productos/${id}`);
   }
+
+  importar(filas: any[]): Observable<{ creados: number; actualizados: number; errores: any[]; total: number }> {
+    return this.api.post('productos/import', { filas });
+  }
 }

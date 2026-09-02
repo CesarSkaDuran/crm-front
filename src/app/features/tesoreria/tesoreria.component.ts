@@ -8,6 +8,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { TesoreriaService } from '../../core/services/tesoreria.service';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { AccountsService } from '../../core/services/accounts.service';
@@ -15,6 +16,7 @@ import { BancosService } from '../../core/services/bancos.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
 import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
+import { CuentaSelectComponent } from '../../shared/components/cuenta-select/cuenta-select.component';
 
 @Component({
   selector: 'app-tesoreria',
@@ -29,8 +31,10 @@ import { CurrencyInputDirective } from '../../shared/directives/currency-input.d
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    MatPaginatorModule,
     CurrencyFormatPipe,
     CurrencyInputDirective,
+    CuentaSelectComponent,
   ],
   templateUrl: './tesoreria.component.html',
   styleUrl: './tesoreria.component.scss',
@@ -51,6 +55,12 @@ export class TesoreriaComponent implements OnInit {
   cuentas: any[] = [];
   bancos: any[] = [];
   editandoId: number | null = null;
+
+  // Paginación
+  total = 0;
+  pageIndex = 0;
+  pageSize = 20;
+  pageSizeOptions = [10, 20, 50, 100];
 
   displayedColumns = [
     'codigo',
@@ -117,10 +127,34 @@ export class TesoreriaComponent implements OnInit {
   }
 
   cargar() {
-    this.tesoreria.getAll(this.filters.value).subscribe((res: any) => {
-      this.movimientos = res.data ?? res ?? [];
+    const query = {
+      ...this.filters.value,
+      page: this.pageIndex + 1,
+      limit: this.pageSize,
+    };
+    this.tesoreria.getAll(query).subscribe((res: any) => {
+      // Backend returns { data, total, page, limit }
+      if (res && Array.isArray(res.data)) {
+        this.movimientos = res.data;
+        this.total = res.total ?? res.data.length;
+      } else {
+        // Fallback for non-paginated response
+        this.movimientos = res ?? [];
+        this.total = this.movimientos.length;
+      }
       this.cdr.detectChanges();
     });
+  }
+
+  onPageChange(e: PageEvent) {
+    this.pageIndex = e.pageIndex;
+    this.pageSize = e.pageSize;
+    this.cargar();
+  }
+
+  onFilterSubmit() {
+    this.pageIndex = 0;
+    this.cargar();
   }
 
   terceroSeleccionado() {

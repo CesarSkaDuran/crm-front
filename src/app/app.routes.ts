@@ -21,6 +21,7 @@ import { Categorias } from './features/configuracion/categorias/categorias';
 import { TiposDocumentoComponent } from './features/configuracion/tipos-documento/tipos-documento';
 import { Maestros } from './features/configuracion/maestros/maestros';
 import { MonedasComponent } from './features/configuracion/monedas/monedas';
+import { PeriodosPagoComponent } from './features/configuracion/periodos-pago/periodos-pago';
 import { InventarioFisicoComponent } from './features/inventario-fisico/inventario-fisico.component';
 import { FacturacionElectronicaComponent } from './features/facturacion-electronica/facturacion-electronica.component';
 import { MigracionComponent } from './features/migracion/migracion.component';
@@ -55,6 +56,7 @@ export const routes: Routes = [
       { path: 'configuracion/tipos-documento', component: TiposDocumentoComponent },
       { path: 'configuracion/maestros', component: Maestros },
       { path: 'configuracion/monedas', component: MonedasComponent },
+      { path: 'configuracion/periodos-pago', component: PeriodosPagoComponent },
       { path: 'configuracion/usuarios', component: UsuariosComponent },
       { path: 'inventario-fisico', component: InventarioFisicoComponent },
       { path: 'facturacion-electronica', component: FacturacionElectronicaComponent },

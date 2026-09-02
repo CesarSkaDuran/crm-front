@@ -147,265 +147,280 @@
   </div>
 </mat-card>
 
-<!-- Listado principal de proveedores -->
-<mat-card class="p-4 mb-6">
-  <div class="flex items-center justify-between mb-4">
-    <h2 class="section-title mb-0">Proveedores con cuentas por pagar</h2>
-  </div>
+<!-- Layout 2 columnas: proveedores (izq) + detalle (der) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
-  <table mat-table [dataSource]="lista" class="w-full">
-    <ng-container matColumnDef="nombre">
-      <th mat-header-cell *matHeaderCellDef>Proveedor</th>
-      <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="documento">
-      <th mat-header-cell *matHeaderCellDef>Documento</th>
-      <td mat-cell *matCellDef="let row">{{ row.documento }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="saldo_total">
-      <th mat-header-cell *matHeaderCellDef>Saldo total</th>
-      <td mat-cell *matCellDef="let row" class="text-right font-bold text-blue-700">{{ row.saldo_total | currencyFormat:currencySymbol }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="cuotas_vencidas">
-      <th mat-header-cell *matHeaderCellDef>Cuotas vencidas</th>
-      <td mat-cell *matCellDef="let row" [class.text-red-600]="row.cuotas_vencidas > 0">{{ row.cuotas_vencidas }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="dias_mora_max">
-      <th mat-header-cell *matHeaderCellDef>Días mora máx</th>
-      <td mat-cell *matCellDef="let row" [class.text-red-600]="row.dias_mora_max > 0">{{ row.dias_mora_max }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="acciones">
-      <th mat-header-cell *matHeaderCellDef>Acciones</th>
-      <td mat-cell *matCellDef="let row">
-        <button mat-icon-button color="primary" (click)="verDetalle(row)" title="Ver detalle">
-          <mat-icon>visibility</mat-icon>
-        </button>
-      </td>
-    </ng-container>
-
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-  </table>
-
-  <div *ngIf="lista.length === 0" class="p-8 text-center text-gray-500">
-    No hay proveedores con cuentas por pagar
-  </div>
-</mat-card>
-
-<!-- Detalle del tercero -->
-<mat-card class="p-4 mb-6" *ngIf="detalle">
-  <div class="flex items-center justify-between mb-4">
-    <div>
-      <h2 class="section-title mb-0">{{ detalle.tercero?.nombre }}</h2>
-      <p class="text-sm text-gray-500">
-        Saldo: {{ detalle.resumen?.saldo_total | currencyFormat:currencySymbol }} |
-        Créditos activos: {{ detalle.resumen?.creditos_activos }} |
-        Cupo: {{ detalle.resumen?.cupo | currencyFormat:currencySymbol }} |
-        Disponible: {{ detalle.resumen?.cupo_disponible | currencyFormat:currencySymbol }}
-      </p>
+  <!-- COLUMNA IZQUIERDA: Listado de proveedores -->
+  <mat-card class="p-4 lg:col-span-1">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="section-title mb-0">Proveedores</h2>
     </div>
-    <button mat-stroked-button color="warn" (click)="cerrarDetalle()">
-      <mat-icon>close</mat-icon>
-      Cerrar
-    </button>
-  </div>
 
-  <!-- Lista de créditos del tercero -->
-  <div *ngFor="let cr of detalle.creditos" class="mb-4 border rounded p-3">
-    <div class="flex items-center justify-between mb-2">
-      <div>
-        <strong>Crédito #{{ cr.id }}</strong>
-        <span class="ml-2 text-sm text-gray-500">{{ cr.documento_origen || 'Manual' }}</span>
-        <span class="ml-2 text-sm">{{ periodoLabel(cr.periodo) }}</span>
-        <span class="ml-2 text-sm" [class.text-green-600]="cr.estado === 2" [class.text-blue-600]="cr.estado === 1">
-          {{ estadoCreditoLabel(cr.estado) }}
-        </span>
-      </div>
-      <div class="flex gap-2">
-        <button mat-stroked-button color="primary" (click)="verCredito(cr.id)">
-          <mat-icon>list</mat-icon>
-          Ver cuotas
-        </button>
-        <button mat-raised-button color="accent" (click)="abrirPago(cr)" [disabled]="cr.saldo <= 0">
-          <mat-icon>payments</mat-icon>
-          Pagar
+    <table mat-table [dataSource]="lista" class="w-full">
+      <ng-container matColumnDef="nombre">
+        <th mat-header-cell *matHeaderCellDef>Proveedor</th>
+        <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="documento">
+        <th mat-header-cell *matHeaderCellDef>Documento</th>
+        <td mat-cell *matCellDef="let row">{{ row.documento }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="saldo_total">
+        <th mat-header-cell *matHeaderCellDef>Saldo total</th>
+        <td mat-cell *matCellDef="let row" class="text-right font-bold text-blue-700">{{ row.saldo_total | currencyFormat:currencySymbol }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="cuotas_vencidas">
+        <th mat-header-cell *matHeaderCellDef>Cuotas vencidas</th>
+        <td mat-cell *matCellDef="let row" [class.text-red-600]="row.cuotas_vencidas > 0">{{ row.cuotas_vencidas }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="dias_mora_max">
+        <th mat-header-cell *matHeaderCellDef>Días mora máx</th>
+        <td mat-cell *matCellDef="let row" [class.text-red-600]="row.dias_mora_max > 0">{{ row.dias_mora_max }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef>Acciones</th>
+        <td mat-cell *matCellDef="let row">
+          <button mat-icon-button color="primary" (click)="verDetalle(row)" title="Ver detalle">
+            <mat-icon>visibility</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+    <div *ngIf="lista.length === 0" class="p-8 text-center text-gray-500">
+      No hay proveedores con cuentas por pagar
+    </div>
+  </mat-card>
+
+  <!-- COLUMNA DERECHA: Detalle del tercero + créditos + cuotas + pagos -->
+  <div class="lg:col-span-2 flex flex-col gap-5">
+
+    <!-- Estado vacío: ningún proveedor seleccionado -->
+    <mat-card class="p-8 text-center text-gray-500" *ngIf="!detalle && !mostrandoFormCredito">
+      <mat-icon class="text-6xl text-gray-300">account_balance_wallet</mat-icon>
+      <p class="mt-4">Seleccione un proveedor de la lista para ver el detalle de sus créditos y cuotas</p>
+    </mat-card>
+
+    <!-- Detalle del tercero -->
+    <mat-card class="p-4" *ngIf="detalle">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="section-title mb-0">{{ detalle.tercero?.nombre }}</h2>
+          <p class="text-sm text-gray-500">
+            Saldo: {{ detalle.resumen?.saldo_total | currencyFormat:currencySymbol }} |
+            Créditos activos: {{ detalle.resumen?.creditos_activos }} |
+            Cupo: {{ detalle.resumen?.cupo | currencyFormat:currencySymbol }} |
+            Disponible: {{ detalle.resumen?.cupo_disponible | currencyFormat:currencySymbol }}
+          </p>
+        </div>
+        <button mat-stroked-button color="warn" (click)="cerrarDetalle()">
+          <mat-icon>close</mat-icon>
+          Cerrar
         </button>
       </div>
-    </div>
-    <div class="grid grid-cols-4 gap-2 text-sm">
-      <div><span class="text-gray-500">Monto:</span> {{ cr.monto_total | currencyFormat:currencySymbol }}</div>
-      <div><span class="text-gray-500">Saldo:</span> <strong>{{ cr.saldo | currencyFormat:currencySymbol }}</strong></div>
-      <div><span class="text-gray-500">Cuotas:</span> {{ cr.cuotas_pagadas }}/{{ cr.numero_cuotas }}</div>
-      <div><span class="text-gray-500">Valor cuota:</span> {{ cr.valor_cuota | currencyFormat:currencySymbol }}</div>
-    </div>
-  </div>
-</mat-card>
 
-<!-- Detalle de un crédito específico (cuotas) -->
-<mat-card class="p-4 mb-6" *ngIf="creditoSeleccionado">
-  <div class="flex items-center justify-between mb-4">
-    <div>
-      <h2 class="section-title mb-0">Crédito #{{ creditoSeleccionado.id }}</h2>
-      <p class="text-sm text-gray-500">
-        Saldo: {{ creditoSeleccionado.saldo | currencyFormat:currencySymbol }} |
-        Pago mínimo: {{ creditoSeleccionado.pago_minimo | currencyFormat:currencySymbol }} |
-        {{ periodoLabel(creditoSeleccionado.periodo) }}
-      </p>
-    </div>
-    <div class="flex gap-2">
-      <button mat-raised-button color="accent" (click)="abrirPago(creditoSeleccionado)" [disabled]="creditoSeleccionado.saldo <= 0">
-        <mat-icon>payments</mat-icon>
-        Registrar pago
-      </button>
-      <button mat-stroked-button color="warn" (click)="cerrarCredito()">
-        <mat-icon>close</mat-icon>
-        Cerrar
-      </button>
-    </div>
-  </div>
+      <!-- Lista de créditos del tercero -->
+      <div *ngFor="let cr of detalle.creditos" class="mb-4 border rounded p-3">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <strong>Crédito #{{ cr.id }}</strong>
+            <span class="ml-2 text-sm text-gray-500">{{ cr.documento_origen || 'Manual' }}</span>
+            <span class="ml-2 text-sm">{{ periodoLabel(cr.periodo) }}</span>
+            <span class="ml-2 text-sm" [class.text-green-600]="cr.estado === 2" [class.text-blue-600]="cr.estado === 1">
+              {{ estadoCreditoLabel(cr.estado) }}
+            </span>
+          </div>
+          <div class="flex gap-2">
+            <button mat-stroked-button color="primary" (click)="verCredito(cr.id)">
+              <mat-icon>list</mat-icon>
+              Ver cuotas
+            </button>
+            <button mat-raised-button color="accent" (click)="abrirPago(cr)" [disabled]="cr.saldo <= 0">
+              <mat-icon>payments</mat-icon>
+              Pagar
+            </button>
+          </div>
+        </div>
+        <div class="grid grid-cols-4 gap-2 text-sm">
+          <div><span class="text-gray-500">Monto:</span> {{ cr.monto_total | currencyFormat:currencySymbol }}</div>
+          <div><span class="text-gray-500">Saldo:</span> <strong>{{ cr.saldo | currencyFormat:currencySymbol }}</strong></div>
+          <div><span class="text-gray-500">Cuotas:</span> {{ cr.cuotas_pagadas }}/{{ cr.numero_cuotas }}</div>
+          <div><span class="text-gray-500">Valor cuota:</span> {{ cr.valor_cuota | currencyFormat:currencySymbol }}</div>
+        </div>
+      </div>
+    </mat-card>
 
-  <table mat-table [dataSource]="creditoSeleccionado.cuotas" class="w-full">
-    <ng-container matColumnDef="numero_cuota">
-      <th mat-header-cell *matHeaderCellDef>#</th>
-      <td mat-cell *matCellDef="let row">{{ row.numero_cuota }}</td>
-    </ng-container>
+    <!-- Detalle de un crédito específico (cuotas) -->
+    <mat-card class="p-4" *ngIf="creditoSeleccionado">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="section-title mb-0">Crédito #{{ creditoSeleccionado.id }}</h2>
+          <p class="text-sm text-gray-500">
+            Saldo: {{ creditoSeleccionado.saldo | currencyFormat:currencySymbol }} |
+            Pago mínimo: {{ creditoSeleccionado.pago_minimo | currencyFormat:currencySymbol }} |
+            {{ periodoLabel(creditoSeleccionado.periodo) }}
+          </p>
+        </div>
+        <div class="flex gap-2">
+          <button mat-raised-button color="accent" (click)="abrirPago(creditoSeleccionado)" [disabled]="creditoSeleccionado.saldo <= 0">
+            <mat-icon>payments</mat-icon>
+            Registrar pago
+          </button>
+          <button mat-stroked-button color="warn" (click)="cerrarCredito()">
+            <mat-icon>close</mat-icon>
+            Cerrar
+          </button>
+        </div>
+      </div>
 
-    <ng-container matColumnDef="valor">
-      <th mat-header-cell *matHeaderCellDef>Valor</th>
-      <td mat-cell *matCellDef="let row" class="text-right">{{ row.valor | currencyFormat:currencySymbol }}</td>
-    </ng-container>
+      <table mat-table [dataSource]="creditoSeleccionado.cuotas" class="w-full">
+        <ng-container matColumnDef="numero_cuota">
+          <th mat-header-cell *matHeaderCellDef>#</th>
+          <td mat-cell *matCellDef="let row">{{ row.numero_cuota }}</td>
+        </ng-container>
 
-    <ng-container matColumnDef="saldo">
-      <th mat-header-cell *matHeaderCellDef>Saldo</th>
-      <td mat-cell *matCellDef="let row" class="text-right font-bold">{{ row.saldo | currencyFormat:currencySymbol }}</td>
-    </ng-container>
+        <ng-container matColumnDef="valor">
+          <th mat-header-cell *matHeaderCellDef>Valor</th>
+          <td mat-cell *matCellDef="let row" class="text-right">{{ row.valor | currencyFormat:currencySymbol }}</td>
+        </ng-container>
 
-    <ng-container matColumnDef="fecha_pago_oportuno">
-      <th mat-header-cell *matHeaderCellDef>Vence</th>
-      <td mat-cell *matCellDef="let row">{{ row.fecha_pago_oportuno | date: 'dd/MM/yyyy' }}</td>
-    </ng-container>
+        <ng-container matColumnDef="saldo">
+          <th mat-header-cell *matHeaderCellDef>Saldo</th>
+          <td mat-cell *matCellDef="let row" class="text-right font-bold">{{ row.saldo | currencyFormat:currencySymbol }}</td>
+        </ng-container>
 
-    <ng-container matColumnDef="dias_mora">
-      <th mat-header-cell *matHeaderCellDef>Días mora</th>
-      <td mat-cell *matCellDef="let row" [class.text-red-600]="row.dias_mora > 0">{{ row.dias_mora }}</td>
-    </ng-container>
+        <ng-container matColumnDef="fecha_pago_oportuno">
+          <th mat-header-cell *matHeaderCellDef>Vence</th>
+          <td mat-cell *matCellDef="let row">{{ row.fecha_pago_oportuno | date: 'dd/MM/yyyy' }}</td>
+        </ng-container>
 
-    <ng-container matColumnDef="total_pagar">
-      <th mat-header-cell *matHeaderCellDef>Total a pagar</th>
-      <td mat-cell *matCellDef="let row" class="text-right">{{ row.total_pagar | currencyFormat:currencySymbol }}</td>
-    </ng-container>
+        <ng-container matColumnDef="dias_mora">
+          <th mat-header-cell *matHeaderCellDef>Días mora</th>
+          <td mat-cell *matCellDef="let row" [class.text-red-600]="row.dias_mora > 0">{{ row.dias_mora }}</td>
+        </ng-container>
 
-    <ng-container matColumnDef="estado">
-      <th mat-header-cell *matHeaderCellDef>Estado</th>
-      <td mat-cell *matCellDef="let row" [class]="estadoCuotaColor(row.estado)">
-        {{ estadoCuotaLabel(row.estado) }}
-      </td>
-    </ng-container>
+        <ng-container matColumnDef="total_pagar">
+          <th mat-header-cell *matHeaderCellDef>Total a pagar</th>
+          <td mat-cell *matCellDef="let row" class="text-right">{{ row.total_pagar | currencyFormat:currencySymbol }}</td>
+        </ng-container>
 
-    <ng-container matColumnDef="acciones">
-      <th mat-header-cell *matHeaderCellDef>Acciones</th>
-      <td mat-cell *matCellDef="let row">
-        <button mat-icon-button color="primary" (click)="abrirPosfechar(row)"
-          [disabled]="row.estado === 2" title="Posfechar">
-          <mat-icon>schedule</mat-icon>
+        <ng-container matColumnDef="estado">
+          <th mat-header-cell *matHeaderCellDef>Estado</th>
+          <td mat-cell *matCellDef="let row" [class]="estadoCuotaColor(row.estado)">
+            {{ estadoCuotaLabel(row.estado) }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let row">
+            <button mat-icon-button color="primary" (click)="abrirPosfechar(row)"
+              [disabled]="row.estado === 2" title="Posfechar">
+              <mat-icon>schedule</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="cuotasColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: cuotasColumns;"></tr>
+      </table>
+    </mat-card>
+
+    <!-- Formulario de pago -->
+    <mat-card class="p-4" *ngIf="pagoCredito">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="section-title mb-0">Registrar pago</h2>
+          <p class="text-sm text-gray-500">
+            Crédito #{{ pagoCredito.id }} — Saldo: {{ pagoCredito.saldo | currencyFormat:currencySymbol }} — Pago mínimo: {{ pagoCredito.pago_minimo | currencyFormat:currencySymbol }}
+          </p>
+        </div>
+        <button mat-stroked-button color="warn" (click)="cerrarPago()">
+          <mat-icon>close</mat-icon>
+          Cancelar
         </button>
-      </td>
-    </ng-container>
+      </div>
 
-    <tr mat-header-row *matHeaderRowDef="cuotasColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: cuotasColumns;"></tr>
-  </table>
-</mat-card>
+      <form [formGroup]="pagoForm" class="form-row items-end" (ngSubmit)="pagar()">
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-label>Fecha</mat-label>
+          <input matInput type="date" formControlName="fecha" />
+        </mat-form-field>
 
-<!-- Formulario de pago -->
-<mat-card class="p-4 mb-6" *ngIf="pagoCredito">
-  <div class="flex items-center justify-between mb-4">
-    <div>
-      <h2 class="section-title mb-0">Registrar pago</h2>
-      <p class="text-sm text-gray-500">
-        Crédito #{{ pagoCredito.id }} — Saldo: {{ pagoCredito.saldo | currencyFormat:currencySymbol }} — Pago mínimo: {{ pagoCredito.pago_minimo | currencyFormat:currencySymbol }}
-      </p>
-    </div>
-    <button mat-stroked-button color="warn" (click)="cerrarPago()">
-      <mat-icon>close</mat-icon>
-      Cancelar
-    </button>
-  </div>
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-label>Tipo de comprobante</mat-label>
+          <mat-select formControlName="tipo_comprobante_id">
+            <mat-option *ngFor="let tipo of tipos" [value]="tipo.id">{{ tipo.nombre }}</mat-option>
+          </mat-select>
+        </mat-form-field>
 
-  <form [formGroup]="pagoForm" class="form-row items-end" (ngSubmit)="pagar()">
-    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-      <mat-label>Fecha</mat-label>
-      <input matInput type="date" formControlName="fecha" />
-    </mat-form-field>
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-label>Banco / Caja</mat-label>
+          <mat-select formControlName="banco_id">
+            <mat-option *ngFor="let b of bancos" [value]="b.id">{{ b.nombre }} — {{ b.monto | currencyFormat:currencySymbol }}</mat-option>
+          </mat-select>
+        </mat-form-field>
 
-    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-      <mat-label>Tipo de comprobante</mat-label>
-      <mat-select formControlName="tipo_comprobante_id">
-        <mat-option *ngFor="let tipo of tipos" [value]="tipo.id">{{ tipo.nombre }}</mat-option>
-      </mat-select>
-    </mat-form-field>
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-label>Valor</mat-label>
+          <input matInput type="text" inputmode="decimal" [appCurrencyInput]="currencySymbol" formControlName="valor" />
+        </mat-form-field>
 
-    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-      <mat-label>Banco / Caja</mat-label>
-      <mat-select formControlName="banco_id">
-        <mat-option *ngFor="let b of bancos" [value]="b.id">{{ b.nombre }} — {{ b.monto | currencyFormat:currencySymbol }}</mat-option>
-      </mat-select>
-    </mat-form-field>
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-label>Descripción</mat-label>
+          <input matInput formControlName="descripcion" />
+        </mat-form-field>
 
-    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-      <mat-label>Valor</mat-label>
-      <input matInput type="text" inputmode="decimal" [appCurrencyInput]="currencySymbol" formControlName="valor" />
-    </mat-form-field>
+        <label class="flex items-center gap-2">
+          <mat-checkbox formControlName="pagar_todo">Pagar todo</mat-checkbox>
+        </label>
 
-    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-      <mat-label>Descripción</mat-label>
-      <input matInput formControlName="descripcion" />
-    </mat-form-field>
+        <button type="submit" mat-raised-button color="primary" [disabled]="pagoForm.invalid || pagando">
+          <mat-icon *ngIf="!pagando">save</mat-icon>
+          <span *ngIf="pagando">Guardando...</span>
+          <span *ngIf="!pagando">Guardar pago</span>
+        </button>
+      </form>
+    </mat-card>
 
-    <label class="flex items-center gap-2">
-      <mat-checkbox formControlName="pagar_todo">Pagar todo</mat-checkbox>
-    </label>
+    <!-- Formulario posfechar -->
+    <mat-card class="p-4" *ngIf="cuotaAPosfechar">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="section-title mb-0">Posfechar cuota #{{ cuotaAPosfechar.numero_cuota }}</h2>
+          <p class="text-sm text-gray-500">Saldo: {{ cuotaAPosfechar.saldo | currencyFormat:currencySymbol }} — Vence: {{ cuotaAPosfechar.fecha_pago_oportuno | date: 'dd/MM/yyyy' }}</p>
+        </div>
+        <button mat-stroked-button color="warn" (click)="cerrarPosfechar()">
+          <mat-icon>close</mat-icon>
+          Cancelar
+        </button>
+      </div>
 
-    <button type="submit" mat-raised-button color="primary" [disabled]="pagoForm.invalid || pagando">
-      <mat-icon *ngIf="!pagando">save</mat-icon>
-      <span *ngIf="pagando">Guardando...</span>
-      <span *ngIf="!pagando">Guardar pago</span>
-    </button>
-  </form>
-</mat-card>
+      <form [formGroup]="posfecharForm" class="form-row items-end" (ngSubmit)="posfechar()">
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-label>Nueva fecha</mat-label>
+          <input matInput type="date" formControlName="fecha_posfechada" />
+        </mat-form-field>
 
-<!-- Formulario posfechar -->
-<mat-card class="p-4 mb-6" *ngIf="cuotaAPosfechar">
-  <div class="flex items-center justify-between mb-4">
-    <div>
-      <h2 class="section-title mb-0">Posfechar cuota #{{ cuotaAPosfechar.numero_cuota }}</h2>
-      <p class="text-sm text-gray-500">Saldo: {{ cuotaAPosfechar.saldo | currencyFormat:currencySymbol }} — Vence: {{ cuotaAPosfechar.fecha_pago_oportuno | date: 'dd/MM/yyyy' }}</p>
-    </div>
-    <button mat-stroked-button color="warn" (click)="cerrarPosfechar()">
-      <mat-icon>close</mat-icon>
-      Cancelar
-    </button>
-  </div>
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-label>Observación</mat-label>
+          <input matInput formControlName="observacion" />
+        </mat-form-field>
 
-  <form [formGroup]="posfecharForm" class="form-row items-end" (ngSubmit)="posfechar()">
-    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-      <mat-label>Nueva fecha</mat-label>
-      <input matInput type="date" formControlName="fecha_posfechada" />
-    </mat-form-field>
+        <button type="submit" mat-raised-button color="primary">
+          <mat-icon>save</mat-icon>
+          Posfechar
+        </button>
+      </form>
+    </mat-card>
 
-    <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-      <mat-label>Observación</mat-label>
-      <input matInput formControlName="observacion" />
-    </mat-form-field>
-
-    <button type="submit" mat-raised-button color="primary">
-      <mat-icon>save</mat-icon>
-      Posfechar
-    </button>
-  </form>
-</mat-card>
+  </div><!-- /columna derecha -->
+</div><!-- /grid 2 columnas -->

@@ -39,4 +39,8 @@ export class AccountsService {
   delete(id: number): Observable<any> {
     return this.api.delete(`cuentas/${id}`);
   }
+
+  importar(filas: any[]): Observable<{ creados: number; actualizados: number; errores: any[]; total: number }> {
+    return this.api.post('cuentas/import', { filas });
+  }
 }

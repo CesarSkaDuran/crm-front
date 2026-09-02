@@ -33,6 +33,8 @@ const SECCIONES: ConfigSection[] = [
       { title: 'Maestros', link: '/configuracion/maestros', icon: 'library_books', ready: true },
       { title: 'Bancos y Cuentas Bancarias', link: '/bancos', icon: 'account_balance_wallet', ready: true },
       { title: 'Categorías', link: '/configuracion/categorias', icon: 'category', ready: true },
+      { title: 'Periodos de Pago para Créditos', link: '/configuracion/periodos-pago', icon: 'schedule', ready: true },
+      { title: 'Facturación Electrónica (DIAN)', link: '/facturacion-electronica', icon: 'receipt_long', ready: true },
       { title: 'Parámetros Contables (IVA, Retenciones)', link: '/configuracion/parametros-contables', icon: 'percent', ready: false },
       { title: 'Parámetros Generales (Moneda, País)', link: '/configuracion/parametros-generales', icon: 'public', ready: false },
     ],

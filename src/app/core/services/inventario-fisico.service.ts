@@ -38,6 +38,10 @@ export class InventarioFisicoService {
     return this.api.post(`inventario-fisico/${id}/consolidar`, dto);
   }
 
+  guardarParcial(id: number, dto: ConsolidarInventarioDto): Observable<InventarioFisico> {
+    return this.api.post(`inventario-fisico/${id}/conteos`, dto);
+  }
+
   finalizar(id: number, dto: FinalizarInventarioDto): Observable<InventarioFisico> {
     return this.api.post(`inventario-fisico/${id}/finalizar`, dto);
   }

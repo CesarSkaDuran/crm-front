@@ -13,13 +13,12 @@
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>account_balance</mat-icon>
-        <mat-label>Cuenta</mat-label>
-        <mat-select formControlName="cuenta_contable_id" required>
-          <mat-option *ngFor="let c of cuentas" [value]="c.id">({{ c.codigo }}) {{ c.nombre }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+      <app-cuenta-select
+        label="Cuenta"
+        [cuentas]="cuentas"
+        [required]="true"
+        formControlName="cuenta_contable_id"
+      ></app-cuenta-select>
 
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>edit</mat-icon>
@@ -27,11 +26,13 @@
         <input matInput formControlName="descripcion" required />
       </mat-form-field>
 
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>attach_money</mat-icon>
-        <mat-label>Valor</mat-label>
-        <input matInput type="number" formControlName="valor" required />
-      </mat-form-field>
+      <app-currency-input
+        class="flex-1"
+        formControlName="valor"
+        label="Valor"
+        icon="attach_money"
+        [required]="true"
+      ></app-currency-input>
 
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>person</mat-icon>
