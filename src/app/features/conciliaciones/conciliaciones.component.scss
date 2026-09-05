@@ -1,0 +1,21 @@
+.conciliaciones-header {
+  .page-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #1e293b;
+  }
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.field-action {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  padding-top: 0.25rem;
+}

@@ -13,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { UsersService, User } from '../../../core/services/users.service';
 import { NotificacionesService } from '../../../core/services/notificaciones.service';
 import { PermisosDialogComponent } from './permisos-dialog/permisos-dialog.component';
+import { FotoDialogComponent } from './foto-dialog/foto-dialog.component';
 
 @Component({
   selector: 'app-usuarios',
@@ -29,6 +30,7 @@ import { PermisosDialogComponent } from './permisos-dialog/permisos-dialog.compo
     MatCardModule,
     MatDialogModule,
     MatTooltipModule,
+    FotoDialogComponent,
   ],
   templateUrl: './usuarios.component.html',
   styleUrl: './usuarios.component.scss',
@@ -54,7 +56,10 @@ export class UsuariosComponent implements OnInit {
     password: [''],
     rol: ['vendedor', Validators.required],
     estado: [1, Validators.required],
+    foto: [''],
   });
+
+  fotoPreview: string | null = null;
 
   ngOnInit() {
     this.cargar();
@@ -73,6 +78,7 @@ export class UsuariosComponent implements OnInit {
   nuevo() {
     this.mostrarFormulario = true;
     this.editandoId = null;
+    this.fotoPreview = null;
     this.form.reset({
       nombre: '',
       apellido: '',
@@ -81,6 +87,7 @@ export class UsuariosComponent implements OnInit {
       password: '',
       rol: 'vendedor',
       estado: 1,
+      foto: '',
     });
     this.form.get('password')?.setValidators([Validators.required]);
     this.form.get('password')?.updateValueAndValidity();
@@ -89,6 +96,7 @@ export class UsuariosComponent implements OnInit {
   editar(user: User) {
     this.mostrarFormulario = true;
     this.editandoId = user.id;
+    this.fotoPreview = user.foto || null;
     this.form.patchValue({
       nombre: user.nombre,
       apellido: user.apellido || '',
@@ -97,6 +105,7 @@ export class UsuariosComponent implements OnInit {
       rol: user.rol,
       estado: user.estado,
       password: '',
+      foto: user.foto || '',
     });
     this.form.get('password')?.clearValidators();
     this.form.get('password')?.updateValueAndValidity();
@@ -106,8 +115,12 @@ export class UsuariosComponent implements OnInit {
     if (this.form.invalid) return;
 
     const body = this.form.value as any;
+    body.foto = this.fotoPreview || '';
     if (!body.password && this.editandoId) {
       delete body.password;
+    }
+    if (!body.foto) {
+      delete body.foto;
     }
 
     const obs = this.editandoId
@@ -142,6 +155,41 @@ export class UsuariosComponent implements OnInit {
       width: '600px',
       data: { user },
     });
+  }
+
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      this.noti.error('La imagen no debe superar los 2 MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.fotoPreview = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  abrirCamara() {
+    const ref = this.dialog.open(FotoDialogComponent, {
+      width: '720px',
+      disableClose: true,
+    });
+
+    ref.afterClosed().subscribe((foto: string | undefined) => {
+      if (foto) {
+        this.fotoPreview = foto;
+      }
+    });
+  }
+
+  eliminarFoto() {
+    this.fotoPreview = null;
+    this.form.patchValue({ foto: '' });
   }
 
   volver() {

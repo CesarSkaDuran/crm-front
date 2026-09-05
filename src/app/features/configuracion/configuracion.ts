@@ -22,6 +22,7 @@ const SECCIONES: ConfigSection[] = [
       { title: 'Branding (Logo, Colores)', link: '/configuracion/empresa', icon: 'palette', ready: false },
       { title: 'Configuración fiscal (Régimen, Obligaciones)', link: '/configuracion/empresa', icon: 'gavel', ready: false },
       { title: 'Usuarios', link: '/configuracion/usuarios', icon: 'people', ready: true },
+      { title: 'Auditoría', link: '/configuracion/auditoria', icon: 'fact_check', ready: true },
     ],
   },
   {
@@ -32,6 +33,7 @@ const SECCIONES: ConfigSection[] = [
       { title: 'Tipos de Tercero', link: '/configuracion/tipos-terceros', icon: 'groups', ready: false },
       { title: 'Maestros', link: '/configuracion/maestros', icon: 'library_books', ready: true },
       { title: 'Bancos y Cuentas Bancarias', link: '/bancos', icon: 'account_balance_wallet', ready: true },
+      { title: 'Conciliaciones Bancarias', link: '/conciliaciones', icon: 'compare_arrows', ready: true },
       { title: 'Categorías', link: '/configuracion/categorias', icon: 'category', ready: true },
       { title: 'Periodos de Pago para Créditos', link: '/configuracion/periodos-pago', icon: 'schedule', ready: true },
       { title: 'Facturación Electrónica (DIAN)', link: '/facturacion-electronica', icon: 'receipt_long', ready: true },

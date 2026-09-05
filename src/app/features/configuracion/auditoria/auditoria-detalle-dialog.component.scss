@@ -1,0 +1,65 @@
+.detalle-meta {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem 1rem;
+  font-size: 0.875rem;
+
+  .label {
+    color: #64748b;
+    font-weight: 600;
+  }
+}
+
+.descripcion {
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  color: #334155;
+}
+
+.diff-table {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.diff-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  border-bottom: 1px solid #e2e8f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.diff-header {
+  background: #f5f7fa;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  color: #475569;
+  letter-spacing: 0.5px;
+}
+
+.diff-campo {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.diff-valor {
+  word-break: break-word;
+  color: #64748b;
+}
+
+.diff-changed {
+  background: #fffbeb;
+
+  .diff-valor {
+    color: #92400e;
+  }
+}

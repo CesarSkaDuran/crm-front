@@ -1,0 +1,255 @@
+<div class="conciliaciones-header mb-6">
+  <h1 class="page-title">Conciliaciones Bancarias</h1>
+  <p class="text-gray-500 mt-1">Compara el saldo según libros con el extracto bancario</p>
+</div>
+
+<!-- ==================== DETALLE DE CONCILIACIÓN ==================== -->
+<ng-container *ngIf="selectedConciliacion; else listView">
+  <mat-card class="p-4 mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <h2 class="section-title mb-0">
+          <button mat-icon-button (click)="cerrarDetalle()" class="mr-2">
+            <mat-icon>arrow_back</mat-icon>
+          </button>
+          {{ selectedConciliacion.banco_nombre }} — {{ selectedConciliacion.periodo }}
+        </h2>
+        <span class="ml-12 inline-block px-3 py-1 rounded-full text-xs font-semibold"
+              [ngClass]="estadoColor(selectedConciliacion.estado)">
+          {{ estadoLabel(selectedConciliacion.estado) }}
+        </span>
+      </div>
+      <div class="flex gap-2" *ngIf="selectedConciliacion.estado !== 1">
+        <button mat-raised-button color="primary" (click)="agregarMovimiento()">
+          <mat-icon>add</mat-icon> Movimiento
+        </button>
+        <button mat-raised-button color="primary" (click)="conciliar()"
+                *ngIf="resumen?.conciliado">
+          <mat-icon>check_circle</mat-icon> Conciliar
+        </button>
+      </div>
+      <div *ngIf="selectedConciliacion.estado === 1" class="flex items-center gap-2 text-green-600">
+        <mat-icon>verified</mat-icon> Conciliado
+      </div>
+    </div>
+
+    <!-- Resumen -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" *ngIf="resumen">
+      <div class="bg-blue-50 rounded-lg p-4">
+        <p class="text-xs text-gray-500">Saldo inicial libros</p>
+        <p class="text-xl font-bold text-blue-700">{{ resumen.saldo_inicial_libros | currencyFormat:currencySymbol }}</p>
+      </div>
+      <div class="bg-purple-50 rounded-lg p-4">
+        <p class="text-xs text-gray-500">Saldo final libros</p>
+        <p class="text-xl font-bold text-purple-700">{{ resumen.saldo_final_libros | currencyFormat:currencySymbol }}</p>
+      </div>
+      <div class="bg-amber-50 rounded-lg p-4">
+        <p class="text-xs text-gray-500">Saldo según extracto</p>
+        <p class="text-xl font-bold text-amber-700">{{ resumen.saldo_extracto | currencyFormat:currencySymbol }}</p>
+      </div>
+      <div class="rounded-lg p-4" [ngClass]="resumen.conciliado ? 'bg-green-50' : 'bg-red-50'">
+        <p class="text-xs text-gray-500">Diferencia</p>
+        <p class="text-xl font-bold" [ngClass]="resumen.conciliado ? 'text-green-700' : 'text-red-700'">
+          {{ resumen.diferencia | currencyFormat:currencySymbol }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Desglose -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6" *ngIf="resumen">
+      <div class="border rounded-lg p-4">
+        <h3 class="font-semibold mb-2 text-gray-700">Ajustes al extracto</h3>
+        <div class="flex justify-between text-sm py-1">
+          <span>+ Consignaciones pendientes</span>
+          <span class="font-medium">{{ resumen.consignaciones_pendientes | currencyFormat:currencySymbol }}</span>
+        </div>
+        <div class="flex justify-between text-sm py-1">
+          <span>- Cheques no cobrados</span>
+          <span class="font-medium">{{ resumen.cheques_no_cobrados | currencyFormat:currencySymbol }}</span>
+        </div>
+        <div class="flex justify-between text-sm py-1 border-t mt-2 pt-2 font-semibold">
+          <span>Saldo extracto ajustado</span>
+          <span>{{ resumen.saldo_extracto_ajustado | currencyFormat:currencySymbol }}</span>
+        </div>
+      </div>
+      <div class="border rounded-lg p-4">
+        <h3 class="font-semibold mb-2 text-gray-700">Ajustes a libros</h3>
+        <div class="flex justify-between text-sm py-1">
+          <span>+ Créditos bancarios (no en libros)</span>
+          <span class="font-medium text-green-600">{{ resumen.creditos_bancarios | currencyFormat:currencySymbol }}</span>
+        </div>
+        <div class="flex justify-between text-sm py-1">
+          <span>- Débitos bancarios (no en libros)</span>
+          <span class="font-medium text-red-600">{{ resumen.debitos_bancarios | currencyFormat:currencySymbol }}</span>
+        </div>
+        <div class="flex justify-between text-sm py-1 border-t mt-2 pt-2 font-semibold">
+          <span>Saldo final libros</span>
+          <span>{{ resumen.saldo_final_libros | currencyFormat:currencySymbol }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de movimientos -->
+    <h3 class="font-semibold mb-2 text-gray-700">Movimientos de conciliación</h3>
+    <table mat-table [dataSource]="selectedConciliacion.movimientos || []" class="w-full">
+      <ng-container matColumnDef="fecha">
+        <th mat-header-cell *matHeaderCellDef>Fecha</th>
+        <td mat-cell *matCellDef="let m">{{ m.fecha }}</td>
+      </ng-container>
+      <ng-container matColumnDef="origen">
+        <th mat-header-cell *matHeaderCellDef>Origen</th>
+        <td mat-cell *matCellDef="let m">
+          <span class="px-2 py-1 rounded text-xs font-medium"
+                [ngClass]="m.origen === 'libro' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'">
+            {{ origenLabel(m.origen) }}
+          </span>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="tipo_movimiento">
+        <th mat-header-cell *matHeaderCellDef>Tipo</th>
+        <td mat-cell *matCellDef="let m" [ngClass]="tipoColor(m.tipo_movimiento)">
+          {{ tipoLabel(m.tipo_movimiento) }}
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="descripcion">
+        <th mat-header-cell *matHeaderCellDef>Descripción</th>
+        <td mat-cell *matCellDef="let m">{{ m.descripcion }}</td>
+      </ng-container>
+      <ng-container matColumnDef="valor">
+        <th mat-header-cell *matHeaderCellDef class="text-right">Valor</th>
+        <td mat-cell *matCellDef="let m" class="text-right font-medium">
+          {{ m.valor | currencyFormat:currencySymbol }}
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="acciones" *ngIf="selectedConciliacion.estado !== 1">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let m">
+          <button mat-icon-button color="warn" (click)="eliminarMovimiento(m)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="selectedConciliacion.estado === 1 ? movColumns.slice(0, -1) : movColumns"></tr>
+      <tr mat-row *matRowDef="let m; columns: (selectedConciliacion.estado === 1 ? movColumns.slice(0, -1) : movColumns);"></tr>
+    </table>
+    <div *ngIf="!selectedConciliacion.movimientos?.length" class="p-4 text-center text-gray-500">
+      No hay movimientos de conciliación. Agregue cheques no cobrados, consignaciones pendientes o notas bancarias.
+    </div>
+  </mat-card>
+</ng-container>
+
+<!-- ==================== LISTA ==================== -->
+<ng-template #listView>
+  <!-- Formulario nueva conciliación -->
+  <mat-card class="p-4 mb-6">
+    <h2 class="section-title">
+      {{ editandoId ? 'Editar conciliación' : 'Nueva conciliación' }}
+    </h2>
+
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <div class="form-row">
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>account_balance</mat-icon>
+          <mat-label>Banco / Cuenta</mat-label>
+          <mat-select formControlName="banco_id" required>
+            <mat-option *ngFor="let b of bancos" [value]="b.id">{{ b.nombre }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>calendar_today</mat-icon>
+          <mat-label>Periodo (YYYY-MM)</mat-label>
+          <input matInput formControlName="periodo" placeholder="2026-09" required />
+        </mat-form-field>
+
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>attach_money</mat-icon>
+          <mat-label>Saldo según extracto</mat-label>
+          <input matInput type="text" inputmode="decimal" [appCurrencyInput]="currencySymbol" formControlName="saldo_extracto" />
+        </mat-form-field>
+
+        <div class="field-action flex-none">
+          <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded" [disabled]="form.invalid">
+            <mat-icon>{{ editandoId ? 'save' : 'add_circle_outline' }}</mat-icon>
+            <span class="ml-2 hidden md:inline">{{ editandoId ? 'Actualizar' : 'Crear' }}</span>
+          </button>
+          <button *ngIf="editandoId" type="button" mat-stroked-button color="warn" class="fuse-mat-button-rounded" (click)="cancelar()">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+    </form>
+  </mat-card>
+
+  <!-- Lista de conciliaciones -->
+  <mat-card class="p-4">
+    <h2 class="section-title mb-4">Conciliaciones registradas</h2>
+
+    <table mat-table [dataSource]="lista" class="w-full">
+      <ng-container matColumnDef="banco">
+        <th mat-header-cell *matHeaderCellDef>Banco</th>
+        <td mat-cell *matCellDef="let row">{{ row.banco_nombre }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="periodo">
+        <th mat-header-cell *matHeaderCellDef>Periodo</th>
+        <td mat-cell *matCellDef="let row">{{ row.periodo }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="saldo_inicial_libros">
+        <th mat-header-cell *matHeaderCellDef class="text-right">Saldo inicial libros</th>
+        <td mat-cell *matCellDef="let row" class="text-right">{{ row.saldo_inicial_libros | currencyFormat:currencySymbol }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="saldo_extracto">
+        <th mat-header-cell *matHeaderCellDef class="text-right">Saldo extracto</th>
+        <td mat-cell *matCellDef="let row" class="text-right">{{ row.saldo_extracto | currencyFormat:currencySymbol }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="diferencia">
+        <th mat-header-cell *matHeaderCellDef class="text-right">Diferencia</th>
+        <td mat-cell *matCellDef="let row" class="text-right font-semibold"
+            [ngClass]="row.diferencia === 0 ? 'text-green-600' : 'text-red-600'">
+          {{ row.diferencia | currencyFormat:currencySymbol }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let row">
+          <span class="px-2 py-1 rounded-full text-xs font-semibold" [ngClass]="estadoColor(row.estado)">
+            {{ estadoLabel(row.estado) }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef>Acciones</th>
+        <td mat-cell *matCellDef="let row">
+          <button mat-icon-button color="primary" (click)="verDetalle(row)" matTooltip="Ver detalle">
+            <mat-icon>visibility</mat-icon>
+          </button>
+          <button mat-icon-button color="primary" (click)="editar(row)" matTooltip="Editar"
+                  *ngIf="row.estado !== 1">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="anular(row)" matTooltip="Anular"
+                  *ngIf="row.estado !== 2">
+            <mat-icon>cancel</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="eliminar(row)" matTooltip="Eliminar"
+                  *ngIf="row.estado !== 1">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+    <div *ngIf="lista.length === 0" class="p-8 text-center text-gray-500">
+      No hay conciliaciones registradas. Cree una nueva para empezar.
+    </div>
+  </mat-card>
+</ng-template>

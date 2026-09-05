@@ -446,8 +446,9 @@ export class VentasComponent implements OnInit {
     }
 
     this.guardando = true;
-    const body = { ...this.form.value, detalles: this.detalles.value };
-    const emitirElectronica = !!this.form.value.emitir_factura_electronica;
+    const { emitir_factura_electronica, ...formValues } = this.form.value;
+    const body = { ...formValues, detalles: this.detalles.value };
+    const emitirElectronica = !!emitir_factura_electronica;
     this.sales.create(body as any).subscribe({
       next: (res: any) => {
         this.ventaGuardada = res;

@@ -3,23 +3,375 @@
   padding: 1.5rem;
 }
 
+// ============ HEADER ============
 .cartera-header {
   @apply mb-6;
+  
+  h1 {
+    @apply text-3xl font-bold text-gray-800;
+  }
+  
+  p {
+    @apply text-sm text-gray-500;
+  }
 }
 
+// ============ CARDS ============
+mat-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+  
+  &.p-4 {
+    padding: 1.5rem;
+  }
+  
+  &.p-8 {
+    padding: 2rem;
+  }
+}
+
+// ============ TABLAS ============
 th.mat-mdc-header-cell {
   font-weight: 700;
-  background-color: var(--countable-input);
-  color: var(--countable-text-secondary);
+  background-color: #f5f7fa;
+  color: #475569;
   text-transform: uppercase;
   font-size: 0.75rem;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 td.mat-mdc-cell,
 th.mat-mdc-header-cell {
-  padding: 0 16px;
+  padding: 12px 16px;
 }
 
-tr.mat-mdc-row:hover {
-  background-color: rgba(56, 138, 243, 0.04);
+tr.mat-mdc-row {
+  border-bottom: 1px solid #e2e8f0;
+  
+  &:hover {
+    background-color: #f8fafc;
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+// ============ BOTONES ============
+button[mat-raised-button],
+button[mat-stroked-button],
+button[mat-icon-button] {
+  transition: all 0.2s ease;
+  
+  &[color="primary"] {
+    &:hover:not([disabled]) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(56, 138, 243, 0.3);
+    }
+  }
+  
+  &[color="accent"] {
+    &:hover:not([disabled]) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    }
+  }
+  
+  &[color="warn"] {
+    &:hover:not([disabled]) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+    }
+  }
+}
+
+// ============ FORMULARIOS ============
+.form-row {
+  @apply flex flex-wrap gap-3;
+  
+  mat-form-field {
+    @apply flex-1 min-w-[200px];
+  }
+  
+  button {
+    @apply mt-2;
+  }
+}
+
+.blue-input {
+  ::ng-deep {
+    .mat-mdc-form-field-focus-overlay {
+      background-color: rgba(56, 138, 243, 0.04);
+    }
+  }
+}
+
+// ============ COLORES Y ESTADOS ============
+.text-blue-700 {
+  color: #1e40af;
+  font-weight: 600;
+}
+
+.text-orange-600 {
+  color: #ea580c;
+  font-weight: 600;
+}
+
+.text-red-600 {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.text-green-600 {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+// ============ SECCIONES ============
+.section-title {
+  @apply text-xl font-bold text-gray-800 mb-4;
+}
+
+// ============ CRÉDITOS LISTADO ============
+.credito-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: #fafbfc;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+  
+  strong {
+    color: #1e293b;
+  }
+  
+  .credito-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 0.75rem;
+    
+    > div {
+      font-size: 0.875rem;
+      
+      span.label {
+        color: #64748b;
+        display: block;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+      }
+      
+      strong {
+        color: #1e293b;
+        font-size: 1rem;
+      }
+    }
+  }
+}
+
+// ============ PANEL DE CLIENTES (lista compacta) ============
+.clientes-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.badge-total {
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+.cliente-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 560px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.cliente-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem 0.875rem;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+
+  &:hover {
+    border-color: #93c5fd;
+    background: #f8fafc;
+  }
+
+  &.active {
+    border-color: #388af3;
+    background: #eff6ff;
+    box-shadow: 0 0 0 1px rgba(56, 138, 243, 0.2);
+  }
+
+  &__main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__nombre {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__documento {
+    font-size: 0.75rem;
+    color: #94a3b8;
+  }
+
+  &__meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+
+  &__saldo {
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: #1e40af;
+    white-space: nowrap;
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #dc2626;
+    background: #fef2f2;
+    padding: 1px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+
+    mat-icon {
+      font-size: 12px;
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  &__chevron {
+    flex-shrink: 0;
+    color: #cbd5e1;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// ============ ESTADO VACÍO ============
+.empty-state {
+  @apply p-8 text-center;
+  
+  mat-icon {
+    @apply text-6xl text-gray-300 mb-4;
+  }
+  
+  p {
+    @apply text-gray-500 text-sm;
+  }
+}
+
+// ============ RESUMEN CARDS ============
+.resumen-card {
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  
+  p:first-child {
+    @apply text-sm text-gray-600 font-medium;
+  }
+  
+  p:last-child {
+    @apply text-3xl font-bold mt-2;
+  }
+  
+  &.blue {
+    p:last-child {
+      @apply text-blue-700;
+    }
+  }
+  
+  &.orange {
+    p:last-child {
+      @apply text-orange-600;
+    }
+  }
+  
+  &.red {
+    p:last-child {
+      @apply text-red-600;
+    }
+  }
+}
+
+// ============ RESPONSIVE ============
+@media (max-width: 1024px) {
+  .credito-info {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 640px) {
+  :host {
+    padding: 1rem;
+  }
+  
+  .form-row {
+    @apply flex-col;
+    
+    mat-form-field {
+      @apply w-full;
+    }
+  }
+  
+  .credito-info {
+    grid-template-columns: 1fr !important;
+  }
+  
+  table {
+    font-size: 0.875rem;
+    
+    th, td {
+      padding: 8px 12px !important;
+    }
+  }
 }

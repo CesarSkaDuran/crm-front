@@ -12,6 +12,7 @@ export interface User {
   estado: number;
   empresa_id?: number;
   ultimo_acceso?: string;
+  foto?: string;
 }
 
 export interface CreateUserDto {
@@ -22,6 +23,7 @@ export interface CreateUserDto {
   password: string;
   rol: string;
   estado?: number;
+  foto?: string;
 }
 
 export interface UpdateUserDto {
@@ -32,6 +34,7 @@ export interface UpdateUserDto {
   password?: string;
   rol?: string;
   estado?: number;
+  foto?: string;
 }
 
 @Injectable({ providedIn: 'root' })

@@ -57,6 +57,7 @@ const MENU: MenuGroup[] = [
     icon: 'account_balance',
     children: [
       { id: 'tesoreria-mov', title: 'Movimientos', link: '/tesoreria' },
+      { id: 'conciliaciones', title: 'Conciliaciones bancarias', link: '/conciliaciones' },
     ]
   },
   {

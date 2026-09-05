@@ -6,6 +6,8 @@ import {
   forwardRef,
   OnInit,
   OnDestroy,
+  ChangeDetectorRef,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -47,13 +49,16 @@ export interface CuentaOption {
   ],
 })
 export class CuentaSelectComponent implements ControlValueAccessor, OnInit, OnDestroy {
+  private cdr = inject(ChangeDetectorRef);
+
   @Input() label = 'Cuenta contable';
   @Input() icon = 'account_balance';
   @Input() required = false;
   @Input() set cuentas(value: CuentaOption[]) {
     this._cuentas = value || [];
-    this.applyFilter();
-    this.updateSelectedFromValue();
+    this.applyFilter(this.searchText);
+    this.updateDisplayFromValue();
+    this.cdr.markForCheck();
   }
   get cuentas(): CuentaOption[] {
     return this._cuentas;
@@ -62,19 +67,24 @@ export class CuentaSelectComponent implements ControlValueAccessor, OnInit, OnDe
 
   private _cuentas: CuentaOption[] = [];
   filtered: CuentaOption[] = [];
-  selected: CuentaOption | string | null = null;
-  private lastSelected: CuentaOption | null = null;
-  value: number | null = null;
-  disabled = false;
-  private search$ = new Subject<string>();
+
+  /** Texto que se muestra en el input (búsqueda o cuenta seleccionada). */
+  searchText = '';
+  /** Valor real (id de cuenta) para ControlValueAccessor. */
+  private innerValue: number | null = null;
+  /** Cuenta seleccionada actualmente. */
+  private selected: CuentaOption | null = null;
+
+  isDisabled = false;
   private touched = false;
+  private search$ = new Subject<string>();
 
   private onChange: (value: number | null) => void = () => {};
   private onTouched: () => void = () => {};
 
   ngOnInit(): void {
     this.search$
-      .pipe(debounceTime(150), distinctUntilChanged())
+      .pipe(debounceTime(100), distinctUntilChanged())
       .subscribe((term) => this.applyFilter(term));
   }
 
@@ -83,8 +93,13 @@ export class CuentaSelectComponent implements ControlValueAccessor, OnInit, OnDe
   }
 
   writeValue(value: number | null): void {
-    this.value = value;
-    this.updateSelectedFromValue();
+    this.innerValue = value || null;
+    this.updateDisplayFromValue();
+    // El valor puede llegar de forma asíncrona (ej. sugerencia de cuentas
+    // por HTTP) después de que Angular ya revisó este componente en el
+    // ciclo de detección de cambios actual. Forzamos el refresco para que
+    // el texto se muestre sin necesidad de que el usuario toque el campo.
+    this.cdr.detectChanges();
   }
 
   registerOnChange(fn: (value: number | null) => void): void {
@@ -96,97 +111,86 @@ export class CuentaSelectComponent implements ControlValueAccessor, OnInit, OnDe
   }
 
   setDisabledState(isDisabled: boolean): void {
-    this.disabled = isDisabled;
+    this.isDisabled = isDisabled;
   }
 
-  displayFn(value: CuentaOption | string | null): string {
-    if (typeof value === 'string') return value;
-    if (!value) return '';
-    return `(${value.codigo}) ${value.nombre}`;
-  }
-
-  onFocus(input: HTMLInputElement): void {
-    // Select all text when focusing so the user can easily type a new search
-    input.select();
+  displayFn(c: CuentaOption | null): string {
+    return c ? `(${c.codigo}) ${c.nombre}` : '';
   }
 
   onSearchChange(term: string | undefined): void {
-    if (term === undefined) return;
-    this.selected = term;
-    this.search$.next(term);
+    const t = term ?? '';
+    this.searchText = t;
+    this.search$.next(t);
+    this.markTouched();
+    // No emitimos onChange mientras se escribe; esperamos a selección o blur.
   }
 
   onSelection(c: CuentaOption | null): void {
-    if (!this.touched) {
-      this.touched = true;
-      this.onTouched();
-    }
     this.selected = c;
-    this.lastSelected = c;
-    this.value = c ? c.id : null;
-    this.onChange(this.value);
-    const selected = c
-      ? this._cuentas.find((x) => x.id === c.id) || null
-      : null;
-    this.selectionChange.emit(selected);
+    this.innerValue = c ? c.id : null;
+    this.searchText = c ? this.displayFn(c) : '';
+    this.onChange(this.innerValue);
+    this.selectionChange.emit(c);
+    this.markTouched();
+    this.applyFilter('');
   }
 
   onBlur(): void {
-    if (!this.touched) {
-      this.touched = true;
-      this.onTouched();
-    }
+    this.markTouched();
+    const text = (this.searchText || '').trim();
 
-    if (this.selected === null || typeof this.selected !== 'string') {
+    if (!text) {
+      // Input vacío -> sin selección
+      this.selected = null;
+      this.innerValue = null;
+      this.searchText = '';
+      this.onChange(null);
       return;
     }
 
-    const typed = this.selected.trim();
-
-    // If the user typed exactly the display text of a previous selection, restore it
-    if (this.lastSelected && this.displayFn(this.lastSelected) === typed) {
-      this.selected = this.lastSelected;
-      this.value = this.lastSelected.id;
-      this.onChange(this.value);
-      return;
-    }
-
-    // If the user typed a string that matches exactly one option, select it
+    // Si el texto coincide exactamente con una cuenta del listado, seleccionarla
     const exact = this._cuentas.find(
-      (c) => `(${c.codigo}) ${c.nombre}` === typed,
+      (c) => this.displayFn(c).toLowerCase() === text.toLowerCase(),
     );
     if (exact) {
       this.onSelection(exact);
       return;
     }
 
-    // Otherwise, keep the previous valid selection if any
-    if (this.lastSelected) {
-      this.selected = this.lastSelected;
-      this.value = this.lastSelected.id;
-      this.onChange(this.value);
+    // Si hay una selección previa y el texto no coincide exactamente,
+    // restauramos el display de la selección (el usuario estaba escribiendo
+    // pero no eligió n válida del panel).
+    if (this.selected) {
+      this.searchText = this.displayFn(this.selected);
+      this.innerValue = this.selected.id;
+      this.onChange(this.innerValue);
     } else {
-      this.selected = null;
-      this.value = null;
+      // Sin selección previa y texto parcial: limpiar
+      this.searchText = '';
+      this.innerValue = null;
       this.onChange(null);
     }
   }
 
-  private updateSelectedFromValue(): void {
-    if (!this.value) {
+  private updateDisplayFromValue(): void {
+    if (this.innerValue) {
+      const found = this._cuentas.find((c) => c.id === this.innerValue) || null;
+      this.selected = found;
+      this.searchText = found ? this.displayFn(found) : '';
+    } else {
       this.selected = null;
-      this.lastSelected = null;
-      return;
+      this.searchText = '';
     }
-    const found = this._cuentas.find((c) => c.id === this.value) || null;
-    this.selected = found;
-    this.lastSelected = found;
+    this.applyFilter('');
   }
 
-  private applyFilter(term: string = ''): void {
+  private applyFilter(term: string): void {
     const t = (term || '').trim().toLowerCase();
     if (!t) {
-      this.filtered = this._cuentas.slice(0, 200);
+      // No mostramos opciones al abrir con el input vacío, evita que el usuario
+      // haga clic accidentalmente en la primera cuenta del listado.
+      this.filtered = [];
       return;
     }
     this.filtered = this._cuentas
@@ -195,6 +199,13 @@ export class CuentaSelectComponent implements ControlValueAccessor, OnInit, OnDe
           c.codigo.toLowerCase().includes(t) ||
           c.nombre.toLowerCase().includes(t),
       )
-      .slice(0, 200);
+      .slice(0, 100);
+  }
+
+  private markTouched(): void {
+    if (!this.touched) {
+      this.touched = true;
+      this.onTouched();
+    }
   }
 }

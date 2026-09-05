@@ -1,0 +1,43 @@
+<h2 mat-dialog-title class="flex items-center gap-2">
+  <mat-icon>photo_camera</mat-icon>
+  Tomar foto
+</h2>
+
+<mat-dialog-content>
+  <div class="camera-container">
+    <video #video *ngIf="!fotoCapturada" autoplay playsinline class="camera-video"></video>
+
+    <canvas #canvas class="camera-canvas" *ngIf="fotoCapturada" [style.display]="'none'"></canvas>
+
+    <img *ngIf="fotoCapturada" [src]="fotoCapturada" alt="Foto capturada" class="camera-preview" />
+
+    <div *ngIf="cargandoCamara" class="camera-message">
+      <mat-icon class="animate-spin">sync</mat-icon>
+      <span>Iniciando cámara...</span>
+    </div>
+
+    <div *ngIf="errorCamara && !fotoCapturada" class="camera-message error">
+      <mat-icon>error</mat-icon>
+      <span>{{ errorCamara }}</span>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-stroked-button (click)="cerrar()">
+    <mat-icon>close</mat-icon>
+    Cancelar
+  </button>
+  <button *ngIf="fotoCapturada" mat-stroked-button color="primary" (click)="tomarOtra()">
+    <mat-icon>replay</mat-icon>
+    Tomar otra
+  </button>
+  <button *ngIf="!fotoCapturada" mat-raised-button color="primary" (click)="capturar()" [disabled]="cargandoCamara || !!errorCamara">
+    <mat-icon>camera</mat-icon>
+    Capturar
+  </button>
+  <button *ngIf="fotoCapturada" mat-raised-button color="primary" (click)="confirmar()">
+    <mat-icon>check</mat-icon>
+    Usar foto
+  </button>
+</mat-dialog-actions>

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatTableModule } from '@angular/material/table';
@@ -29,6 +29,7 @@ export class DashboardComponent implements OnInit {
   private bancos = inject(BancosService);
   private tesoreria = inject(TesoreriaService);
   private asentados = inject(AccountingService);
+  private cdr = inject(ChangeDetectorRef);
 
   resumen: Resumen = { cartera: 0, porPagar: 0, bancos: 0, tesoreria: 0 };
 
@@ -47,16 +48,18 @@ export class DashboardComponent implements OnInit {
   cargarResumen() {
     this.cartera.getAll().subscribe((r: any) => {
       this.resumen.cartera = (r.data ?? []).reduce(
-        (acc: number, item: any) => acc + (Number(item.saldo) || 0),
+        (acc: number, item: any) => acc + (Number(item.saldo_total) || 0),
         0,
       );
+      this.cdr.detectChanges();
     });
 
     this.cuentasPorPagar.getAll().subscribe((r: any) => {
       this.resumen.porPagar = (r.data ?? []).reduce(
-        (acc: number, item: any) => acc + (Number(item.saldo) || 0),
+        (acc: number, item: any) => acc + (Number(item.saldo_total) || 0),
         0,
       );
+      this.cdr.detectChanges();
     });
 
     this.bancos.getAll().subscribe((r: any) => {
@@ -66,6 +69,7 @@ export class DashboardComponent implements OnInit {
         0,
       );
       this.bancosList = list.slice(0, 5);
+      this.cdr.detectChanges();
     });
 
     this.tesoreria.getAll().subscribe((r: any) => {
@@ -75,11 +79,13 @@ export class DashboardComponent implements OnInit {
         0,
       );
       this.movimientosTesoreria = list.slice(0, 5);
+      this.cdr.detectChanges();
     });
 
     this.asentados.getAsentados().subscribe((r: any) => {
       const list = r.data ?? [];
       this.ultimosComprobantes = list.slice(0, 5);
+      this.cdr.detectChanges();
     });
   }
 }

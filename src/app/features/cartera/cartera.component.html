@@ -18,19 +18,19 @@
 </div>
 
 <!-- Resumen total -->
-<div class="grid grid-cols-3 gap-4 mb-6">
-  <mat-card class="p-4">
-    <p class="text-sm text-gray-600">Total por cobrar</p>
-    <p class="text-2xl font-extrabold text-blue-700">{{ totalSaldo | currencyFormat:currencySymbol }}</p>
-  </mat-card>
-  <mat-card class="p-4">
-    <p class="text-sm text-gray-600">Clientes con saldo</p>
-    <p class="text-2xl font-extrabold text-orange-600">{{ lista.length }}</p>
-  </mat-card>
-  <mat-card class="p-4">
-    <p class="text-sm text-gray-600">Cuotas vencidas</p>
-    <p class="text-2xl font-extrabold text-red-600">{{ vencidas?.count ?? 0 }}</p>
-  </mat-card>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <div class="resumen-card blue">
+    <p>Total por cobrar</p>
+    <p>{{ totalSaldo | currencyFormat:currencySymbol }}</p>
+  </div>
+  <div class="resumen-card orange">
+    <p>Clientes con saldo</p>
+    <p>{{ lista.length }}</p>
+  </div>
+  <div class="resumen-card red">
+    <p>Cuotas vencidas</p>
+    <p>{{ vencidas?.count ?? 0 }}</p>
+  </div>
 </div>
 
 <!-- Formulario nuevo crédito -->
@@ -151,49 +151,34 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
   <!-- COLUMNA IZQUIERDA: Listado de clientes -->
-  <mat-card class="p-4 lg:col-span-1">
+  <mat-card class="p-4 lg:col-span-1 clientes-panel">
     <div class="flex items-center justify-between mb-4">
       <h2 class="section-title mb-0">Clientes</h2>
+      <span class="badge-total">{{ lista.length }}</span>
     </div>
 
-    <table mat-table [dataSource]="lista" class="w-full">
-      <ng-container matColumnDef="nombre">
-        <th mat-header-cell *matHeaderCellDef>Cliente</th>
-        <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="documento">
-        <th mat-header-cell *matHeaderCellDef>Documento</th>
-        <td mat-cell *matCellDef="let row">{{ row.documento }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="saldo_total">
-        <th mat-header-cell *matHeaderCellDef>Saldo total</th>
-        <td mat-cell *matCellDef="let row" class="text-right font-bold text-blue-700">{{ row.saldo_total | currencyFormat:currencySymbol }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="cuotas_vencidas">
-        <th mat-header-cell *matHeaderCellDef>Cuotas vencidas</th>
-        <td mat-cell *matCellDef="let row" [class.text-red-600]="row.cuotas_vencidas > 0">{{ row.cuotas_vencidas }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="dias_mora_max">
-        <th mat-header-cell *matHeaderCellDef>Días mora máx</th>
-        <td mat-cell *matCellDef="let row" [class.text-red-600]="row.dias_mora_max > 0">{{ row.dias_mora_max }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="acciones">
-        <th mat-header-cell *matHeaderCellDef>Acciones</th>
-        <td mat-cell *matCellDef="let row">
-          <button mat-icon-button color="primary" (click)="verDetalle(row)" title="Ver detalle">
-            <mat-icon>visibility</mat-icon>
-          </button>
-        </td>
-      </ng-container>
-
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-    </table>
+    <div class="cliente-list">
+      <button
+        type="button"
+        *ngFor="let row of lista"
+        class="cliente-list-item"
+        [class.active]="detalle?.tercero?.id === row.tercero_id"
+        (click)="verDetalle(row)"
+      >
+        <div class="cliente-list-item__main">
+          <span class="cliente-list-item__nombre">{{ row.nombre }}</span>
+          <span class="cliente-list-item__documento" *ngIf="row.documento">{{ row.documento }}</span>
+        </div>
+        <div class="cliente-list-item__meta">
+          <span class="cliente-list-item__saldo">{{ row.saldo_total | currencyFormat:currencySymbol }}</span>
+          <span class="cliente-list-item__badge" *ngIf="row.cuotas_vencidas > 0">
+            <mat-icon>schedule</mat-icon>
+            {{ row.cuotas_vencidas }} vencida{{ row.cuotas_vencidas > 1 ? 's' : '' }}
+          </span>
+        </div>
+        <mat-icon class="cliente-list-item__chevron">chevron_right</mat-icon>
+      </button>
+    </div>
 
     <div *ngIf="lista.length === 0" class="p-8 text-center text-gray-500">
       No hay clientes con cartera
@@ -204,9 +189,11 @@
   <div class="lg:col-span-2 flex flex-col gap-5">
 
     <!-- Estado vacío -->
-    <mat-card class="p-8 text-center text-gray-500" *ngIf="!detalle && !mostrandoFormCredito">
-      <mat-icon class="text-6xl text-gray-300">account_balance_wallet</mat-icon>
-      <p class="mt-4">Seleccione un cliente de la lista para ver el detalle de sus créditos y cuotas</p>
+    <mat-card class="p-8" *ngIf="!detalle && !mostrandoFormCredito">
+      <div class="empty-state">
+        <mat-icon>account_balance_wallet</mat-icon>
+        <p>Seleccione un cliente de la lista para ver el detalle de sus créditos y cuotas</p>
+      </div>
     </mat-card>
 
     <!-- Detalle del tercero -->
@@ -228,7 +215,7 @@
       </div>
 
       <!-- Lista de créditos del tercero -->
-      <div *ngFor="let cr of detalle.creditos" class="mb-4 border rounded p-3">
+      <div *ngFor="let cr of detalle.creditos" class="credito-item">
         <div class="flex items-center justify-between mb-2">
           <div>
             <strong>Crédito #{{ cr.id }}</strong>
@@ -239,21 +226,33 @@
             </span>
           </div>
           <div class="flex gap-2">
-            <button mat-stroked-button color="primary" (click)="verCredito(cr.id)">
+            <button mat-stroked-button color="primary" (click)="verCredito(cr.id)" size="small">
               <mat-icon>list</mat-icon>
               Ver cuotas
             </button>
-            <button mat-raised-button color="accent" (click)="abrirCobro(cr)" [disabled]="cr.saldo <= 0">
+            <button mat-raised-button color="accent" (click)="abrirCobro(cr)" [disabled]="cr.saldo <= 0" size="small">
               <mat-icon>payments</mat-icon>
               Cobrar
             </button>
           </div>
         </div>
-        <div class="grid grid-cols-4 gap-2 text-sm">
-          <div><span class="text-gray-500">Monto:</span> {{ cr.monto_total | currencyFormat:currencySymbol }}</div>
-          <div><span class="text-gray-500">Saldo:</span> <strong>{{ cr.saldo | currencyFormat:currencySymbol }}</strong></div>
-          <div><span class="text-gray-500">Cuotas:</span> {{ cr.cuotas_pagadas }}/{{ cr.numero_cuotas }}</div>
-          <div><span class="text-gray-500">Valor cuota:</span> {{ cr.valor_cuota | currencyFormat:currencySymbol }}</div>
+        <div class="credito-info">
+          <div>
+            <span class="label">Monto</span>
+            <strong>{{ cr.monto_total | currencyFormat:currencySymbol }}</strong>
+          </div>
+          <div>
+            <span class="label">Saldo</span>
+            <strong class="text-blue-700">{{ cr.saldo | currencyFormat:currencySymbol }}</strong>
+          </div>
+          <div>
+            <span class="label">Cuotas</span>
+            <strong>{{ cr.cuotas_pagadas }}/{{ cr.numero_cuotas }}</strong>
+          </div>
+          <div>
+            <span class="label">Valor cuota</span>
+            <strong>{{ cr.valor_cuota | currencyFormat:currencySymbol }}</strong>
+          </div>
         </div>
       </div>
     </mat-card>

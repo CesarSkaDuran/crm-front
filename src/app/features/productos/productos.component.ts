@@ -6,6 +6,7 @@ import {
   FormBuilder,
   Validators,
 } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -113,9 +114,11 @@ export class ProductosComponent implements OnInit {
       this.currencySymbol = moneda?.simbolo || '$';
       this.cdr.detectChanges();
     });
-    this.cargarCuentas();
-    this.cargarCategorias();
     this.cargar();
+    Promise.all([
+      this.cargarCuentasPromise(),
+      this.cargarCategoriasPromise(),
+    ]).then(() => this.sugerirCuentas());
     this.form.get('tipo')?.valueChanges.subscribe(() => this.sugerirCuentas());
     this.form.get('categoria_id')?.valueChanges.subscribe((id) => {
       // Sincronizar campo categoria (texto) con el nombre de la categoría
@@ -132,8 +135,13 @@ export class ProductosComponent implements OnInit {
   }
 
   cargarCategorias() {
-    // Cargamos el árbol para tener la jerarquía completa
-    this.categorias.getTree().subscribe((res: any) => {
+    this.cargarCategoriasPromise().catch(() => {});
+  }
+
+  private cargarCategoriasPromise(): Promise<void> {
+    return firstValueFrom(
+      this.categorias.getTree()
+    ).then((res: any) => {
       const arbol = res ?? [];
       this.categoriasList = [];
       this.categoriasHojas = [];
@@ -161,7 +169,6 @@ export class ProductosComponent implements OnInit {
   }
 
   sugerirCuentas() {
-    if (this.editandoId) return;
     const tipo = this.form.get('tipo')?.value ?? 1;
     const categoriaId = this.form.get('categoria_id')?.value ?? null;
     // Enviamos el NOMBRE de la categoría (no el ID) porque el backend usa
@@ -172,8 +179,15 @@ export class ProductosComponent implements OnInit {
       ? this.categoriasList.find((c) => c.id === categoriaId)?.nombre ?? ''
       : '';
     this.products.sugerirCuentas(Number(tipo), categoriaNombre).subscribe((res: any) => {
-      this.form.patchValue(res, { emitEvent: false });
-      this.cdr.detectChanges();
+      // Solo parchamos las cuentas vacías para no sobreescribir ediciones manuales
+      const patch: any = {};
+      if (!this.form.get('cuenta_inventarios_id')?.value && res.cuenta_inventarios_id) patch.cuenta_inventarios_id = res.cuenta_inventarios_id;
+      if (!this.form.get('cuenta_costos_id')?.value && res.cuenta_costos_id) patch.cuenta_costos_id = res.cuenta_costos_id;
+      if (!this.form.get('cuenta_ingresos_id')?.value && res.cuenta_ingresos_id) patch.cuenta_ingresos_id = res.cuenta_ingresos_id;
+      if (Object.keys(patch).length > 0) {
+        this.form.patchValue(patch, { emitEvent: false });
+        this.cdr.detectChanges();
+      }
     });
   }
 
@@ -222,7 +236,13 @@ export class ProductosComponent implements OnInit {
   }
 
   cargarCuentas() {
-    this.accounts.getAll().subscribe((res: any) => {
+    this.cargarCuentasPromise().catch(() => {});
+  }
+
+  private cargarCuentasPromise(): Promise<void> {
+    return firstValueFrom(
+      this.accounts.getAll()
+    ).then((res: any) => {
       this.cuentas = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
@@ -292,6 +312,10 @@ export class ProductosComponent implements OnInit {
   editar(row: any) {
     this.editandoId = row.id;
     this.form.patchValue(row, { emitEvent: false });
+    // Si no tiene cuentas asignadas, sugerirlas automáticamente
+    if (!row.cuenta_inventarios_id && !row.cuenta_costos_id && !row.cuenta_ingresos_id) {
+      this.sugerirCuentas();
+    }
   }
 
   cancelar() {

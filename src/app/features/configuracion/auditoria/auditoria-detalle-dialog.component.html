@@ -1,0 +1,36 @@
+<h2 mat-dialog-title class="flex items-center gap-2">
+  <mat-icon color="primary">fact_check</mat-icon>
+  Detalle de auditoría
+</h2>
+
+<mat-dialog-content>
+  <div class="detalle-meta mb-4">
+    <div><span class="label">Módulo:</span> {{ registro.tabla }}</div>
+    <div><span class="label">Registro:</span> #{{ registro.registro_id }}</div>
+    <div><span class="label">Usuario:</span> {{ registro.usuario }}</div>
+    <div><span class="label">Fecha:</span> {{ registro.fecha | date: 'dd/MM/yyyy HH:mm:ss' }}</div>
+  </div>
+
+  <p *ngIf="registro.descripcion" class="descripcion mb-4">{{ registro.descripcion }}</p>
+
+  <div *ngIf="campos.length > 0" class="diff-table">
+    <div class="diff-row diff-header">
+      <span>Campo</span>
+      <span>Valor anterior</span>
+      <span>Valor nuevo</span>
+    </div>
+    <div class="diff-row" *ngFor="let c of campos" [class.diff-changed]="c.cambio">
+      <span class="diff-campo">{{ c.campo }}</span>
+      <span class="diff-valor">{{ c.anterior === null || c.anterior === undefined ? '—' : c.anterior }}</span>
+      <span class="diff-valor">{{ c.nuevo === null || c.nuevo === undefined ? '—' : c.nuevo }}</span>
+    </div>
+  </div>
+
+  <div *ngIf="campos.length === 0" class="text-center text-gray-500 p-4">
+    No hay valores registrados para este cambio
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-raised-button color="primary" (click)="cerrar()">Cerrar</button>
+</mat-dialog-actions>

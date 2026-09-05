@@ -3,27 +3,28 @@
   <mat-label>{{ label }}</mat-label>
   <input
     matInput
-    #inputRef
     [placeholder]="'Buscar ' + label.toLowerCase() + '...'"
-    [(ngModel)]="selected"
+    [ngModel]="searchText"
     (ngModelChange)="onSearchChange($event)"
     [matAutocomplete]="auto"
-    [disabled]="disabled"
+    [disabled]="isDisabled"
     [required]="required"
     (blur)="onBlur()"
-    (focus)="onFocus(inputRef)"
+    autocomplete="off"
   />
   <mat-autocomplete
     #auto="matAutocomplete"
-    [displayWith]="displayFn"
     (optionSelected)="onSelection($event.option.value)"
   >
     <mat-option [value]="null" *ngIf="!required" (onSelectionChange)="onSelection(null)">— Sin cuenta —</mat-option>
     <mat-option *ngFor="let c of filtered" [value]="c">
       ({{ c.codigo }}) {{ c.nombre }}
     </mat-option>
-    <mat-option *ngIf="filtered.length === 0" disabled>
-      Sin resultados para "{{ selected }}"
+    <mat-option *ngIf="searchText && filtered.length === 0" disabled>
+      Sin resultados para "{{ searchText }}"
+    </mat-option>
+    <mat-option *ngIf="!searchText && filtered.length === 0" disabled>
+      Escribe para buscar cuenta...
     </mat-option>
   </mat-autocomplete>
 </mat-form-field>

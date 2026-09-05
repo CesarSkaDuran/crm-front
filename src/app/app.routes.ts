@@ -25,7 +25,9 @@ import { PeriodosPagoComponent } from './features/configuracion/periodos-pago/pe
 import { InventarioFisicoComponent } from './features/inventario-fisico/inventario-fisico.component';
 import { FacturacionElectronicaComponent } from './features/facturacion-electronica/facturacion-electronica.component';
 import { MigracionComponent } from './features/migracion/migracion.component';
+import { ConciliacionesComponent } from './features/conciliaciones/conciliaciones.component';
 import { UsuariosComponent } from './features/configuracion/usuarios/usuarios.component';
+import { AuditoriaComponent } from './features/configuracion/auditoria/auditoria.component';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
@@ -58,9 +60,11 @@ export const routes: Routes = [
       { path: 'configuracion/monedas', component: MonedasComponent },
       { path: 'configuracion/periodos-pago', component: PeriodosPagoComponent },
       { path: 'configuracion/usuarios', component: UsuariosComponent },
+      { path: 'configuracion/auditoria', component: AuditoriaComponent },
       { path: 'inventario-fisico', component: InventarioFisicoComponent },
       { path: 'facturacion-electronica', component: FacturacionElectronicaComponent },
       { path: 'migracion', component: MigracionComponent },
+      { path: 'conciliaciones', component: ConciliacionesComponent },
     ]
   },
   { path: '**', redirectTo: 'login' },
