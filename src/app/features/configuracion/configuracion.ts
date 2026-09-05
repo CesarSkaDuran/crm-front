@@ -47,6 +47,7 @@ const SECCIONES: ConfigSection[] = [
     items: [
       { title: 'Plan de cuentas', link: '/plan-cuentas', icon: 'account_tree', ready: true },
       { title: 'Tipos de comprobantes', link: '/tipos-comprobantes', icon: 'receipt', ready: true },
+      { title: 'Cierres de Período', link: '/configuracion/cierres', icon: 'lock_clock', ready: true },
     ],
   },
   {
