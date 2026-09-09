@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -39,6 +40,7 @@ import { CurrencyInputComponent } from '../../shared/components/currency-input/c
   styleUrl: './comprobantes.component.scss',
 })
 export class ComprobantesComponent implements OnInit {
+  private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private accounting = inject(AccountingService);
   private accounts = inject(AccountsService);
@@ -101,7 +103,7 @@ export class ComprobantesComponent implements OnInit {
       this.cuentas = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
-    this.thirds.getAll().subscribe((res: any) => {
+    this.thirds.getAll({ limit: 200 }).subscribe((res: any) => {
       this.terceros = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
@@ -159,7 +161,7 @@ export class ComprobantesComponent implements OnInit {
   asentar() {
     if (!this.balanceado || this.lineas.length === 0) return;
     if (!this.consecutivo) {
-      alert('Seleccione un tipo de comprobante');
+      this.noti.warning('Seleccione un tipo de comprobante');
       return;
     }
 
@@ -182,9 +184,10 @@ export class ComprobantesComponent implements OnInit {
     this.accounting.createAsentado(body as any).subscribe({
       next: () => {
         this.restaurar();
+        this.noti.success('Comprobante asentado');
       },
       error: (err) => {
-        alert(err.error?.message || 'Error al asentar');
+        this.noti.error(err.error?.message || 'Error al asentar');
       },
     });
   }

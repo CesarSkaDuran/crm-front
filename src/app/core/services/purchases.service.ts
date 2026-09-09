@@ -30,8 +30,8 @@ export interface CreatePurchase {
 export class PurchasesService {
   private api = inject(ApiService);
 
-  getAll(): Observable<any> {
-    return this.api.get('compras');
+  getAll(query?: Record<string, any>): Observable<any> {
+    return this.api.get('compras', query);
   }
 
   getOne(id: number): Observable<any> {

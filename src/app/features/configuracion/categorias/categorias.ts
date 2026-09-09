@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -46,6 +47,7 @@ interface FilaPlana {
   styleUrl: './categorias.scss',
 })
 export class Categorias implements OnInit {
+  private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private categorias = inject(CategoriasService);
   private cdr = inject(ChangeDetectorRef);
@@ -222,10 +224,11 @@ export class Categorias implements OnInit {
         this.guardando = false;
         this.cancelar();
         this.cargar();
+        this.noti.success('Registro guardado');
       },
       error: (err: { error?: { message?: string } }) => {
         this.guardando = false;
-        window.alert(err?.error?.message || 'Error al guardar la categoría');
+        this.noti.error(err?.error?.message || 'Error al guardar la categoría');
         this.cdr.detectChanges();
       },
     });
@@ -234,9 +237,9 @@ export class Categorias implements OnInit {
   eliminar(categoria: Categoria) {
     if (!confirm(`¿Eliminar la categoría "${categoria.nombre}"?`)) return;
     this.categorias.remove(categoria.id).subscribe({
-      next: () => this.cargar(),
+      next: () => { this.cargar(); this.noti.success('Registro eliminado'); },
       error: (err: { error?: { message?: string } }) => {
-        window.alert(err?.error?.message || 'Error al eliminar la categoría');
+        this.noti.error(err?.error?.message || 'Error al eliminar la categoría');
         this.cdr.detectChanges();
       },
     });

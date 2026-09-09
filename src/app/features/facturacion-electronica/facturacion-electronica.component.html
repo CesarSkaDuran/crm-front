@@ -55,36 +55,36 @@
 </div>
 
 <!-- Cards de estado -->
-<div class="grid grid-cols-3 gap-4 mb-6">
-  <mat-card class="p-4">
-    <p class="text-sm text-gray-600">Estado configuración</p>
-    <p class="text-2xl font-extrabold" [class.text-green-600]="configurado" [class.text-red-600]="!configurado">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+  <div class="resumen-card" [ngClass]="configurado ? 'green' : 'red'">
+    <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Estado configuración</p>
+    <p class="text-2xl font-bold" [class.text-green-600]="configurado" [class.text-red-600]="!configurado">
       {{ configurado ? 'Activo' : 'Sin configurar' }}
     </p>
-    <p *ngIf="configurado" class="text-sm text-gray-500 mt-1">
+    <p *ngIf="configurado" class="text-sm text-gray-500 mt-2">
       Resolución: {{ estado?.resolucion || config?.resolucion }} — Prefijo: {{ estado?.prefijo || config?.prefijo }}
     </p>
-  </mat-card>
+  </div>
 
-  <mat-card class="p-4">
-    <p class="text-sm text-gray-600">Consecutivos disponibles</p>
-    <p class="text-2xl font-extrabold" [class.text-blue-700]="consecutivosDisponibles > 0" [class.text-red-600]="consecutivosDisponibles <= 0">
+  <div class="resumen-card" [ngClass]="consecutivosDisponibles > 0 ? 'blue' : 'red'">
+    <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Consecutivos disponibles</p>
+    <p class="text-2xl font-bold" [class.text-blue-600]="consecutivosDisponibles > 0" [class.text-red-600]="consecutivosDisponibles <= 0">
       {{ consecutivosDisponibles }}
     </p>
-    <p class="text-sm text-gray-500 mt-1">
+    <p class="text-sm text-gray-500 mt-2">
       Usados: {{ consecutivosUsados }} — Último: {{ estado?.ultimo_consecutivo ?? config?.ultimo_consecutivo ?? 0 }}
     </p>
-  </mat-card>
+  </div>
 
-  <mat-card class="p-4">
-    <p class="text-sm text-gray-600">Vencimiento resolución</p>
-    <p class="text-2xl font-extrabold" [class.text-red-600]="vencida" [class.text-orange-600]="vencimientoCercano && !vencida" [class.text-green-600]="configurado && !vencida && !vencimientoCercano">
+  <div class="resumen-card" [ngClass]="vencida ? 'red' : (vencimientoCercano ? 'orange' : 'green')">
+    <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Vencimiento resolución</p>
+    <p class="text-2xl font-bold" [class.text-red-600]="vencida" [class.text-orange-600]="vencimientoCercano && !vencida" [class.text-green-600]="configurado && !vencida && !vencimientoCercano">
       {{ (estado?.fecha_vencimiento || config?.fecha_vencimiento) ? ((estado?.fecha_vencimiento || config?.fecha_vencimiento) | date: 'dd/MM/yyyy') : '—' }}
     </p>
-    <p class="text-sm text-gray-500 mt-1">
+    <p class="text-sm text-gray-500 mt-2">
       Rango: {{ estado?.rango_inicio ?? config?.rango_inicio }} - {{ estado?.rango_fin ?? config?.rango_fin }}
     </p>
-  </mat-card>
+  </div>
 </div>
 
 <!-- Formulario de configuración -->

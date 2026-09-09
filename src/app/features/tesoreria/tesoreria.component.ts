@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -40,6 +41,7 @@ import { CuentaSelectComponent } from '../../shared/components/cuenta-select/cue
   styleUrl: './tesoreria.component.scss',
 })
 export class TesoreriaComponent implements OnInit {
+  private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private tesoreria = inject(TesoreriaService);
   private thirds = inject(ThirdsService);
@@ -107,7 +109,7 @@ export class TesoreriaComponent implements OnInit {
   }
 
   cargarCatalogos() {
-    this.thirds.getAll().subscribe((res: any) => {
+    this.thirds.getAll({ limit: 200 }).subscribe((res: any) => {
       this.terceros = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
@@ -177,9 +179,10 @@ export class TesoreriaComponent implements OnInit {
       next: () => {
         this.cancelar();
         this.cargar();
+        this.noti.success('Registro guardado');
       },
       error: (err) => {
-        alert(err.error?.message || 'Error al guardar el movimiento');
+        this.noti.error(err.error?.message || 'Error al guardar el movimiento');
       },
     });
   }
@@ -196,7 +199,10 @@ export class TesoreriaComponent implements OnInit {
 
   eliminar(row: any) {
     if (!confirm(`¿Eliminar el movimiento ${row.codigo}?`)) return;
-    this.tesoreria.delete(row.id).subscribe(() => this.cargar());
+    this.tesoreria.delete(row.id).subscribe({
+      next: () => { this.cargar(); this.noti.success('Registro eliminado'); },
+      error: (err: any) => this.noti.error(err.error?.message || 'Error al eliminar'),
+    });
   }
 
   nombreCuenta(codigo: string) {

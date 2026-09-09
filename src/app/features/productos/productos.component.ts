@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -6,7 +7,7 @@ import {
   FormBuilder,
   Validators,
 } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, forkJoin } from 'rxjs';
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -14,14 +15,18 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { ProductsService } from '../../core/services/products.service';
 import { AccountsService } from '../../core/services/accounts.service';
 import { CategoriasService } from '../../core/services/categorias.service';
 import { ExcelExportService } from '../../core/services/excel-export.service';
 import { CurrencyService } from '../../core/services/currency.service';
+import { UnidadesMedidaService } from '../../core/services/unidades-medida.service';
+import { ImpuestosService } from '../../core/services/impuestos.service';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
 import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
 import { CuentaSelectComponent } from '../../shared/components/cuenta-select/cuenta-select.component';
+import { API_SERVER_URL } from '../../core/api-url';
 
 @Component({
   selector: 'app-productos',
@@ -37,6 +42,7 @@ import { CuentaSelectComponent } from '../../shared/components/cuenta-select/cue
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    MatPaginatorModule,
     CurrencyFormatPipe,
     CurrencyInputDirective,
     CuentaSelectComponent,
@@ -45,6 +51,7 @@ import { CuentaSelectComponent } from '../../shared/components/cuenta-select/cue
   styleUrl: './productos.component.scss',
 })
 export class ProductosComponent implements OnInit {
+  private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private products = inject(ProductsService);
   private excel = inject(ExcelExportService);
@@ -52,6 +59,11 @@ export class ProductosComponent implements OnInit {
   private categorias = inject(CategoriasService);
   private cdr = inject(ChangeDetectorRef);
   private currency = inject(CurrencyService);
+  private unidadesSvc = inject(UnidadesMedidaService);
+  private impuestosSvc = inject(ImpuestosService);
+
+  unidades: any[] = [];
+  impuestos: any[] = [];
 
   lista: any[] = [];
   cuentas: any[] = [];
@@ -62,6 +74,20 @@ export class ProductosComponent implements OnInit {
   creandoCategoria = false;
   search = '';
   currencySymbol = '$';
+
+  // Paginación
+  total = 0;
+  pageIndex = 0;
+  pageSize = 20;
+  pageSizeOptions = [10, 20, 50, 100];
+
+  // Imágenes
+  imagen1File: File | null = null;
+  imagen2File: File | null = null;
+  previewImagen1: string | null = null;
+  previewImagen2: string | null = null;
+  imagen1Actual: string | null = null;
+  imagen2Actual: string | null = null;
 
   nuevaCategoriaForm = this.fb.group({
     nombre: ['', Validators.required],
@@ -77,6 +103,7 @@ export class ProductosComponent implements OnInit {
 
   displayedColumns = [
     'codigo',
+    'imagen',
     'nombre',
     'tipo',
     'stock',
@@ -87,7 +114,7 @@ export class ProductosComponent implements OnInit {
   ];
 
   form = this.fb.group({
-    codigo: ['', Validators.required],
+    codigo: [''],
     nombre: ['', Validators.required],
     descripcion: [''],
     tipo: [1],
@@ -115,6 +142,8 @@ export class ProductosComponent implements OnInit {
       this.cdr.detectChanges();
     });
     this.cargar();
+    this.cargarUnidades();
+    this.cargarImpuestos();
     Promise.all([
       this.cargarCuentasPromise(),
       this.cargarCategoriasPromise(),
@@ -131,6 +160,28 @@ export class ProductosComponent implements OnInit {
     this.form.get('pvp1')?.valueChanges.subscribe(() => {
       this.recalcularMargenDesdePvp1();
       this.recalcularPvp4();
+    });
+  }
+
+  cargarUnidades() {
+    this.unidadesSvc.getAll({ limit: 100 }).subscribe({
+      next: (res: any) => {
+        this.unidades = (res.data ?? res ?? []).filter((u: any) => u.estado === 1);
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
+  }
+
+  cargarImpuestos() {
+    this.impuestosSvc.getAll({ limit: 100 }).subscribe({
+      next: (res: any) => {
+        this.impuestos = (res.data ?? res ?? [])
+          .filter((i: any) => i.estado === 1)
+          .map((i: any) => ({ ...i, porcentaje: Number(i.porcentaje) }));
+        this.cdr.detectChanges();
+      },
+      error: () => {},
     });
   }
 
@@ -191,6 +242,24 @@ export class ProductosComponent implements OnInit {
     });
   }
 
+  /**
+   * Opciones del select de impuesto.
+   * Si el producto tiene un porcentaje guardado que no existe en la
+   * configuración, se agrega como opción personalizada para que quede
+   * seleccionado al editar.
+   */
+  get opcionesImpuesto(): any[] {
+    const actual = Number(this.form.get('impuesto')?.value) || 0;
+    const existe =
+      actual === 0 ||
+      this.impuestos.some((i: any) => Number(i.porcentaje) === actual);
+    if (existe) return this.impuestos;
+    return [
+      ...this.impuestos,
+      { codigo: 'OTRO', nombre: 'Personalizado', porcentaje: actual },
+    ];
+  }
+
   recalcularPvp4() {
     const pvp1 = Number(this.form.get('pvp1')?.value) || 0;
     const iva = Number(this.form.get('impuesto')?.value) || 19;
@@ -249,28 +318,46 @@ export class ProductosComponent implements OnInit {
   }
 
   cargar() {
-    const params: any = { search: this.search };
+    const params: any = {
+      page: this.pageIndex + 1,
+      limit: this.pageSize,
+      search: this.search,
+    };
     if (this.filtroCategoriaId) {
       params.categoria_id = this.filtroCategoriaId;
     }
     this.products.getAll(params).subscribe((res: any) => {
-      this.lista = res.data ?? res ?? [];
+      this.lista = res?.data ?? [];
+      this.total = res?.total ?? this.lista.length;
       this.cdr.detectChanges();
     });
   }
 
   filtrarPorCategoria() {
+    this.pageIndex = 0;
     this.cargar();
   }
 
   limpiarFiltroCategoria() {
     this.filtroCategoriaId = null;
+    this.pageIndex = 0;
+    this.cargar();
+  }
+
+  buscar() {
+    this.pageIndex = 0;
+    this.cargar();
+  }
+
+  onPage(event: PageEvent) {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
     this.cargar();
   }
 
   exportarExcel() {
     if (this.lista.length === 0) {
-      alert('No hay productos para exportar');
+      this.noti.warning('No hay productos para exportar');
       return;
     }
     const data = this.lista.map((p) => ({
@@ -293,25 +380,55 @@ export class ProductosComponent implements OnInit {
   guardar() {
     if (this.form.invalid) return;
     const body = this.form.value as any;
+    const isNew = !this.editandoId;
 
-    const req = this.editandoId
-      ? this.products.update(this.editandoId, body)
-      : this.products.create(body);
+    const req = isNew
+      ? this.products.create(body)
+      : this.products.update(this.editandoId!, body);
 
     req.subscribe({
-      next: () => {
-        this.cancelar();
-        this.cargar();
+      next: (res: any) => {
+        const productId = isNew ? res?.id : this.editandoId;
+        const uploads: any[] = [];
+        if (this.imagen1File && productId) {
+          uploads.push(this.products.uploadImagen(productId, this.imagen1File, 1));
+        }
+        if (this.imagen2File && productId) {
+          uploads.push(this.products.uploadImagen(productId, this.imagen2File, 2));
+        }
+        if (uploads.length === 0) {
+          this.finalizarGuardar();
+        } else {
+          forkJoin(uploads).subscribe({
+            next: () => this.finalizarGuardar(),
+            error: (err) => {
+              this.noti.error(err.error?.message || 'Error al subir imágenes');
+              this.finalizarGuardar();
+            },
+          });
+        }
+        this.noti.success('Registro guardado');
       },
       error: (err) => {
-        alert(err.error?.message || 'Error al guardar el producto');
+        this.noti.error(err.error?.message || 'Error al guardar el producto');
       },
     });
+  }
+
+  private finalizarGuardar() {
+    this.cancelar();
+    this.cargar();
   }
 
   editar(row: any) {
     this.editandoId = row.id;
     this.form.patchValue(row, { emitEvent: false });
+    this.imagen1Actual = row.imagen1 ?? null;
+    this.imagen2Actual = row.imagen2 ?? null;
+    this.imagen1File = null;
+    this.imagen2File = null;
+    this.previewImagen1 = null;
+    this.previewImagen2 = null;
     // Si no tiene cuentas asignadas, sugerirlas automáticamente
     if (!row.cuenta_inventarios_id && !row.cuenta_costos_id && !row.cuenta_ingresos_id) {
       this.sugerirCuentas();
@@ -324,12 +441,21 @@ export class ProductosComponent implements OnInit {
       { tipo: 1, stock_min: 0, ultimo_precio: 0, margen: 30, pvp1: 0, pvp2: 0, pvp3: 0, pvp4: 0, pvp5: 0, costo_flete: 0, impuesto: 0, categoria_id: null },
       { emitEvent: false },
     );
+    this.imagen1File = null;
+    this.imagen2File = null;
+    this.previewImagen1 = null;
+    this.previewImagen2 = null;
+    this.imagen1Actual = null;
+    this.imagen2Actual = null;
     this.sugerirCuentas();
   }
 
   eliminar(row: any) {
     if (!confirm(`¿Eliminar el producto ${row.nombre}?`)) return;
-    this.products.delete(row.id).subscribe(() => this.cargar());
+    this.products.delete(row.id).subscribe({
+      next: () => { this.cargar(); this.noti.success('Registro eliminado'); },
+      error: (err: any) => this.noti.error(err.error?.message || 'Error al eliminar'),
+    });
   }
 
   abrirNuevaCategoria() {
@@ -356,14 +482,53 @@ export class ProductosComponent implements OnInit {
         this.cargarCategorias();
         this.form.patchValue({ categoria_id: res.id }, { emitEvent: true });
         this.cancelarNuevaCategoria();
+        this.noti.success('Registro creado');
       },
       error: (err: any) => {
-        alert(err.error?.message || 'Error al crear la categoría');
+        this.noti.error(err.error?.message || 'Error al crear la categoría');
       },
     });
   }
 
   nombreTipo(id: number) {
     return this.tipos.find((t) => t.id === id)?.nombre || id;
+  }
+
+  imagenUrl(ruta?: string | null): string | null {
+    if (!ruta) return null;
+    if (ruta.startsWith('data:') || ruta.startsWith('http')) return ruta;
+    return `${API_SERVER_URL}${ruta}`;
+  }
+
+  onImagen1Change(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.imagen1File = input.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.previewImagen1 = reader.result as string;
+        this.cdr.detectChanges();
+      };
+      reader.readAsDataURL(this.imagen1File);
+    } else {
+      this.imagen1File = null;
+      this.previewImagen1 = null;
+    }
+  }
+
+  onImagen2Change(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.imagen2File = input.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.previewImagen2 = reader.result as string;
+        this.cdr.detectChanges();
+      };
+      reader.readAsDataURL(this.imagen2File);
+    } else {
+      this.imagen2File = null;
+      this.previewImagen2 = null;
+    }
   }
 }

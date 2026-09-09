@@ -1,0 +1,92 @@
+<div class="mb-6">
+  <h1 class="page-title">Tipos de Tercero</h1>
+  <p class="text-gray-500 mt-1">Clasificación de terceros (clientes, proveedores, empleados...)</p>
+</div>
+
+<mat-card class="p-4 mb-6">
+  <h2 class="section-title">
+    {{ editandoId ? 'Editar tipo' : 'Nuevo tipo' }}
+  </h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <div class="form-row">
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>assignment</mat-icon>
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="nombre" required />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>notes</mat-icon>
+        <mat-label>Descripción</mat-label>
+        <input matInput formControlName="descripcion" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+        <mat-icon matPrefix>toggle_on</mat-icon>
+        <mat-label>Estado</mat-label>
+        <mat-select formControlName="estado">
+          <mat-option [value]="1">Activo</mat-option>
+          <mat-option [value]="0">Inactivo</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="field-action flex-none">
+        <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded" [disabled]="form.invalid">
+          <mat-icon>{{ editandoId ? 'save' : 'add_circle_outline' }}</mat-icon>
+          <span class="ml-2 hidden md:inline">{{ editandoId ? 'Actualizar' : 'Agregar' }}</span>
+        </button>
+        <button *ngIf="editandoId" type="button" mat-stroked-button color="warn" class="fuse-mat-button-rounded" (click)="cancelar()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+  </form>
+</mat-card>
+
+<mat-card class="p-4">
+  <div class="flex items-center justify-between mb-4 gap-4">
+    <h2 class="section-title mb-0">Tipos registrados</h2>
+    <mat-form-field class="blue-input w-72" subscriptSizing="dynamic">
+      <mat-icon matPrefix>search</mat-icon>
+      <mat-label>Buscar</mat-label>
+      <input matInput [(ngModel)]="search" [ngModelOptions]="{ standalone: true }" (keyup.enter)="cargar()" />
+    </mat-form-field>
+  </div>
+
+  <table mat-table [dataSource]="lista" class="w-full">
+    <ng-container matColumnDef="nombre">
+      <th mat-header-cell *matHeaderCellDef>Nombre</th>
+      <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="descripcion">
+      <th mat-header-cell *matHeaderCellDef>Descripción</th>
+      <td mat-cell *matCellDef="let row">{{ row.descripcion }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="estado">
+      <th mat-header-cell *matHeaderCellDef>Estado</th>
+      <td mat-cell *matCellDef="let row">{{ nombreEstado(row.estado) }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="acciones">
+      <th mat-header-cell *matHeaderCellDef>Acciones</th>
+      <td mat-cell *matCellDef="let row">
+        <button mat-icon-button color="primary" (click)="editar(row)" matTooltip="Editar">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="eliminar(row)" matTooltip="Eliminar">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  <div *ngIf="lista.length === 0" class="p-8 text-center text-gray-500">
+    No hay tipos de tercero registrados
+  </div>
+</mat-card>

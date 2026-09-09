@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -34,6 +35,7 @@ import { CurrencyInputDirective } from '../../shared/directives/currency-input.d
   styleUrl: './bancos.component.scss',
 })
 export class BancosComponent implements OnInit {
+  private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private bancos = inject(BancosService);
   private accounts = inject(AccountsService);
@@ -107,9 +109,10 @@ export class BancosComponent implements OnInit {
       next: () => {
         this.cancelar();
         this.cargar();
+        this.noti.success('Registro guardado');
       },
       error: (err) => {
-        alert(err.error?.message || 'Error al guardar el banco');
+        this.noti.error(err.error?.message || 'Error al guardar el banco');
       },
     });
   }
@@ -126,7 +129,10 @@ export class BancosComponent implements OnInit {
 
   eliminar(row: any) {
     if (!confirm(`¿Eliminar el banco ${row.nombre}?`)) return;
-    this.bancos.delete(row.id).subscribe(() => this.cargar());
+    this.bancos.delete(row.id).subscribe({
+      next: () => { this.cargar(); this.noti.success('Registro eliminado'); },
+      error: (err: any) => this.noti.error(err.error?.message || 'Error al eliminar'),
+    });
   }
 
   nombreTipo(id: number) {

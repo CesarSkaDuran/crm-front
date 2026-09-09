@@ -41,4 +41,10 @@ export class ApiService {
   delete<T>(path: string): Observable<T> {
     return this.http.delete<T>(`${this.apiUrl}/${path}`);
   }
+
+  upload<T>(path: string, fieldName: string, file: File | Blob, fileName = 'archivo.png'): Observable<T> {
+    const formData = new FormData();
+    formData.append(fieldName, file, fileName);
+    return this.http.post<T>(`${this.apiUrl}/${path}`, formData);
+  }
 }

@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ViewChildren, QueryList, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
@@ -51,6 +52,7 @@ import {
   styleUrl: './informes.component.scss',
 })
 export class InformesComponent implements OnInit {
+  private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private informes = inject(InformesService);
   private accounts = inject(AccountsService);
@@ -179,7 +181,7 @@ export class InformesComponent implements OnInit {
   }
 
   cargarTerceros() {
-    this.thirds.getAll().subscribe((res: { data: Tercero[] } | Tercero[]) => {
+    this.thirds.getAll({ limit: 200 }).subscribe((res: { data: Tercero[] } | Tercero[]) => {
       const list = Array.isArray(res) ? res : res.data ?? [];
       this.terceros = list;
       this.filtrarTerceros(this.terceroSearch.value ?? '');
@@ -353,7 +355,7 @@ export class InformesComponent implements OnInit {
     } else if (tipo === 'pyg') {
       call$ = this.informes.getPyG(req as PygQuery);
     } else {
-      alert('Informe no implementado aún');
+      this.noti.warning('Informe no implementado aún');
       this.cargando = false;
       return;
     }
@@ -363,9 +365,10 @@ export class InformesComponent implements OnInit {
         this.resultado = { ...res, tipo } as InformeResultado;
         this.cargando = false;
         setTimeout(() => this.cdr.detectChanges());
+        this.noti.success('Informe generado');
       },
       error: (err: any) => {
-        alert(err.error?.message || 'Error al generar el informe');
+        this.noti.error(err.error?.message || 'Error al generar el informe');
         this.cargando = false;
         setTimeout(() => this.cdr.detectChanges());
       },
@@ -438,7 +441,7 @@ export class InformesComponent implements OnInit {
       }
     } catch (err) {
       console.error('Error al exportar:', err);
-      alert('Error al generar el archivo. Revise la consola para más detalles.');
+      this.noti.error('Error al generar el archivo. Revise la consola para más detalles.');
     } finally {
       this.exportando = false;
       this.cdr.detectChanges();

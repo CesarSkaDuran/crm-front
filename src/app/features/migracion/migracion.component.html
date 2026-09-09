@@ -58,17 +58,17 @@
   <div *ngIf="resultado" class="mt-6">
     <h3 class="font-semibold mb-2">Resultado de la importación:</h3>
     <div class="grid grid-cols-3 gap-4 mb-4">
-      <div class="bg-blue-50 p-4 rounded text-center">
-        <div class="text-2xl font-bold text-blue-700">{{ resultado.total }}</div>
-        <div class="text-sm text-gray-600">Total</div>
+      <div class="resumen-card blue">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Total</p>
+        <p class="text-2xl font-bold text-blue-600">{{ resultado.total }}</p>
       </div>
-      <div class="bg-green-50 p-4 rounded text-center">
-        <div class="text-2xl font-bold text-green-700">{{ resultado.exitosos }}</div>
-        <div class="text-sm text-gray-600">Exitosos</div>
+      <div class="resumen-card green">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Exitosos</p>
+        <p class="text-2xl font-bold text-green-600">{{ resultado.exitosos }}</p>
       </div>
-      <div class="bg-red-50 p-4 rounded text-center">
-        <div class="text-2xl font-bold text-red-700">{{ resultado.fallidos }}</div>
-        <div class="text-sm text-gray-600">Fallidos</div>
+      <div class="resumen-card red">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Fallidos</p>
+        <p class="text-2xl font-bold text-red-600">{{ resultado.fallidos }}</p>
       </div>
     </div>
 

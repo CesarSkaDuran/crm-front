@@ -1,4 +1,6 @@
-import { Component, signal, inject } from '@angular/core';
+import { NotificacionesService } from '../../core/services/notificaciones.service'
+import { Component, signal, inject, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { MatIcon } from '@angular/material/icon';
@@ -6,6 +8,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatToolbar } from '@angular/material/toolbar';
 import { AuthService } from '../../core/services/auth.service';
+import { UsersService } from '../../core/services/users.service';
+import { EmpresasService } from '../../core/services/empresas.service';
+import { API_SERVER_URL } from '../../core/api-url';
 import { NotificacionesComponent } from '../notificaciones/notificaciones.component';
 
 interface MenuGroup {
@@ -108,6 +113,7 @@ const MENU: MenuGroup[] = [
   selector: 'app-shell',
   standalone: true,
   imports: [
+    CommonModule,
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
@@ -123,14 +129,56 @@ const MENU: MenuGroup[] = [
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss'
 })
-export class ShellComponent {
+export class ShellComponent implements OnInit {
+  private noti = inject(NotificacionesService);
   private auth = inject(AuthService);
   private router = inject(Router);
+  private users = inject(UsersService);
+  private empresas = inject(EmpresasService);
 
   opened = signal(true);
   menu = signal(MENU);
   expanded = signal<Record<string, boolean>>({});
   usuario = signal(this.auth.getUsuario());
+  empresa = signal<any>(null);
+
+  ngOnInit() {
+    // Refrescar datos del usuario (incluida la foto) desde el servidor
+    const u = this.usuario();
+    if (u?.id) {
+      this.users.getOne(u.id).subscribe({
+        next: (fresh: any) => {
+          const actualizado = { ...u, foto: fresh?.foto ?? u.foto };
+          this.usuario.set(actualizado);
+          localStorage.setItem('usuario', JSON.stringify(actualizado));
+        },
+        error: () => {},
+      });
+    }
+    // Cargar logo/nombre de la empresa para el sidebar
+    this.empresas.getMiEmpresa().subscribe({
+      next: (emp: any) => this.empresa.set(emp),
+      error: () => {},
+    });
+  }
+
+  get logoEmpresa(): string | null {
+    const logo = this.empresa()?.logo;
+    if (!logo) return null;
+    if (logo.startsWith('data:') || logo.startsWith('http')) return logo;
+    return `${API_SERVER_URL}${logo}`;
+  }
+
+  get nombreEmpresa(): string {
+    return this.empresa()?.nombre || this.empresa()?.razon_social || '';
+  }
+
+  get fotoUsuario(): string | null {
+    const foto = this.usuario()?.foto;
+    if (!foto) return null;
+    if (foto.startsWith('data:') || foto.startsWith('http')) return foto;
+    return `${API_SERVER_URL}${foto}`;
+  }
 
   get nombreUsuario(): string {
     const u = this.usuario();

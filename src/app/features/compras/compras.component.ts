@@ -16,6 +16,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { PurchasesService } from '../../core/services/purchases.service';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { ProductsService } from '../../core/services/products.service';
@@ -23,6 +24,8 @@ import { BancosService } from '../../core/services/bancos.service';
 import { NotificacionesService } from '../../core/services/notificaciones.service';
 import { ExcelExportService } from '../../core/services/excel-export.service';
 import { CurrencyService } from '../../core/services/currency.service';
+import { ImpuestosService } from '../../core/services/impuestos.service';
+import { TiposTerceroService } from '../../core/services/tipos-tercero.service';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
 import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
 
@@ -61,6 +64,7 @@ interface TotalesCompra {
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    MatPaginatorModule,
     CurrencyFormatPipe,
     CurrencyInputDirective,
   ],
@@ -77,6 +81,11 @@ export class ComprasComponent implements OnInit {
   private noti = inject(NotificacionesService);
   private excel = inject(ExcelExportService);
   private currency = inject(CurrencyService);
+  private impuestosSvc = inject(ImpuestosService);
+  private tiposTerceroSvc = inject(TiposTerceroService);
+
+  impuestos: any[] = [];
+  tiposTercero: any[] = [];
 
   compras: any[] = [];
   comprasFiltradas: any[] = [];
@@ -87,8 +96,19 @@ export class ComprasComponent implements OnInit {
 
   mostrarFormulario = false;
   compraSeleccionada: any = null;
-  busqueda = '';
   guardando = false;
+
+  // Paginación (servidor)
+  total = 0;
+  pageIndex = 0;
+  pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
+
+  filters = this.fb.group({
+    search: [''],
+    date: [''],
+    date2: [''],
+  });
   compraGuardada: any = null;
 
   displayedColumns = ['codigo', 'fecha', 'proveedor', 'total', 'modo', 'estado', 'acciones'];
@@ -139,23 +159,70 @@ export class ComprasComponent implements OnInit {
     });
     this.cargarCompras();
     this.cargarCatalogos();
+    this.cargarImpuestos();
+  }
+
+  cargarImpuestos() {
+    this.impuestosSvc.getAll({ limit: 100 }).subscribe({
+      next: (res: any) => {
+        this.impuestos = (res.data ?? res ?? [])
+          .filter((i: any) => i.estado === 1)
+          .map((i: any) => ({ ...i, porcentaje: Number(i.porcentaje) }));
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
   }
 
   cargarCompras() {
-    this.purchases.getAll().subscribe((res: any) => {
-      this.compras = res.data ?? res ?? [];
-      this.comprasFiltradas = [...this.compras];
+    const query = {
+      ...this.filters.value,
+      page: this.pageIndex + 1,
+      limit: this.pageSize,
+    };
+    this.purchases.getAll(query).subscribe((res: any) => {
+      // Backend returns { data, total, page, limit }
+      if (res && Array.isArray(res.data)) {
+        this.compras = res.data;
+        this.total = res.total ?? res.data.length;
+      } else {
+        // Fallback for non-paginated response
+        this.compras = res ?? [];
+        this.total = this.compras.length;
+      }
+      this.comprasFiltradas = this.compras;
       this.cdr.detectChanges();
     });
   }
 
+  onPageChange(e: PageEvent) {
+    this.pageIndex = e.pageIndex;
+    this.pageSize = e.pageSize;
+    this.cargarCompras();
+  }
+
+  onFilterSubmit() {
+    this.pageIndex = 0;
+    this.cargarCompras();
+  }
+
+  /** Busca el id del tipo de tercero por nombre (ej. 'Proveedor') con fallback */
+  private tipoTerceroId(nombre: string, fallback: number): number {
+    const t = this.tiposTercero.find(
+      (x: any) => String(x.nombre).toLowerCase() === nombre.toLowerCase(),
+    );
+    return t ? Number(t.id) : fallback;
+  }
+
   cargarCatalogos() {
-    this.thirds.getAll().subscribe((res: any) => {
-      const list = res.data ?? res ?? [];
-      this.proveedores = list.filter((t: any) => Number(t.tipo_terceros) === 2);
-      this.cdr.detectChanges();
+    this.tiposTerceroSvc.getAll({ limit: 100 }).subscribe({
+      next: (res: any) => {
+        this.tiposTercero = (res.data ?? res ?? []).filter((t: any) => t.estado === 1);
+        this.cargarProveedores();
+      },
+      error: () => this.cargarProveedores(),
     });
-    this.products.getAll().subscribe((res: any) => {
+    this.products.getAll({ limit: 500 }).subscribe((res: any) => {
       this.productos = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
@@ -165,21 +232,16 @@ export class ComprasComponent implements OnInit {
     });
   }
 
-  filtrar() {
-    const q = this.busqueda.toLowerCase().trim();
-    if (!q) {
-      this.comprasFiltradas = [...this.compras];
-      return;
-    }
-    this.comprasFiltradas = this.compras.filter((c) => {
-      const proveedor = this.nombreProveedor(c.proveedor_id).toLowerCase();
-      return (
-        String(c.codigo || '').toLowerCase().includes(q) ||
-        proveedor.includes(q) ||
-        String(c.observacion || '').toLowerCase().includes(q)
-      );
+  private cargarProveedores() {
+    const idProveedor = this.tipoTerceroId('Proveedor', 2);
+    this.thirds.getAll({ limit: 200 }).subscribe((res: any) => {
+      const list = res.data ?? res ?? [];
+      this.proveedores = list.filter((t: any) => Number(t.tipo_terceros) === idProveedor);
+      this.cdr.detectChanges();
     });
   }
+
+
 
   nuevaCompra() {
     this.compraSeleccionada = null;
@@ -247,6 +309,24 @@ export class ComprasComponent implements OnInit {
       // Mostrar vista previa del nuevo PVP si el producto tiene margen
       this.calcularNuevoPvpVistaPrevia(producto, costo);
     }
+  }
+
+  /**
+   * Opciones del select de impuesto del detalle.
+   * Incluye los impuestos configurados y, si el producto trae un porcentaje
+   * que no existe en la configuración, lo agrega como opción personalizada
+   * para que quede seleccionado.
+   */
+  get opcionesImpuestoDetalle(): any[] {
+    const actual = Number(this.nuevoDetalle.get('impuesto')?.value) || 0;
+    const existe =
+      actual === 0 ||
+      this.impuestos.some((i: any) => Number(i.porcentaje) === actual);
+    if (existe) return this.impuestos;
+    return [
+      ...this.impuestos,
+      { codigo: 'OTRO', nombre: 'Personalizado', porcentaje: actual },
+    ];
   }
 
   /**

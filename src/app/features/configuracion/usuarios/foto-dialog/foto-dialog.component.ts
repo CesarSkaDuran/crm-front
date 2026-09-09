@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../../../core/services/notificaciones.service'
 import { Component, inject, ViewChild, ElementRef, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';

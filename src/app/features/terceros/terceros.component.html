@@ -107,13 +107,29 @@
 </mat-card>
 
 <mat-card class="p-4">
-  <div class="flex items-center justify-between mb-4 gap-4">
+  <div class="flex items-center justify-between mb-4 gap-4 flex-wrap">
     <h2 class="section-title mb-0">Terceros registrados</h2>
-    <mat-form-field class="blue-input w-72" subscriptSizing="dynamic">
-      <mat-icon matPrefix>search</mat-icon>
-      <mat-label>Buscar</mat-label>
-      <input matInput [(ngModel)]="search" [ngModelOptions]="{ standalone: true }" (keyup.enter)="cargar()" />
-    </mat-form-field>
+    <form [formGroup]="filters" (ngSubmit)="onFilterSubmit()" class="flex items-center gap-4 flex-wrap">
+      <mat-form-field class="blue-input w-72" subscriptSizing="dynamic">
+        <mat-icon matPrefix>search</mat-icon>
+        <mat-label>Buscar</mat-label>
+        <input matInput formControlName="search" />
+      </mat-form-field>
+
+      <mat-form-field class="blue-input w-56" subscriptSizing="dynamic">
+        <mat-icon matPrefix>groups</mat-icon>
+        <mat-label>Tipo de tercero</mat-label>
+        <mat-select formControlName="tipo_terceros">
+          <mat-option [value]="null">Todos</mat-option>
+          <mat-option *ngFor="let t of tiposTercero" [value]="t.id">{{ t.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded">
+        <mat-icon>search</mat-icon>
+        Buscar
+      </button>
+    </form>
   </div>
 
   <table mat-table [dataSource]="lista" class="w-full">
@@ -166,4 +182,14 @@
   <div *ngIf="lista.length === 0" class="p-8 text-center text-gray-500">
     No hay terceros registrados
   </div>
+
+  <mat-paginator
+    *ngIf="total > 0"
+    [length]="total"
+    [pageSize]="pageSize"
+    [pageIndex]="pageIndex"
+    [pageSizeOptions]="pageSizeOptions"
+    (page)="onPageChange($event)"
+    showFirstLastButtons
+  ></mat-paginator>
 </mat-card>

@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -30,6 +31,7 @@ import { PeriodosPagoService, PeriodoPago } from '../../../core/services/periodo
   styleUrl: './periodos-pago.scss',
 })
 export class PeriodosPagoComponent implements OnInit {
+  private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private svc = inject(PeriodosPagoService);
   private cdr = inject(ChangeDetectorRef);
@@ -72,10 +74,11 @@ export class PeriodosPagoComponent implements OnInit {
         this.guardando = false;
         this.cancelar();
         this.cargar();
+        this.noti.success('Registro guardado');
       },
       error: (err) => {
         this.guardando = false;
-        alert(err.error?.message || 'Error al guardar el periodo de pago');
+        this.noti.error(err.error?.message || 'Error al guardar el periodo de pago');
         this.cdr.detectChanges();
       },
     });
@@ -99,8 +102,8 @@ export class PeriodosPagoComponent implements OnInit {
   eliminar(row: PeriodoPago) {
     if (!confirm(`¿Eliminar el periodo "${row.nombre}"?`)) return;
     this.svc.delete(row.id).subscribe({
-      next: () => this.cargar(),
-      error: (err) => alert(err.error?.message || 'Error al eliminar'),
+      next: () => { this.cargar(); this.noti.success('Registro eliminado'); },
+      error: (err) => this.noti.error(err.error?.message || 'Error al eliminar'),
     });
   }
 

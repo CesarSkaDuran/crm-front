@@ -31,3 +31,30 @@ th.mat-mdc-header-cell {
 tr.mat-mdc-row:hover {
   background-color: rgba(56, 138, 243, 0.04);
 }
+
+// ============ RESUMEN CARDS (estándar con sparkline) ============
+.resumen-card {
+  border-radius: 12px;
+  padding: 1.5rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    border-color: #cbd5e1;
+  }
+
+  &.blue {
+    border-left: 4px solid #3b82f6;
+  }
+
+  &.green {
+    border-left: 4px solid #22c55e;
+  }
+
+  &.slate {
+    border-left: 4px solid #64748b;
+  }
+}

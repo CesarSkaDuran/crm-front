@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -78,6 +79,7 @@ import { CurrencyInputDirective } from '../../shared/directives/currency-input.d
   `,
 })
 export class MovimientoDialogComponent {
+  private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private ref = inject(MatDialogRef);
   private data = ngInject(MAT_DIALOG_DATA);

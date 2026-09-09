@@ -14,6 +14,7 @@ import { UsersService, User } from '../../../core/services/users.service';
 import { NotificacionesService } from '../../../core/services/notificaciones.service';
 import { PermisosDialogComponent } from './permisos-dialog/permisos-dialog.component';
 import { FotoDialogComponent } from './foto-dialog/foto-dialog.component';
+import { API_SERVER_URL } from '../../../core/api-url';
 
 @Component({
   selector: 'app-usuarios',
@@ -60,6 +61,9 @@ export class UsuariosComponent implements OnInit {
   });
 
   fotoPreview: string | null = null;
+  fotoFile: File | Blob | null = null;
+  fotoEliminada = false;
+  guardandoFoto = false;
 
   ngOnInit() {
     this.cargar();
@@ -75,10 +79,18 @@ export class UsuariosComponent implements OnInit {
     });
   }
 
+  fotoUrl(foto?: string | null): string | null {
+    if (!foto) return null;
+    if (foto.startsWith('data:') || foto.startsWith('http')) return foto;
+    return `${API_SERVER_URL}${foto}`;
+  }
+
   nuevo() {
     this.mostrarFormulario = true;
     this.editandoId = null;
     this.fotoPreview = null;
+    this.fotoFile = null;
+    this.fotoEliminada = false;
     this.form.reset({
       nombre: '',
       apellido: '',
@@ -96,7 +108,9 @@ export class UsuariosComponent implements OnInit {
   editar(user: User) {
     this.mostrarFormulario = true;
     this.editandoId = user.id;
-    this.fotoPreview = user.foto || null;
+    this.fotoPreview = this.fotoUrl(user.foto);
+    this.fotoFile = null;
+    this.fotoEliminada = false;
     this.form.patchValue({
       nombre: user.nombre,
       apellido: user.apellido || '',
@@ -115,12 +129,13 @@ export class UsuariosComponent implements OnInit {
     if (this.form.invalid) return;
 
     const body = this.form.value as any;
-    body.foto = this.fotoPreview || '';
+    delete body.foto;
     if (!body.password && this.editandoId) {
       delete body.password;
     }
-    if (!body.foto) {
-      delete body.foto;
+    // Si el usuario quitó la foto, limpiarla en el backend
+    if (this.fotoEliminada && !this.fotoFile) {
+      body.foto = null;
     }
 
     const obs = this.editandoId
@@ -128,15 +143,51 @@ export class UsuariosComponent implements OnInit {
       : this.users.create(body);
 
     obs.subscribe({
-      next: () => {
-        this.noti.success(this.editandoId ? 'Usuario actualizado' : 'Usuario creado');
-        this.volver();
-        this.cargar();
+      next: (guardado: User) => {
+        const userId = this.editandoId ?? guardado.id;
+        if (this.fotoFile && userId) {
+          this.subirFoto(userId);
+        } else {
+          this.noti.success(this.editandoId ? 'Usuario actualizado' : 'Usuario creado');
+          this.volver();
+          this.cargar();
+        }
       },
       error: (err: any) => {
         this.noti.error(err.error?.message || 'Error al guardar usuario');
       },
     });
+  }
+
+  private subirFoto(userId: number) {
+    this.guardandoFoto = true;
+    this.users.uploadFoto(userId, this.fotoFile!, 'foto.png').subscribe({
+      next: (user: User) => {
+        this.guardandoFoto = false;
+        this.noti.success(this.editandoId ? 'Usuario actualizado' : 'Usuario creado');
+        this.actualizarSesionSiEsActual(user);
+        this.volver();
+        this.cargar();
+      },
+      error: () => {
+        this.guardandoFoto = false;
+        this.noti.error('Usuario guardado, pero la foto no pudo subirse');
+        this.volver();
+        this.cargar();
+      },
+    });
+  }
+
+  private actualizarSesionSiEsActual(user: User) {
+    const raw = localStorage.getItem('usuario');
+    if (!raw) return;
+    try {
+      const sesion = JSON.parse(raw);
+      if (sesion?.id === user.id) {
+        sesion.foto = user.foto;
+        localStorage.setItem('usuario', JSON.stringify(sesion));
+      }
+    } catch {}
   }
 
   eliminar(user: User) {
@@ -162,11 +213,14 @@ export class UsuariosComponent implements OnInit {
     const file = input.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      this.noti.error('La imagen no debe superar los 2 MB');
+    if (file.size > 5 * 1024 * 1024) {
+      this.noti.error('La imagen no debe superar los 5 MB');
+      input.value = '';
       return;
     }
 
+    this.fotoFile = file;
+    this.fotoEliminada = false;
     const reader = new FileReader();
     reader.onload = () => {
       this.fotoPreview = reader.result as string;
@@ -182,13 +236,26 @@ export class UsuariosComponent implements OnInit {
 
     ref.afterClosed().subscribe((foto: string | undefined) => {
       if (foto) {
+        this.fotoFile = this.dataUrlToFile(foto, 'foto-camara.png');
         this.fotoPreview = foto;
+        this.fotoEliminada = false;
       }
     });
   }
 
+  private dataUrlToFile(dataUrl: string, nombre: string): File {
+    const [meta, base64] = dataUrl.split(',');
+    const mime = meta.match(/data:(.*?);/)?.[1] || 'image/png';
+    const bytes = atob(base64);
+    const arr = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+    return new File([arr], nombre, { type: mime });
+  }
+
   eliminarFoto() {
     this.fotoPreview = null;
+    this.fotoFile = null;
+    this.fotoEliminada = true;
     this.form.patchValue({ foto: '' });
   }
 

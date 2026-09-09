@@ -202,8 +202,6 @@ button[mat-icon-button] {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-height: 560px;
-  overflow-y: auto;
   padding-right: 2px;
 }
 
@@ -311,35 +309,28 @@ button[mat-icon-button] {
 
 // ============ RESUMEN CARDS ============
 .resumen-card {
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1.5rem;
-  background: linear-gradient(135deg, #f5f7fa 0%, #f8fafc 100%);
+  background: white;
   border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
   
-  p:first-child {
-    @apply text-sm text-gray-600 font-medium;
-  }
-  
-  p:last-child {
-    @apply text-3xl font-bold mt-2;
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    border-color: #cbd5e1;
   }
   
   &.blue {
-    p:last-child {
-      @apply text-blue-700;
-    }
+    border-left: 4px solid #3b82f6;
   }
   
   &.orange {
-    p:last-child {
-      @apply text-orange-600;
-    }
+    border-left: 4px solid #f97316;
   }
   
   &.red {
-    p:last-child {
-      @apply text-red-600;
-    }
+    border-left: 4px solid #ef4444;
   }
 }
 

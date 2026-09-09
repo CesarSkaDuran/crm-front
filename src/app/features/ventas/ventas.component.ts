@@ -17,6 +17,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { SalesService } from '../../core/services/sales.service';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { ProductsService } from '../../core/services/products.service';
@@ -25,6 +26,8 @@ import { NotificacionesService } from '../../core/services/notificaciones.servic
 import { ExcelExportService } from '../../core/services/excel-export.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { FacturacionElectronicaService } from '../../core/services/facturacion-electronica.service';
+import { ImpuestosService } from '../../core/services/impuestos.service';
+import { TiposTerceroService } from '../../core/services/tipos-tercero.service';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
 import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
 
@@ -62,6 +65,7 @@ interface TotalesVenta {
     MatIconModule,
     MatCardModule,
     MatCheckboxModule,
+    MatPaginatorModule,
     CurrencyFormatPipe,
     CurrencyInputDirective,
   ],
@@ -79,6 +83,11 @@ export class VentasComponent implements OnInit {
   private excel = inject(ExcelExportService);
   private currency = inject(CurrencyService);
   private factElectronica = inject(FacturacionElectronicaService);
+  private impuestosSvc = inject(ImpuestosService);
+  private tiposTerceroSvc = inject(TiposTerceroService);
+
+  impuestos: any[] = [];
+  tiposTercero: any[] = [];
 
   ventas: any[] = [];
   ventasFiltradas: any[] = [];
@@ -92,8 +101,19 @@ export class VentasComponent implements OnInit {
 
   mostrarFormulario = false;
   ventaSeleccionada: any = null;
-  busqueda = '';
   guardando = false;
+
+  // Paginación (servidor)
+  total = 0;
+  pageIndex = 0;
+  pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
+
+  filters = this.fb.group({
+    search: [''],
+    date: [''],
+    date2: [''],
+  });
   ventaGuardada: any = null;
   facturacionElectronicaConfigurada = false;
   facturacionElectronicaActiva = false;
@@ -147,6 +167,7 @@ export class VentasComponent implements OnInit {
     });
     this.cargarVentas();
     this.cargarCatalogos();
+    this.cargarImpuestos();
     this.verificarFacturacionElectronica();
   }
 
@@ -165,24 +186,66 @@ export class VentasComponent implements OnInit {
   }
 
   cargarVentas() {
-    this.sales.getAll().subscribe((res: any) => {
-      this.ventas = res ?? [];
-      this.ventasFiltradas = [...this.ventas];
+    const query = {
+      ...this.filters.value,
+      page: this.pageIndex + 1,
+      limit: this.pageSize,
+    };
+    this.sales.getAll(query).subscribe((res: any) => {
+      // Backend returns { data, total, page, limit }
+      if (res && Array.isArray(res.data)) {
+        this.ventas = res.data;
+        this.total = res.total ?? res.data.length;
+      } else {
+        // Fallback for non-paginated response
+        this.ventas = res ?? [];
+        this.total = this.ventas.length;
+      }
+      this.ventasFiltradas = this.ventas;
       this.cdr.detectChanges();
     });
   }
 
-  cargarCatalogos() {
-    this.thirds.getAll().subscribe((res: any) => {
-      const list = Array.isArray(res) ? res : (res?.data || []);
-      console.log('Terceros cargados:', list.length, list);
-      this.clientes = list.filter((t: any) => Number(t.tipo_terceros) === 1 || Number(t.tipo_terceros) === 10);
-      this.vendedores = list.filter(
-        (t: any) => Number(t.tipo_terceros) === 4,
-      );
-      this.cdr.detectChanges();
+  onPageChange(e: PageEvent) {
+    this.pageIndex = e.pageIndex;
+    this.pageSize = e.pageSize;
+    this.cargarVentas();
+  }
+
+  onFilterSubmit() {
+    this.pageIndex = 0;
+    this.cargarVentas();
+  }
+
+  cargarImpuestos() {
+    this.impuestosSvc.getAll({ limit: 100 }).subscribe({
+      next: (res: any) => {
+        this.impuestos = (res.data ?? res ?? [])
+          .filter((i: any) => i.estado === 1)
+          .map((i: any) => ({ ...i, porcentaje: Number(i.porcentaje) }));
+        this.cdr.detectChanges();
+      },
+      error: () => {},
     });
-    this.products.getAll().subscribe((res: any) => {
+  }
+
+  /** Busca el id del tipo de tercero por nombre (ej. 'Cliente') con fallback al id por defecto */
+  private tipoTerceroId(nombre: string, fallback: number): number {
+    const t = this.tiposTercero.find(
+      (x: any) => String(x.nombre).toLowerCase() === nombre.toLowerCase(),
+    );
+    return t ? Number(t.id) : fallback;
+  }
+
+  cargarCatalogos() {
+    this.tiposTerceroSvc.getAll({ limit: 100 }).subscribe({
+      next: (res: any) => {
+        this.tiposTercero = (res.data ?? res ?? []).filter((t: any) => t.estado === 1);
+        this.cargarTerceros();
+      },
+      error: () => this.cargarTerceros(),
+    });
+    this.products.getAll({ limit: 500 }).subscribe((res: any) => {
       this.productos = res.data ?? res ?? [];
       this.productosConStock = this.productos.filter((p) => Number(p.stock) > 0);
       this.productosSinStock = this.productos.filter((p) => Number(p.stock) <= 0);
@@ -194,21 +257,20 @@ export class VentasComponent implements OnInit {
     });
   }
 
-  filtrar() {
-    const q = this.busqueda.toLowerCase().trim();
-    if (!q) {
-      this.ventasFiltradas = [...this.ventas];
-      return;
-    }
-    this.ventasFiltradas = this.ventas.filter((v) => {
-      const cliente = this.nombreCliente(v.cliente_id).toLowerCase();
-      return (
-        String(v.codigo || '').toLowerCase().includes(q) ||
-        cliente.includes(q) ||
-        String(v.observacion || '').toLowerCase().includes(q)
+  private cargarTerceros() {
+    const idCliente = this.tipoTerceroId('Cliente', 1);
+    const idVendedor = this.tipoTerceroId('Vendedor', 4);
+    this.thirds.getAll({ limit: 200 }).subscribe((res: any) => {
+      const list = Array.isArray(res) ? res : (res?.data || []);
+      this.clientes = list.filter(
+        (t: any) => Number(t.tipo_terceros) === idCliente || Number(t.tipo_terceros) === 10,
       );
+      this.vendedores = list.filter((t: any) => Number(t.tipo_terceros) === idVendedor);
+      this.cdr.detectChanges();
     });
   }
+
+
 
   nuevaVenta() {
     this.ventaSeleccionada = null;
@@ -276,6 +338,24 @@ export class VentasComponent implements OnInit {
       const impuesto = Number(producto.impuesto) || 0;
       this.nuevoDetalle.get('impuesto')?.setValue(impuesto);
     }
+  }
+
+  /**
+   * Opciones del select de impuesto del detalle.
+   * Incluye los impuestos configurados y, si el producto trae un porcentaje
+   * que no existe en la configuración, lo agrega como opción personalizada
+   * para que quede seleccionado.
+   */
+  get opcionesImpuestoDetalle(): any[] {
+    const actual = Number(this.nuevoDetalle.get('impuesto')?.value) || 0;
+    const existe =
+      actual === 0 ||
+      this.impuestos.some((i: any) => Number(i.porcentaje) === actual);
+    if (existe) return this.impuestos;
+    return [
+      ...this.impuestos,
+      { codigo: 'OTRO', nombre: 'Personalizado', porcentaje: actual },
+    ];
   }
 
   agregarDetalle() {

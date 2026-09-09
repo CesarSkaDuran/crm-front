@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -34,6 +35,7 @@ import { AccountsService } from '../../core/services/accounts.service';
   styleUrl: './plan-cuentas.component.scss',
 })
 export class PlanCuentasComponent implements OnInit {
+  private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private accounts = inject(AccountsService);
   private cdr = inject(ChangeDetectorRef);
@@ -97,9 +99,10 @@ export class PlanCuentasComponent implements OnInit {
       next: () => {
         this.cancelar();
         this.cargar();
+        this.noti.success('Registro guardado');
       },
       error: (err) => {
-        alert(err.error?.message || 'Error al guardar la cuenta');
+        this.noti.error(err.error?.message || 'Error al guardar la cuenta');
       },
     });
   }
@@ -116,7 +119,10 @@ export class PlanCuentasComponent implements OnInit {
 
   eliminar(row: any) {
     if (!confirm(`¿Eliminar la cuenta ${row.codigo} - ${row.nombre}?`)) return;
-    this.accounts.delete(row.id).subscribe(() => this.cargar());
+    this.accounts.delete(row.id).subscribe({
+      next: () => { this.cargar(); this.noti.success('Registro eliminado'); },
+      error: (err: any) => this.noti.error(err.error?.message || 'Error al eliminar'),
+    });
   }
 
   nombreNaturaleza(id: string) {

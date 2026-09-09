@@ -131,44 +131,44 @@
 
 <mat-card class="p-4" *ngIf="resultado">
   <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4" *ngIf="resultado.totales && resultado.tipo === 'balance'">
-    <div class="p-4 text-center rounded border border-gray-200">
-      <p class="text-sm text-gray-600">Total Activo</p>
-      <p class="text-xl font-extrabold text-blue-700">{{ resultado.totales.activo | number: '1.2-2' }}</p>
+    <div class="resumen-card blue">
+      <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Total Activo</p>
+      <p class="text-xl font-bold text-blue-600">{{ resultado.totales.activo | number: '1.2-2' }}</p>
     </div>
-    <div class="p-4 text-center rounded border border-gray-200">
-      <p class="text-sm text-gray-600">Total Pasivo</p>
-      <p class="text-xl font-extrabold text-red-700">{{ resultado.totales.pasivo | number: '1.2-2' }}</p>
+    <div class="resumen-card red">
+      <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Total Pasivo</p>
+      <p class="text-xl font-bold text-red-600">{{ resultado.totales.pasivo | number: '1.2-2' }}</p>
     </div>
-    <div class="p-4 text-center rounded border border-gray-200">
-      <p class="text-sm text-gray-600">Total Patrimonio</p>
-      <p class="text-xl font-extrabold text-green-700">{{ resultado.totales.patrimonio | number: '1.2-2' }}</p>
+    <div class="resumen-card green">
+      <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Total Patrimonio</p>
+      <p class="text-xl font-bold text-green-600">{{ resultado.totales.patrimonio | number: '1.2-2' }}</p>
     </div>
-    <div class="p-4 text-center rounded border border-gray-200">
-      <p class="text-sm text-gray-600">Resultado del Ejercicio</p>
-      <p class="text-xl font-extrabold" [ngClass]="(resultado.totales.resultado_ejercicio ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'">{{ resultado.totales.resultado_ejercicio | number: '1.2-2' }}</p>
+    <div class="resumen-card" [ngClass]="(resultado.totales.resultado_ejercicio ?? 0) >= 0 ? 'green' : 'red'">
+      <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Resultado del Ejercicio</p>
+      <p class="text-xl font-bold" [ngClass]="(resultado.totales.resultado_ejercicio ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'">{{ resultado.totales.resultado_ejercicio | number: '1.2-2' }}</p>
     </div>
-    <div class="p-4 text-center rounded border border-gray-200">
-      <p class="text-sm text-gray-600">Pasivo + Patrimonio</p>
-      <p class="text-xl font-extrabold text-gray-800">{{ resultado.totales.pasivo_mas_patrimonio | number: '1.2-2' }}</p>
+    <div class="resumen-card slate">
+      <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Pasivo + Patrimonio</p>
+      <p class="text-xl font-bold text-gray-700">{{ resultado.totales.pasivo_mas_patrimonio | number: '1.2-2' }}</p>
     </div>
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4" *ngIf="resultado.tipo === 'pyg' && (resultado.totalIngresos !== undefined)">
-    <div class="p-4 text-center rounded border border-gray-200">
-      <p class="text-sm text-gray-600">Total Ingresos</p>
-      <p class="text-xl font-extrabold text-blue-700">{{ resultado.totalIngresos | number: '1.2-2' }}</p>
+    <div class="resumen-card blue">
+      <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Total Ingresos</p>
+      <p class="text-xl font-bold text-blue-600">{{ resultado.totalIngresos | number: '1.2-2' }}</p>
     </div>
-    <div class="p-4 text-center rounded border border-gray-200">
-      <p class="text-sm text-gray-600">Total Costos</p>
-      <p class="text-xl font-extrabold text-orange-700">{{ resultado.totalCostos | number: '1.2-2' }}</p>
+    <div class="resumen-card orange">
+      <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Total Costos</p>
+      <p class="text-xl font-bold text-orange-600">{{ resultado.totalCostos | number: '1.2-2' }}</p>
     </div>
-    <div class="p-4 text-center rounded border border-gray-200">
-      <p class="text-sm text-gray-600">Total Gastos</p>
-      <p class="text-xl font-extrabold text-red-700">{{ resultado.totalGastos | number: '1.2-2' }}</p>
+    <div class="resumen-card red">
+      <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Total Gastos</p>
+      <p class="text-xl font-bold text-red-600">{{ resultado.totalGastos | number: '1.2-2' }}</p>
     </div>
-    <div class="p-4 text-center rounded border border-gray-200">
-      <p class="text-sm text-gray-600">Utilidad / Pérdida</p>
-      <p class="text-xl font-extrabold" [ngClass]="(resultado.utilidadPerdida ?? 0) >= 0 ? 'text-green-700' : 'text-red-700'">{{ resultado.utilidadPerdida | number: '1.2-2' }}</p>
+    <div class="resumen-card" [ngClass]="(resultado.utilidadPerdida ?? 0) >= 0 ? 'green' : 'red'">
+      <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Utilidad / Pérdida</p>
+      <p class="text-xl font-bold" [ngClass]="(resultado.utilidadPerdida ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'">{{ resultado.utilidadPerdida | number: '1.2-2' }}</p>
     </div>
   </div>
 

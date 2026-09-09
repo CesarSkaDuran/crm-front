@@ -18,23 +18,72 @@
 </div>
 
 <!-- Resumen -->
-<div class="grid grid-cols-4 gap-4 mb-6">
-  <mat-card class="p-4">
-    <p class="text-sm text-gray-600">Total inventarios</p>
-    <p class="text-2xl font-extrabold text-blue-700">{{ lista.length }}</p>
-  </mat-card>
-  <mat-card class="p-4">
-    <p class="text-sm text-gray-600">Inventario pendiente</p>
-    <p class="text-2xl font-extrabold text-orange-600">{{ pendiente ? pendiente.codigo : 'Ninguno' }}</p>
-  </mat-card>
-  <mat-card class="p-4">
-    <p class="text-sm text-gray-600">Productos contados</p>
-    <p class="text-2xl font-extrabold text-blue-700">{{ productosContados }}/{{ totalProductos }}</p>
-  </mat-card>
-  <mat-card class="p-4">
-    <p class="text-sm text-gray-600">Valor inventario (sistema)</p>
-    <p class="text-2xl font-extrabold text-green-600">{{ valorizacion?.total_valor ? (valorizacion.total_valor | number: '1.2-2') : '—' }}</p>
-  </mat-card>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <!-- Total inventarios -->
+  <div class="resumen-card blue">
+    <div class="mb-3">
+      <p class="text-xs text-gray-600 uppercase font-semibold">Total inventarios</p>
+      <p class="text-2xl font-bold text-blue-600">{{ total }}</p>
+    </div>
+    <svg class="w-full h-12" viewBox="0 0 300 60" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="igrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.3" />
+          <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0" />
+        </linearGradient>
+      </defs>
+      <path [attr.d]="sparklineToPath(sparkTotal, 300, 60)" stroke="#3b82f6" stroke-width="2" fill="none" />
+      <path [attr.d]="sparklineToPath(sparkTotal, 300, 60) + ' L 300 60 L 0 60 Z'" fill="url(#igrad1)" />
+    </svg>
+  </div>
+
+  <!-- Inventario pendiente -->
+  <div class="resumen-card orange">
+    <div class="mb-3">
+      <p class="text-xs text-gray-600 uppercase font-semibold">Inventario pendiente</p>
+      <p class="text-2xl font-bold text-orange-600 leading-tight truncate">
+        {{ pendiente ? pendiente.codigo : 'Ninguno' }}
+      </p>
+    </div>
+    <div class="pendiente-info">
+      <mat-icon>{{ pendiente ? 'pending_actions' : 'check_circle' }}</mat-icon>
+      <span>{{ pendiente ? 'En proceso de conteo' : 'No hay toma activa' }}</span>
+    </div>
+  </div>
+
+  <!-- Productos contados -->
+  <div class="resumen-card indigo">
+    <div class="mb-3">
+      <p class="text-xs text-gray-600 uppercase font-semibold">Productos contados</p>
+      <p class="text-2xl font-bold text-indigo-600">
+        {{ productosContados }}/{{ totalProductos }}
+        <span class="text-sm font-semibold text-gray-500" *ngIf="totalProductos > 0">
+          ({{ porcentajeContados | number: '1.0-0' }}%)
+        </span>
+      </p>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" [style.width.%]="porcentajeContados"></div>
+    </div>
+  </div>
+
+  <!-- Valor inventario -->
+  <div class="resumen-card green">
+    <div class="mb-3">
+      <p class="text-xs text-gray-600 uppercase font-semibold">Valor inventario (sistema)</p>
+      <p class="text-2xl font-bold text-green-600">{{ valorizacion?.total_valor ? (valorizacion.total_valor | number: '1.2-2') : '—' }}</p>
+    </div>
+    <svg class="w-full h-12" viewBox="0 0 300 60" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="igrad4" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#22c55e;stop-opacity:0.3" />
+          <stop offset="100%" style="stop-color:#22c55e;stop-opacity:0" />
+        </linearGradient>
+      </defs>
+      <path [attr.d]="sparklineToPath(sparkValor, 300, 60)" stroke="#22c55e" stroke-width="2" fill="none" />
+      <path [attr.d]="sparklineToPath(sparkValor, 300, 60) + ' L 300 60 L 0 60 Z'" fill="url(#igrad4)" />
+    </svg>
+  </div>
 </div>
 
 <!-- Valorización -->
@@ -261,17 +310,41 @@
 
 <!-- Listado principal de inventarios -->
 <mat-card class="p-4 mb-6">
-  <div class="flex items-center justify-between mb-4">
+  <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
     <h2 class="section-title mb-0">Historial de inventarios</h2>
-    <div class="flex gap-2">
-      <mat-form-field class="blue-input" subscriptSizing="dynamic" style="width: 250px;">
-        <mat-icon matPrefix>search</mat-icon>
-        <mat-label>Buscar</mat-label>
-        <input matInput [(ngModel)]="busquedaHistorial" placeholder="Código, fecha, estado..." />
-      </mat-form-field>
-      <button mat-stroked-button (click)="exportarHistorialExcel()" [disabled]="lista.length === 0">
-        <mat-icon>table_view</mat-icon>
-        Excel
+    <button mat-stroked-button (click)="exportarHistorialExcel()" [disabled]="lista.length === 0">
+      <mat-icon>table_view</mat-icon>
+      Excel
+    </button>
+  </div>
+
+  <div class="filtros-historial mb-4">
+    <mat-form-field class="blue-input filtro-buscar" subscriptSizing="dynamic">
+      <mat-icon matPrefix>search</mat-icon>
+      <mat-label>Buscar</mat-label>
+      <input matInput [(ngModel)]="busquedaHistorial" placeholder="Código, fecha, estado..." />
+    </mat-form-field>
+
+    <mat-form-field class="blue-input filtro-fecha" subscriptSizing="dynamic" floatLabel="always">
+      <mat-icon matPrefix>event</mat-icon>
+      <mat-label>Desde</mat-label>
+      <input matInput type="date" [(ngModel)]="date" (change)="buscarHistorial()" />
+    </mat-form-field>
+
+    <mat-form-field class="blue-input filtro-fecha" subscriptSizing="dynamic" floatLabel="always">
+      <mat-icon matPrefix>event</mat-icon>
+      <mat-label>Hasta</mat-label>
+      <input matInput type="date" [(ngModel)]="date2" (change)="buscarHistorial()" />
+    </mat-form-field>
+
+    <div class="filtro-actions">
+      <button mat-raised-button color="primary" class="fuse-mat-button-rounded" (click)="buscarHistorial()">
+        <mat-icon>search</mat-icon>
+        Buscar
+      </button>
+      <button mat-stroked-button color="primary" class="fuse-mat-button-rounded" (click)="limpiarHistorial()">
+        <mat-icon>refresh</mat-icon>
+        Limpiar
       </button>
     </div>
   </div>
@@ -328,6 +401,16 @@
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
   </table>
+
+  <mat-paginator
+    [length]="total"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="pageSizeOptions"
+    [showFirstLastButtons]="true"
+    (page)="onPageChange($event)"
+    class="mt-4">
+  </mat-paginator>
 
   <div *ngIf="listaFiltrada.length === 0" class="p-8 text-center text-gray-500">
     {{ lista.length === 0 ? 'No hay inventarios físicos registrados' : 'No se encontraron inventarios con ese filtro' }}

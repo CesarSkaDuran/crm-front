@@ -85,6 +85,10 @@ export interface CarteraListResponse {
   total: number;
   page: number;
   limit: number;
+  resumen?: {
+    saldo_total: number;
+    terceros: number;
+  };
 }
 
 export interface CarteraDetalleResponse {

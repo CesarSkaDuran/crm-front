@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../../../core/services/notificaciones.service'
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
@@ -32,6 +33,7 @@ interface PermisoModulo {
   styleUrl: './permisos-dialog.component.scss',
 })
 export class PermisosDialogComponent {
+  private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private dialogRef = inject(MatDialogRef<PermisosDialogComponent>);
   data = inject(MAT_DIALOG_DATA);

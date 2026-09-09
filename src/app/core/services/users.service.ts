@@ -60,4 +60,8 @@ export class UsersService {
   delete(id: number): Observable<any> {
     return this.api.delete(`usuarios/${id}`);
   }
+
+  uploadFoto(id: number, file: File | Blob, fileName = 'foto.png'): Observable<User> {
+    return this.api.upload<User>(`usuarios/${id}/foto`, 'foto', file, fileName);
+  }
 }

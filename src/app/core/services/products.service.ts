@@ -68,6 +68,10 @@ export class ProductsService {
     return this.api.delete(`productos/${id}`);
   }
 
+  uploadImagen(id: number, file: File, index: 1 | 2): Observable<any> {
+    return this.api.upload(`productos/${id}/imagen?index=${index}`, 'imagen', file, file.name);
+  }
+
   importar(filas: any[]): Observable<{ creados: number; actualizados: number; errores: any[]; total: number }> {
     return this.api.post('productos/import', { filas });
   }

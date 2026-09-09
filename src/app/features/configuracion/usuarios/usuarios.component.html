@@ -19,7 +19,7 @@
         <th mat-header-cell *matHeaderCellDef>Nombre</th>
         <td mat-cell *matCellDef="let row">
           <div class="usuario-nombre">
-            <img *ngIf="row.foto" [src]="row.foto" class="avatar-mini" alt="Foto" />
+            <img *ngIf="row.foto" [src]="fotoUrl(row.foto)" class="avatar-mini" alt="Foto" />
             <div *ngIf="!row.foto" class="avatar-mini avatar-placeholder">
               <mat-icon>account_circle</mat-icon>
             </div>

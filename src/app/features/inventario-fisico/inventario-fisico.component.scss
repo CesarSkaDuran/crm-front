@@ -23,3 +23,95 @@ th.mat-mdc-header-cell {
 tr.mat-mdc-row:hover {
   background-color: rgba(56, 138, 243, 0.04);
 }
+
+// ============ RESUMEN CARDS (estándar con sparkline) ============
+.resumen-card {
+  border-radius: 12px;
+  padding: 1.5rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    border-color: #cbd5e1;
+  }
+
+  &.blue {
+    border-left: 4px solid #3b82f6;
+  }
+
+  &.orange {
+    border-left: 4px solid #f97316;
+  }
+
+  &.indigo {
+    border-left: 4px solid #6366f1;
+  }
+
+  &.green {
+    border-left: 4px solid #22c55e;
+  }
+}
+
+// ============ FILTROS DEL HISTORIAL ============
+.filtros-historial {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+
+  .filtro-buscar {
+    flex: 1 1 320px;
+    min-width: 240px;
+  }
+
+  .filtro-fecha {
+    flex: 0 0 210px;
+  }
+
+  .filtro-actions {
+    display: flex;
+    gap: 8px;
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+}
+
+// ============ INDICADORES ESPECIALES ============
+.pendiente-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 3rem;
+  color: #9a3412;
+  font-size: 0.8rem;
+  font-weight: 600;
+
+  mat-icon {
+    color: #f97316;
+    font-size: 1.4rem;
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+}
+
+.progress-track {
+  height: 12px;
+  border-radius: 999px;
+  background: #e0e7ff;
+  overflow: hidden;
+  margin-top: 2.2rem;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #6366f1, #818cf8);
+  transition: width 0.4s ease;
+}

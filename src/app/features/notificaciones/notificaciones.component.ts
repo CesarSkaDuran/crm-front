@@ -1,8 +1,8 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { NotificacionesService, Notificacion } from '../../core/services/notificaciones.service';
+import { NotificacionesService } from '../../core/services/notificaciones.service';
 
 @Component({
   selector: 'app-notificaciones',
@@ -11,7 +11,7 @@ import { NotificacionesService, Notificacion } from '../../core/services/notific
   template: `
     <div class="notificaciones-container fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm">
       <div
-        *ngFor="let n of notificaciones"
+        *ngFor="let n of svc.notificaciones$ | async"
         class="notificacion flex items-start gap-3 px-4 py-3 rounded-lg shadow-lg border-l-4 animate-slide-in"
         [class.bg-green-50]="n.tipo === 'success'"
         [class.border-green-500]="n.tipo === 'success'"
@@ -46,15 +46,8 @@ import { NotificacionesService, Notificacion } from '../../core/services/notific
     }
   `],
 })
-export class NotificacionesComponent implements OnInit {
+export class NotificacionesComponent {
   svc = inject(NotificacionesService);
-  notificaciones: Notificacion[] = [];
-
-  ngOnInit() {
-    this.svc.notificaciones$.subscribe((list) => {
-      this.notificaciones = list;
-    });
-  }
 
   icono(tipo: string): string {
     switch (tipo) {

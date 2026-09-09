@@ -32,8 +32,8 @@ export interface CreateSale {
 export class SalesService {
   private api = inject(ApiService);
 
-  getAll(): Observable<any> {
-    return this.api.get('ventas');
+  getAll(query?: Record<string, any>): Observable<any> {
+    return this.api.get('ventas', query);
   }
 
   getOne(id: number): Observable<any> {

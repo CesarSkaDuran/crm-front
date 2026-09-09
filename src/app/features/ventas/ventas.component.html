@@ -18,13 +18,32 @@
   </div>
 
   <mat-card class="p-4">
-    <div class="flex items-center gap-4 mb-4">
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
-        <mat-icon matPrefix>search</mat-icon>
-        <mat-label>Buscar</mat-label>
-        <input matInput [(ngModel)]="busqueda" (ngModelChange)="filtrar()" placeholder="Código, cliente..." />
-      </mat-form-field>
-    </div>
+    <form [formGroup]="filters" (ngSubmit)="onFilterSubmit()">
+      <div class="flex items-center gap-4 mb-4 flex-wrap">
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>search</mat-icon>
+          <mat-label>Buscar</mat-label>
+          <input matInput formControlName="search" placeholder="Código, cliente..." />
+        </mat-form-field>
+
+        <mat-form-field class="blue-input" subscriptSizing="dynamic" floatLabel="always">
+          <mat-icon matPrefix>event</mat-icon>
+          <mat-label>Desde</mat-label>
+          <input matInput type="date" formControlName="date" />
+        </mat-form-field>
+
+        <mat-form-field class="blue-input" subscriptSizing="dynamic" floatLabel="always">
+          <mat-icon matPrefix>event</mat-icon>
+          <mat-label>Hasta</mat-label>
+          <input matInput type="date" formControlName="date2" />
+        </mat-form-field>
+
+        <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded">
+          <mat-icon>search</mat-icon>
+          Buscar
+        </button>
+      </div>
+    </form>
 
     <table mat-table [dataSource]="ventasFiltradas" class="w-full">
       <ng-container matColumnDef="codigo">
@@ -75,6 +94,16 @@
     <div *ngIf="ventasFiltradas.length === 0" class="text-center py-8 text-gray-400">
       No hay ventas registradas
     </div>
+
+    <mat-paginator
+      *ngIf="total > 0"
+      [length]="total"
+      [pageSize]="pageSize"
+      [pageIndex]="pageIndex"
+      [pageSizeOptions]="pageSizeOptions"
+      (page)="onPageChange($event)"
+      showFirstLastButtons
+    ></mat-paginator>
   </mat-card>
 </div>
 
@@ -263,7 +292,10 @@
         <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
           <mat-icon matPrefix>account_balance_wallet</mat-icon>
           <mat-label>Impuesto (%)</mat-label>
-          <input matInput type="number" formControlName="impuesto" />
+          <mat-select formControlName="impuesto">
+            <mat-option [value]="0">0% - Exento</mat-option>
+            <mat-option *ngFor="let i of opcionesImpuestoDetalle" [value]="i.porcentaje">{{ i.codigo }} - {{ i.nombre }} ({{ i.porcentaje }}%)</mat-option>
+          </mat-select>
         </mat-form-field>
 
         <button type="button" mat-raised-button color="primary" class="fuse-mat-button-rounded mb-3" (click)="agregarDetalle()">

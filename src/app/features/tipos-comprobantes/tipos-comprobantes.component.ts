@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -34,6 +35,7 @@ import { AccountingService } from '../../core/services/accounting.service';
   styleUrl: './tipos-comprobantes.component.scss',
 })
 export class TiposComprobantesComponent implements OnInit {
+  private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private accounting = inject(AccountingService);
   private cdr = inject(ChangeDetectorRef);
@@ -92,9 +94,10 @@ export class TiposComprobantesComponent implements OnInit {
       next: () => {
         this.cancelar();
         this.cargar();
+        this.noti.success('Registro guardado');
       },
       error: (err) => {
-        alert(err.error?.message || 'Error al guardar el tipo de comprobante');
+        this.noti.error(err.error?.message || 'Error al guardar el tipo de comprobante');
       },
     });
   }

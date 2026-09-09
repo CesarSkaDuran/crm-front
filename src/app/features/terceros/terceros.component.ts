@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -13,9 +14,11 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { AccountsService } from '../../core/services/accounts.service';
 import { TiposDocumentoService } from '../../core/services/tipos-documento.service';
+import { TiposTerceroService } from '../../core/services/tipos-tercero.service';
 import { CuentaSelectComponent } from '../../shared/components/cuenta-select/cuenta-select.component';
 
 @Component({
@@ -32,32 +35,47 @@ import { CuentaSelectComponent } from '../../shared/components/cuenta-select/cue
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    MatPaginatorModule,
     CuentaSelectComponent,
   ],
   templateUrl: './terceros.component.html',
   styleUrl: './terceros.component.scss',
 })
 export class TercerosComponent implements OnInit {
+  private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private thirds = inject(ThirdsService);
   private accounts = inject(AccountsService);
   private tiposDocumentoSvc = inject(TiposDocumentoService);
+  private tiposTerceroSvc = inject(TiposTerceroService);
   private cdr = inject(ChangeDetectorRef);
 
   lista: any[] = [];
   cuentas: any[] = [];
   tiposDocumento: any[] = [];
   editandoId: number | null = null;
-  search = '';
 
-  tiposTercero = [
+  // Paginación (servidor)
+  total = 0;
+  pageIndex = 0;
+  pageSize = 10;
+  pageSizeOptions = [5, 10, 25, 50];
+
+  filters = this.fb.group({
+    search: [''],
+    tipo_terceros: [null as number | null],
+  });
+
+  // Fallback local usado solo si el API no devuelve tipos
+  private tiposTerceroPorDefecto = [
     { id: 1, nombre: 'Cliente' },
     { id: 2, nombre: 'Proveedor' },
     { id: 3, nombre: 'Empleado' },
     { id: 4, nombre: 'Vendedor' },
     { id: 5, nombre: 'Otro' },
-    { id: 8, nombre: 'Persona natural' },
   ];
+
+  tiposTercero: any[] = [...this.tiposTerceroPorDefecto];
 
   naturalezas = [
     { id: 1, nombre: 'Natural' },
@@ -92,7 +110,21 @@ export class TercerosComponent implements OnInit {
   ngOnInit() {
     this.cargarCuentas();
     this.cargarTiposDocumento();
+    this.cargarTiposTercero();
     this.cargar();
+  }
+
+  cargarTiposTercero() {
+    this.tiposTerceroSvc.getAll({ limit: 100 }).subscribe({
+      next: (res: any) => {
+        const data = (res.data ?? res ?? []).filter((t: any) => t.estado === 1);
+        if (data.length > 0) {
+          this.tiposTercero = data;
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => this.cdr.detectChanges(),
+    });
   }
 
   cargarCuentas() {
@@ -110,10 +142,34 @@ export class TercerosComponent implements OnInit {
   }
 
   cargar() {
-    this.thirds.getAll({ search: this.search }).subscribe((res: any) => {
-      this.lista = res.data ?? res ?? [];
+    const query = {
+      ...this.filters.value,
+      page: this.pageIndex + 1,
+      limit: this.pageSize,
+    };
+    this.thirds.getAll(query).subscribe((res: any) => {
+      // Backend returns { data, total, page, limit }
+      if (res && Array.isArray(res.data)) {
+        this.lista = res.data;
+        this.total = res.total ?? res.data.length;
+      } else {
+        // Fallback for non-paginated response
+        this.lista = res ?? [];
+        this.total = this.lista.length;
+      }
       this.cdr.detectChanges();
     });
+  }
+
+  onPageChange(e: PageEvent) {
+    this.pageIndex = e.pageIndex;
+    this.pageSize = e.pageSize;
+    this.cargar();
+  }
+
+  onFilterSubmit() {
+    this.pageIndex = 0;
+    this.cargar();
   }
 
   guardar() {
@@ -128,9 +184,10 @@ export class TercerosComponent implements OnInit {
       next: () => {
         this.cancelar();
         this.cargar();
+        this.noti.success('Registro guardado');
       },
       error: (err) => {
-        alert(err.error?.message || 'Error al guardar el tercero');
+        this.noti.error(err.error?.message || 'Error al guardar el tercero');
         this.cdr.detectChanges();
       },
     });
@@ -160,8 +217,9 @@ export class TercerosComponent implements OnInit {
       next: () => {
         this.cargar();
         this.cdr.detectChanges();
+        this.noti.success('Registro eliminado');
       },
-      error: () => this.cdr.detectChanges(),
+      error: (err: any) => { this.cdr.detectChanges(); this.noti.error(err.error?.message || 'Error al eliminar el tercero'); },
     });
   }
 

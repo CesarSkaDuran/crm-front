@@ -4,65 +4,125 @@
     <p class="text-gray-500 mt-1">Visión rápida del estado contable y financiero</p>
   </div>
 
+  <!-- KPI Cards -->
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-    <mat-card class="summary-card bg-blue-50">
-      <div class="flex items-center gap-4">
-        <div class="summary-icon bg-blue-100 text-blue-600">
-          <mat-icon>account_balance_wallet</mat-icon>
-        </div>
-        <div>
-          <p class="summary-label">Cartera por cobrar</p>
-          <p class="summary-value text-blue-700">
-            {{ resumen.cartera | number: '1.2-2' }}
-          </p>
-        </div>
+    <mat-card class="kpi-card">
+      <div class="kpi-header">
+        <mat-icon class="text-blue-600">account_balance_wallet</mat-icon>
+        <span>Cartera por cobrar</span>
       </div>
+      <p class="kpi-value text-blue-700">{{ resumen.cartera | currencyFormat:currencySymbol }}</p>
+      <p class="kpi-sub">{{ resumen.clientes }} cliente{{ resumen.clientes === 1 ? '' : 's' }} con saldo</p>
     </mat-card>
 
-    <mat-card class="summary-card bg-red-50">
-      <div class="flex items-center gap-4">
-        <div class="summary-icon bg-red-100 text-red-600">
-          <mat-icon>payments</mat-icon>
-        </div>
-        <div>
-          <p class="summary-label">Cuentas por pagar</p>
-          <p class="summary-value text-red-700">
-            {{ resumen.porPagar | number: '1.2-2' }}
-          </p>
-        </div>
+    <mat-card class="kpi-card">
+      <div class="kpi-header">
+        <mat-icon class="text-red-500">payments</mat-icon>
+        <span>Cuentas por pagar</span>
       </div>
+      <p class="kpi-value text-red-600">{{ resumen.porPagar | currencyFormat:currencySymbol }}</p>
+      <p class="kpi-sub">{{ resumen.proveedores }} proveedor{{ resumen.proveedores === 1 ? '' : 'es' }} con saldo</p>
     </mat-card>
 
-    <mat-card class="summary-card bg-green-50">
-      <div class="flex items-center gap-4">
-        <div class="summary-icon bg-green-100 text-green-600">
-          <mat-icon>account_balance</mat-icon>
-        </div>
-        <div>
-          <p class="summary-label">Saldo bancario</p>
-          <p class="summary-value text-green-700">
-            {{ resumen.bancos | number: '1.2-2' }}
-          </p>
-        </div>
+    <mat-card class="kpi-card">
+      <div class="kpi-header">
+        <mat-icon class="text-green-600">account_balance</mat-icon>
+        <span>Saldo bancario</span>
       </div>
+      <p class="kpi-value text-green-700">{{ resumen.bancos | currencyFormat:currencySymbol }}</p>
+      <p class="kpi-sub">{{ bancosList.length }} cuenta{{ bancosList.length === 1 ? '' : 's' }} bancaria{{ bancosList.length === 1 ? '' : 's' }}</p>
     </mat-card>
 
-    <mat-card class="summary-card bg-purple-50">
-      <div class="flex items-center gap-4">
-        <div class="summary-icon bg-purple-100 text-purple-600">
-          <mat-icon>swap_horiz</mat-icon>
-        </div>
+    <mat-card class="kpi-card">
+      <div class="kpi-header">
+        <mat-icon class="text-amber-500">schedule</mat-icon>
+        <span>Cuotas vencidas</span>
+      </div>
+      <p class="kpi-value text-amber-600">{{ resumen.cuotasVencidas }}</p>
+      <p class="kpi-sub">entre cobros y pagos</p>
+    </mat-card>
+  </div>
+
+  <!-- Fila 2: gráfico ventas/compras + agenda de vencidas -->
+  <div class="grid grid-cols-1 lg:grid-cols-5 gap-5 mb-6">
+    <mat-card class="p-6 lg:col-span-3">
+      <div class="flex items-center justify-between mb-2">
         <div>
-          <p class="summary-label">Movimientos tesorería</p>
-          <p class="summary-value text-purple-700">
-            {{ resumen.tesoreria | number: '1.2-2' }}
-          </p>
+          <h2 class="section-title mb-0">Ventas vs Compras</h2>
+          <p class="text-xs text-gray-500">Totales mensuales, últimos 6 meses</p>
         </div>
+      </div>
+      <apx-chart
+        [series]="chartVentas.series"
+        [chart]="chartVentas.chart"
+        [xaxis]="chartVentas.xaxis"
+        [dataLabels]="chartVentas.dataLabels"
+        [stroke]="chartVentas.stroke"
+        [fill]="chartVentas.fill"
+        [tooltip]="chartVentas.tooltip"
+        [legend]="chartVentas.legend"
+        [colors]="chartVentas.colors"
+      ></apx-chart>
+    </mat-card>
+
+    <mat-card class="p-6 lg:col-span-2">
+      <h2 class="section-title mb-1">Agenda de cuotas vencidas</h2>
+      <p class="text-xs text-gray-500 mb-4">Cuotas pendientes ordenadas por fecha</p>
+
+      <div class="agenda-list">
+        <a
+          *ngFor="let item of agenda"
+          class="agenda-item"
+          [routerLink]="item.tipo === 'Por cobrar' ? '/cartera' : '/cuentas-por-pagar'"
+        >
+          <div class="agenda-date">
+            <span class="agenda-day">{{ item.fecha_pago_oportuno | date: 'dd' }}</span>
+            <span class="agenda-month">{{ item.fecha_pago_oportuno | date: 'MMM' }}</span>
+          </div>
+          <div class="agenda-main">
+            <span class="agenda-title">{{ item.nombre }}</span>
+            <span class="agenda-meta">
+              Cuota #{{ item.numero_cuota }} · {{ item.dias_mora }} días de mora
+            </span>
+          </div>
+          <div class="agenda-right">
+            <span class="agenda-amount">{{ item.saldo | currencyFormat:currencySymbol }}</span>
+            <span
+              class="agenda-tag"
+              [class.tag-cobrar]="item.tipo === 'Por cobrar'"
+              [class.tag-pagar]="item.tipo === 'Por pagar'"
+            >{{ item.tipo }}</span>
+          </div>
+        </a>
+      </div>
+
+      <div *ngIf="agenda.length === 0" class="p-6 text-center text-gray-500">
+        No hay cuotas vencidas
       </div>
     </mat-card>
   </div>
 
+  <!-- Fila 3: donut cartera + comprobantes + bancos -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <mat-card class="p-6">
+      <h2 class="section-title mb-0">Distribución de cartera</h2>
+      <p class="text-xs text-gray-500 mb-2">Saldos por cliente</p>
+      <apx-chart
+        *ngIf="chartCartera.series.length"
+        [series]="chartCartera.series"
+        [chart]="chartCartera.chart"
+        [labels]="chartCartera.labels"
+        [legend]="chartCartera.legend"
+        [dataLabels]="chartCartera.dataLabels"
+        [plotOptions]="chartCartera.plotOptions"
+        [colors]="chartCartera.colors"
+        [tooltip]="chartCartera.tooltip"
+      ></apx-chart>
+      <div *ngIf="!chartCartera.series.length" class="p-8 text-center text-gray-500">
+        Sin saldos de cartera
+      </div>
+    </mat-card>
+
     <mat-card class="p-6">
       <h2 class="section-title">Últimos comprobantes</h2>
       <table mat-table [dataSource]="ultimosComprobantes" class="w-full">
@@ -78,53 +138,33 @@
 
         <ng-container matColumnDef="total">
           <th mat-header-cell *matHeaderCellDef>Total</th>
-          <td mat-cell *matCellDef="let row">{{ row.total_debito | number: '1.2-2' }}</td>
+          <td mat-cell *matCellDef="let row">{{ row.total_debito | currencyFormat:currencySymbol }}</td>
         </ng-container>
 
         <tr mat-header-row *matHeaderRowDef="comprobantesColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: comprobantesColumns;"></tr>
       </table>
+      <div *ngIf="ultimosComprobantes.length === 0" class="p-6 text-center text-gray-500">
+        Sin comprobantes
+      </div>
     </mat-card>
 
     <mat-card class="p-6">
       <h2 class="section-title">Bancos</h2>
-      <table mat-table [dataSource]="bancosList" class="w-full">
-        <ng-container matColumnDef="nombre">
-          <th mat-header-cell *matHeaderCellDef>Nombre</th>
-          <td mat-cell *matCellDef="let row">{{ row.nombre }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="monto">
-          <th mat-header-cell *matHeaderCellDef>Monto</th>
-          <td mat-cell *matCellDef="let row">{{ row.monto | number: '1.2-2' }}</td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="bancosColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: bancosColumns;"></tr>
-      </table>
-    </mat-card>
-
-    <mat-card class="p-6">
-      <h2 class="section-title">Tesorería</h2>
-      <table mat-table [dataSource]="movimientosTesoreria" class="w-full">
-        <ng-container matColumnDef="codigo">
-          <th mat-header-cell *matHeaderCellDef>Código</th>
-          <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="nombre_tercero">
-          <th mat-header-cell *matHeaderCellDef>Tercero</th>
-          <td mat-cell *matCellDef="let row">{{ row.nombre_tercero }}</td>
-        </ng-container>
-
-        <ng-container matColumnDef="valor">
-          <th mat-header-cell *matHeaderCellDef>Valor</th>
-          <td mat-cell *matCellDef="let row">{{ row.valor | number: '1.2-2' }}</td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="tesoreriaColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: tesoreriaColumns;"></tr>
-      </table>
+      <div class="banco-list">
+        <div *ngFor="let b of bancosList" class="banco-item">
+          <div class="banco-icon">
+            <mat-icon>account_balance</mat-icon>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="banco-nombre">{{ b.nombre }}</p>
+            <p class="banco-monto">{{ b.monto | currencyFormat:currencySymbol }}</p>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="bancosList.length === 0" class="p-6 text-center text-gray-500">
+        Sin cuentas bancarias
+      </div>
     </mat-card>
   </div>
 </div>

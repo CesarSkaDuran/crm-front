@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -37,6 +38,7 @@ import {
   styleUrl: './facturacion-electronica.component.scss',
 })
 export class FacturacionElectronicaComponent implements OnInit {
+  private noti = inject(NotificacionesService);
   private facturacionService = inject(FacturacionElectronicaService);
   private fb = inject(FormBuilder);
   private cdr = inject(ChangeDetectorRef);
@@ -215,6 +217,7 @@ export class FacturacionElectronicaComponent implements OnInit {
         this.snackBar.open('Factura electrónica emitida correctamente', 'Cerrar', { duration: 3000 });
         this.cargarEstado();
         this.cdr.detectChanges();
+        this.noti.success('Factura emitida');
       },
       error: (err: { error?: { message?: string } }) => {
         this.emitiendo = false;

@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -32,6 +33,7 @@ import { TiposDocumentoService } from '../../../core/services/tipos-documento.se
   styleUrl: './tipos-documento.scss',
 })
 export class TiposDocumentoComponent implements OnInit {
+  private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private svc = inject(TiposDocumentoService);
   private cdr = inject(ChangeDetectorRef);
@@ -75,10 +77,11 @@ export class TiposDocumentoComponent implements OnInit {
         this.guardando = false;
         this.cancelar();
         this.cargar();
+        this.noti.success('Registro guardado');
       },
       error: (err) => {
         this.guardando = false;
-        alert(err.error?.message || 'Error al guardar el tipo de documento');
+        this.noti.error(err.error?.message || 'Error al guardar el tipo de documento');
         this.cdr.detectChanges();
       },
     });
@@ -100,6 +103,7 @@ export class TiposDocumentoComponent implements OnInit {
       next: () => {
         this.cargar();
         this.cdr.detectChanges();
+        this.noti.success('Registro eliminado');
       },
       error: () => this.cdr.detectChanges(),
     });
@@ -108,7 +112,7 @@ export class TiposDocumentoComponent implements OnInit {
   toggleEstado(row: any) {
     const nuevo = row.estado === 1 ? 0 : 1;
     this.svc.update(row.id, { estado: nuevo }).subscribe({
-      next: () => this.cargar(),
+      next: () => { this.cargar(); this.noti.success('Registro actualizado'); },
       error: () => this.cdr.detectChanges(),
     });
   }

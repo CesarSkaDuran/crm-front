@@ -4,20 +4,65 @@
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-  <mat-card class="p-4 text-center">
-    <p class="text-sm text-gray-600">Total Débito</p>
-    <p class="text-2xl font-extrabold text-blue-700">{{ totalDebito | number: '1.2-2' }}</p>
-  </mat-card>
+  <!-- Total Débito -->
+  <div class="resumen-card blue">
+    <div class="flex justify-between items-start mb-3">
+      <div>
+        <p class="text-xs text-gray-600 uppercase font-semibold">Total Débito</p>
+        <p class="text-2xl font-bold text-blue-600">{{ totalDebito | number: '1.2-2' }}</p>
+      </div>
+    </div>
+    <svg class="w-full h-12" viewBox="0 0 300 60" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="mgrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:0.3" />
+          <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0" />
+        </linearGradient>
+      </defs>
+      <path [attr.d]="sparklineToPath(sparkDebito, 300, 60)" stroke="#3b82f6" stroke-width="2" fill="none" />
+      <path [attr.d]="sparklineToPath(sparkDebito, 300, 60) + ' L 300 60 L 0 60 Z'" fill="url(#mgrad1)" />
+    </svg>
+  </div>
 
-  <mat-card class="p-4 text-center">
-    <p class="text-sm text-gray-600">Total Crédito</p>
-    <p class="text-2xl font-extrabold text-green-700">{{ totalCredito | number: '1.2-2' }}</p>
-  </mat-card>
+  <!-- Total Crédito -->
+  <div class="resumen-card green">
+    <div class="flex justify-between items-start mb-3">
+      <div>
+        <p class="text-xs text-gray-600 uppercase font-semibold">Total Crédito</p>
+        <p class="text-2xl font-bold text-green-600">{{ totalCredito | number: '1.2-2' }}</p>
+      </div>
+    </div>
+    <svg class="w-full h-12" viewBox="0 0 300 60" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="mgrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#22c55e;stop-opacity:0.3" />
+          <stop offset="100%" style="stop-color:#22c55e;stop-opacity:0" />
+        </linearGradient>
+      </defs>
+      <path [attr.d]="sparklineToPath(sparkCredito, 300, 60)" stroke="#22c55e" stroke-width="2" fill="none" />
+      <path [attr.d]="sparklineToPath(sparkCredito, 300, 60) + ' L 300 60 L 0 60 Z'" fill="url(#mgrad2)" />
+    </svg>
+  </div>
 
-  <mat-card class="p-4 text-center">
-    <p class="text-sm text-gray-600">Registros</p>
-    <p class="text-2xl font-extrabold text-gray-800">{{ total }}</p>
-  </mat-card>
+  <!-- Registros -->
+  <div class="resumen-card slate">
+    <div class="flex justify-between items-start mb-3">
+      <div>
+        <p class="text-xs text-gray-600 uppercase font-semibold">Registros</p>
+        <p class="text-2xl font-bold text-gray-700">{{ total }}</p>
+      </div>
+    </div>
+    <svg class="w-full h-12" viewBox="0 0 300 60" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="mgrad3" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" style="stop-color:#64748b;stop-opacity:0.3" />
+          <stop offset="100%" style="stop-color:#64748b;stop-opacity:0" />
+        </linearGradient>
+      </defs>
+      <path [attr.d]="sparklineToPath(sparkRegistros, 300, 60)" stroke="#64748b" stroke-width="2" fill="none" />
+      <path [attr.d]="sparklineToPath(sparkRegistros, 300, 60) + ' L 300 60 L 0 60 Z'" fill="url(#mgrad3)" />
+    </svg>
+  </div>
 </div>
 
 <mat-card class="p-4 mb-6">
@@ -116,4 +161,14 @@
   <div *ngIf="movimientos.length === 0" class="p-8 text-center text-gray-500">
     No hay movimientos registrados
   </div>
+
+  <mat-paginator
+    *ngIf="total > 0"
+    [length]="total"
+    [pageSize]="pageSize"
+    [pageIndex]="pageIndex"
+    [pageSizeOptions]="pageSizeOptions"
+    (page)="onPageChange($event)"
+    showFirstLastButtons
+  ></mat-paginator>
 </mat-card>

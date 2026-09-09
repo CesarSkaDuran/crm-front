@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -8,6 +9,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { InventarioFisicoService } from '../../core/services/inventario-fisico.service';
 import { ExcelExportService } from '../../core/services/excel-export.service';
 import {
@@ -33,11 +35,13 @@ import {
     MatFormFieldModule,
     MatInputModule,
     MatTooltipModule,
+    MatPaginatorModule,
   ],
   templateUrl: './inventario-fisico.component.html',
   styleUrl: './inventario-fisico.component.scss',
 })
 export class InventarioFisicoComponent implements OnInit {
+  private noti = inject(NotificacionesService);
   private service = inject(InventarioFisicoService);
   private cdr = inject(ChangeDetectorRef);
   private excel = inject(ExcelExportService);
@@ -45,6 +49,14 @@ export class InventarioFisicoComponent implements OnInit {
   // Listado principal
   lista: InventarioFisico[] = [];
   cargando = false;
+  total = 0;
+  pageIndex = 0;
+  pageSize = 5;
+  pageSizeOptions = [5, 10, 25, 50];
+
+  // Filtros del histórico
+  date = '';
+  date2 = '';
 
   // Inventario pendiente (activo) para registrar conteos
   pendiente: InventarioFisico | null = null;
@@ -85,13 +97,27 @@ export class InventarioFisicoComponent implements OnInit {
   ngOnInit() {
     this.cargar();
     this.cargarPendiente();
+    // Cargar valorización en segundo plano para el indicador
+    this.service.getValorizacion().subscribe({
+      next: (res) => {
+        this.valorizacion = res;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   cargar() {
     this.cargando = true;
-    this.service.getAll().subscribe({
-      next: (res) => {
+    const query = {
+      page: this.pageIndex + 1,
+      limit: this.pageSize,
+      date: this.date,
+      date2: this.date2,
+    };
+    this.service.getAll(query).subscribe({
+      next: (res: any) => {
         this.lista = res.data ?? [];
+        this.total = res.total ?? res.data?.length ?? 0;
         this.cargando = false;
         this.cdr.detectChanges();
       },
@@ -100,6 +126,52 @@ export class InventarioFisicoComponent implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  buscarHistorial() {
+    this.pageIndex = 0;
+    this.cargar();
+  }
+
+  limpiarHistorial() {
+    this.date = '';
+    this.date2 = '';
+    this.busquedaHistorial = '';
+    this.pageIndex = 0;
+    this.cargar();
+  }
+
+  // Sparkline helpers (estándar de indicadores)
+  generateSparklineData(count: number = 12): number[] {
+    const data: number[] = [];
+    for (let i = 0; i < count; i++) {
+      data.push(Math.random() * 100);
+    }
+    return data;
+  }
+
+  sparklineToPath(data: number[], width: number = 300, height: number = 60): string {
+    if (data.length < 2) return '';
+    const maxVal = Math.max(...data);
+    const minVal = Math.min(...data);
+    const range = maxVal - minVal || 1;
+    const pointWidth = width / (data.length - 1);
+    let path = `M 0 ${height - ((data[0] - minVal) / range) * height}`;
+    for (let i = 1; i < data.length; i++) {
+      const x = i * pointWidth;
+      const y = height - ((data[i] - minVal) / range) * height;
+      path += ` L ${x} ${y}`;
+    }
+    return path;
+  }
+
+  sparkTotal = this.generateSparklineData(12);
+  sparkValor = this.generateSparklineData(12);
+
+  onPageChange(e: PageEvent) {
+    this.pageIndex = e.pageIndex;
+    this.pageSize = e.pageSize;
+    this.cargar();
   }
 
   cargarPendiente() {
@@ -138,10 +210,11 @@ export class InventarioFisicoComponent implements OnInit {
           this.inicializarConteos(inv.detalles);
         }
         this.cdr.detectChanges();
+        this.noti.success('Registro creado');
       },
       error: (err: { error?: { message?: string } }) => {
         this.creando = false;
-        window.alert(err?.error?.message || 'Error al crear el inventario');
+        this.noti.error(err?.error?.message || 'Error al crear el inventario');
         this.cdr.detectChanges();
       },
     });
@@ -168,7 +241,7 @@ export class InventarioFisicoComponent implements OnInit {
       }
     }
     if (conteos.length === 0) {
-      window.alert('Debe registrar al menos un conteo');
+      this.noti.warning('Debe registrar al menos un conteo');
       return;
     }
     this.consolidando = true;
@@ -179,10 +252,11 @@ export class InventarioFisicoComponent implements OnInit {
         this.pendiente = inv;
         this.cargar();
         this.cdr.detectChanges();
+        this.noti.success('Inventario consolidado');
       },
       error: (err: { error?: { message?: string } }) => {
         this.consolidando = false;
-        window.alert(err?.error?.message || 'Error al consolidar');
+        this.noti.error(err?.error?.message || 'Error al consolidar');
         this.cdr.detectChanges();
       },
     });
@@ -207,10 +281,11 @@ export class InventarioFisicoComponent implements OnInit {
         this.observacionFinalizar = '';
         this.cargar();
         this.cdr.detectChanges();
+        this.noti.success('Inventario finalizado');
       },
       error: (err: { error?: { message?: string } }) => {
         this.finalizando = false;
-        window.alert(err?.error?.message || 'Error al finalizar');
+        this.noti.error(err?.error?.message || 'Error al finalizar');
         this.cdr.detectChanges();
       },
     });
@@ -230,10 +305,11 @@ export class InventarioFisicoComponent implements OnInit {
         if (this.detalle?.id === id) this.detalle = null;
         this.cargar();
         this.cdr.detectChanges();
+        this.noti.success('Registro anulado');
       },
       error: (err: { error?: { message?: string } }) => {
         this.anulando = false;
-        window.alert(err?.error?.message || 'Error al anular');
+        this.noti.error(err?.error?.message || 'Error al anular');
         this.cdr.detectChanges();
       },
     });
@@ -318,6 +394,11 @@ export class InventarioFisicoComponent implements OnInit {
     return this.pendiente?.detalles?.length ?? 0;
   }
 
+  get porcentajeContados(): number {
+    if (!this.totalProductos) return 0;
+    return (this.productosContados / this.totalProductos) * 100;
+  }
+
   // ============ GUARDADO PARCIAL ============
   guardarParcial() {
     if (!this.pendiente) return;
@@ -329,7 +410,7 @@ export class InventarioFisicoComponent implements OnInit {
       }
     }
     if (conteos.length === 0) {
-      window.alert('No hay conteos para guardar');
+      this.noti.warning('No hay conteos para guardar');
       return;
     }
     this.guardandoParcial = true;
@@ -339,10 +420,11 @@ export class InventarioFisicoComponent implements OnInit {
         this.guardandoParcial = false;
         this.pendiente = { ...this.pendiente, ...inv };
         this.cdr.detectChanges();
+        this.noti.success('Conteos guardados');
       },
       error: (err: { error?: { message?: string } }) => {
         this.guardandoParcial = false;
-        window.alert(err?.error?.message || 'Error al guardar conteos');
+        this.noti.error(err?.error?.message || 'Error al guardar conteos');
         this.cdr.detectChanges();
       },
     });

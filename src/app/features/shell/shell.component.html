@@ -17,11 +17,20 @@
 
       <!-- User -->
       <div class="p-6 text-center" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-        <div class="shell-avatar w-16 h-16 mx-auto rounded-full flex items-center justify-center text-2xl font-bold text-white">
-          {{ iniciales }}
+        <div class="shell-avatar w-16 h-16 mx-auto rounded-full flex items-center justify-center text-2xl font-bold text-white overflow-hidden bg-white">
+          @if (logoEmpresa) {
+            <img [src]="logoEmpresa" alt="Logo empresa" class="w-full h-full object-contain p-1" />
+          } @else if (fotoUsuario) {
+            <img [src]="fotoUsuario" alt="Foto" class="w-full h-full object-cover" />
+          } @else {
+            {{ iniciales }}
+          }
         </div>
         <div class="mt-4 font-medium text-white">{{ nombreUsuario }}</div>
         <div class="text-sm truncate" style="color: rgba(255,255,255,0.45);">{{ emailUsuario }}</div>
+        <div *ngIf="nombreEmpresa" class="mt-1 text-xs font-semibold truncate" style="color: rgba(255,255,255,0.6);">
+          {{ nombreEmpresa }}
+        </div>
         <button
           type="button"
           (click)="logout()"
@@ -98,8 +107,12 @@
 
       <button type="button" mat-button [matMenuTriggerFor]="userMenu" class="!rounded-full">
         <div class="flex items-center gap-2">
-          <div class="shell-avatar w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white">
-            {{ iniciales }}
+          <div class="shell-avatar w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white overflow-hidden">
+            @if (fotoUsuario) {
+              <img [src]="fotoUsuario" alt="Foto" class="w-full h-full object-cover" />
+            } @else {
+              {{ iniciales }}
+            }
           </div>
           <span class="hidden md:inline text-sm" style="color: var(--countable-text);">{{ nombreUsuario }}</span>
           <mat-icon style="color: var(--countable-text-secondary);">expand_more</mat-icon>
@@ -107,9 +120,18 @@
       </button>
 
       <mat-menu #userMenu="matMenu">
-        <div class="px-4 py-3 border-b">
-          <p class="text-sm font-medium" style="color: var(--countable-text);">{{ nombreUsuario }}</p>
-          <p class="text-xs" style="color: var(--countable-text-secondary);">{{ emailUsuario }}</p>
+        <div class="px-4 py-3 border-b flex items-center gap-3">
+          <div class="shell-avatar w-10 h-10 rounded-full flex items-center justify-center text-base font-bold text-white overflow-hidden shrink-0">
+            @if (fotoUsuario) {
+              <img [src]="fotoUsuario" alt="Foto" class="w-full h-full object-cover" />
+            } @else {
+              {{ iniciales }}
+            }
+          </div>
+          <div class="min-w-0">
+            <p class="text-sm font-medium truncate" style="color: var(--countable-text);">{{ nombreUsuario }}</p>
+            <p class="text-xs truncate" style="color: var(--countable-text-secondary);">{{ emailUsuario }}</p>
+          </div>
         </div>
         <button mat-menu-item (click)="logout()">
           <mat-icon class="!text-red-500">logout</mat-icon>

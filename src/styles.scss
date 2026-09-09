@@ -182,3 +182,27 @@ body {
 .mat-mdc-row:hover {
   background-color: rgba(56, 138, 243, 0.04) !important;
 }
+
+// ============ ESTÁNDAR: tarjetas de indicadores (resumen-card) ============
+// Usar: <div class="resumen-card blue|orange|green|red|indigo|slate">
+// Estructura: etiqueta uppercase + valor grande + sparkline/progreso/info
+.resumen-card {
+  border-radius: 12px;
+  padding: 1.5rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    border-color: #cbd5e1;
+  }
+
+  &.blue   { border-left: 4px solid #3b82f6; }
+  &.orange { border-left: 4px solid #f97316; }
+  &.red    { border-left: 4px solid #ef4444; }
+  &.green  { border-left: 4px solid #22c55e; }
+  &.indigo { border-left: 4px solid #6366f1; }
+  &.slate  { border-left: 4px solid #64748b; }
+}

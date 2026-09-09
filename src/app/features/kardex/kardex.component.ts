@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -13,6 +14,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { KardexService } from '../../core/services/kardex.service';
 import { ProductsService } from '../../core/services/products.service';
 import { ExcelExportService } from '../../core/services/excel-export.service';
@@ -31,11 +33,13 @@ import { ExcelExportService } from '../../core/services/excel-export.service';
     MatIconModule,
     MatCardModule,
     MatTooltipModule,
+    MatPaginatorModule,
   ],
   templateUrl: './kardex.component.html',
   styleUrl: './kardex.component.scss',
 })
 export class KardexComponent implements OnInit {
+  private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private kardex = inject(KardexService);
   private products = inject(ProductsService);
@@ -44,6 +48,12 @@ export class KardexComponent implements OnInit {
 
   movimientos: any[] = [];
   productos: any[] = [];
+
+  // Paginación
+  total = 0;
+  pageIndex = 0;
+  pageSize = 20;
+  pageSizeOptions = [10, 20, 50, 100];
 
   displayedColumns = [
     'consecutivo',
@@ -73,26 +83,39 @@ export class KardexComponent implements OnInit {
   }
 
   cargarProductos() {
-    this.products.getAll().subscribe((res: any) => {
+    this.products.getAll({ limit: 10000 }).subscribe((res: any) => {
       this.productos = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
   }
 
   cargarKardex() {
-    const query = this.filters.value;
+    const query = {
+      ...this.filters.value,
+      page: this.pageIndex + 1,
+      limit: this.pageSize,
+    };
     this.kardex.getAll(query).subscribe((res: any) => {
       this.movimientos = res.data ?? res ?? [];
+      this.total = res.total ?? res.data?.length ?? 0;
       this.cdr.detectChanges();
     });
   }
 
   buscar() {
+    this.pageIndex = 0;
     this.cargarKardex();
   }
 
   limpiar() {
     this.filters.reset();
+    this.pageIndex = 0;
+    this.cargarKardex();
+  }
+
+  onPageChange(e: PageEvent) {
+    this.pageIndex = e.pageIndex;
+    this.pageSize = e.pageSize;
     this.cargarKardex();
   }
 
@@ -103,7 +126,7 @@ export class KardexComponent implements OnInit {
 
   exportarExcel() {
     if (this.movimientos.length === 0) {
-      alert('No hay movimientos para exportar');
+      this.noti.warning('No hay movimientos para exportar');
       return;
     }
     const data = this.movimientos.map((m) => ({

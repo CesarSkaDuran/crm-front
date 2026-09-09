@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../../core/services/notificaciones.service'
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
@@ -20,6 +21,7 @@ interface CampoDiff {
   styleUrl: './auditoria-detalle-dialog.component.scss',
 })
 export class AuditoriaDetalleDialogComponent {
+  private noti = inject(NotificacionesService);
   private dialogRef = inject(MatDialogRef<AuditoriaDetalleDialogComponent>);
   data = inject(MAT_DIALOG_DATA);
 

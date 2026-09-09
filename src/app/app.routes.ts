@@ -29,6 +29,10 @@ import { ConciliacionesComponent } from './features/conciliaciones/conciliacione
 import { UsuariosComponent } from './features/configuracion/usuarios/usuarios.component';
 import { AuditoriaComponent } from './features/configuracion/auditoria/auditoria.component';
 import { CierresComponent } from './features/configuracion/cierres/cierres.component';
+import { TiposTerceroComponent } from './features/configuracion/tipos-tercero/tipos-tercero.component';
+import { ImpuestosComponent } from './features/configuracion/impuestos/impuestos.component';
+import { UnidadesMedidaComponent } from './features/configuracion/unidades-medida/unidades-medida.component';
+import { EmpresaComponent } from './features/configuracion/empresa/empresa.component';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
@@ -63,6 +67,10 @@ export const routes: Routes = [
       { path: 'configuracion/usuarios', component: UsuariosComponent },
       { path: 'configuracion/auditoria', component: AuditoriaComponent },
       { path: 'configuracion/cierres', component: CierresComponent },
+      { path: 'configuracion/tipos-terceros', component: TiposTerceroComponent },
+      { path: 'configuracion/impuestos', component: ImpuestosComponent },
+      { path: 'configuracion/unidades', component: UnidadesMedidaComponent },
+      { path: 'configuracion/empresa', component: EmpresaComponent },
       { path: 'inventario-fisico', component: InventarioFisicoComponent },
       { path: 'facturacion-electronica', component: FacturacionElectronicaComponent },
       { path: 'migracion', component: MigracionComponent },

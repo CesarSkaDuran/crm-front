@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -38,6 +39,7 @@ import { MovimientoDialogComponent } from './movimiento-dialog.component';
   styleUrl: './conciliaciones.component.scss',
 })
 export class ConciliacionesComponent implements OnInit {
+  private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private svc = inject(ConciliacionesService);
   private bancosSvc = inject(BancosService);
@@ -98,13 +100,13 @@ export class ConciliacionesComponent implements OnInit {
 
     if (this.editandoId) {
       this.svc.update(this.editandoId, dto).subscribe({
-        next: () => { this.cancelar(); this.cargar(); },
-        error: (err: any) => alert(err.error?.message || 'Error al actualizar'),
+        next: () => { this.cancelar(); this.cargar(); this.noti.success('Registro actualizado'); },
+        error: (err: any) => this.noti.error(err.error?.message || 'Error al actualizar'),
       });
     } else {
       this.svc.create(dto).subscribe({
-        next: () => { this.form.reset({ banco_id: '', periodo: '', saldo_extracto: 0, notas: '' }); this.cargar(); },
-        error: (err: any) => alert(err.error?.message || 'Error al crear'),
+        next: () => { this.form.reset({ banco_id: '', periodo: '', saldo_extracto: 0, notas: '' }); this.cargar(); this.noti.success('Registro creado'); },
+        error: (err: any) => this.noti.error(err.error?.message || 'Error al crear'),
       });
     }
   }
@@ -156,8 +158,8 @@ export class ConciliacionesComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result: any) => {
       if (result) {
         this.svc.addMovimiento(this.selectedConciliacion.id, result).subscribe({
-          next: () => { this.verDetalle(this.selectedConciliacion); },
-          error: (err: any) => alert(err.error?.message || 'Error al agregar movimiento'),
+          next: () => { this.verDetalle(this.selectedConciliacion); this.noti.success('Movimiento agregado'); },
+          error: (err: any) => this.noti.error(err.error?.message || 'Error al agregar movimiento'),
         });
       }
     });
@@ -166,32 +168,32 @@ export class ConciliacionesComponent implements OnInit {
   eliminarMovimiento(mov: any) {
     if (!confirm(`¿Eliminar "${mov.descripcion}"?`)) return;
     this.svc.removeMovimiento(this.selectedConciliacion.id, mov.id).subscribe({
-      next: () => { this.verDetalle(this.selectedConciliacion); },
-      error: (err: any) => alert(err.error?.message || 'Error al eliminar'),
+      next: () => { this.verDetalle(this.selectedConciliacion); this.noti.success('Movimiento eliminado'); },
+      error: (err: any) => this.noti.error(err.error?.message || 'Error al eliminar'),
     });
   }
 
   conciliar() {
     if (!this.selectedConciliacion) return;
     this.svc.conciliar(this.selectedConciliacion.id).subscribe({
-      next: () => { this.verDetalle(this.selectedConciliacion); this.cargar(); },
-      error: (err: any) => alert(err.error?.message || 'Error al conciliar'),
+      next: () => { this.verDetalle(this.selectedConciliacion); this.cargar(); this.noti.success('Conciliación realizada'); },
+      error: (err: any) => this.noti.error(err.error?.message || 'Error al conciliar'),
     });
   }
 
   anular(row: any) {
     if (!confirm(`¿Anular la conciliación de ${row.periodo}?`)) return;
     this.svc.anular(row.id).subscribe({
-      next: () => { this.cargar(); if (this.selectedConciliacion?.id === row.id) this.cerrarDetalle(); },
-      error: (err: any) => alert(err.error?.message || 'Error al anular'),
+      next: () => { this.cargar(); if (this.selectedConciliacion?.id === row.id) this.cerrarDetalle(); this.noti.success('Registro anulado'); },
+      error: (err: any) => this.noti.error(err.error?.message || 'Error al anular'),
     });
   }
 
   eliminar(row: any) {
     if (!confirm(`¿Eliminar la conciliación de ${row.periodo}?`)) return;
     this.svc.remove(row.id).subscribe({
-      next: () => { this.cargar(); if (this.selectedConciliacion?.id === row.id) this.cerrarDetalle(); },
-      error: (err: any) => alert(err.error?.message || 'Error al eliminar'),
+      next: () => { this.cargar(); if (this.selectedConciliacion?.id === row.id) this.cerrarDetalle(); this.noti.success('Registro eliminado'); },
+      error: (err: any) => this.noti.error(err.error?.message || 'Error al eliminar'),
     });
   }
 

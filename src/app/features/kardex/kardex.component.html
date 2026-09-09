@@ -10,7 +10,7 @@
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>inventory_2</mat-icon>
         <mat-label>Producto</mat-label>
-        <mat-select formControlName="producto_id">
+        <mat-select formControlName="producto_id" (selectionChange)="buscar()">
           <mat-option value="">Todos</mat-option>
           <mat-option *ngFor="let p of productos" [value]="p.id">{{ p.nombre }}</mat-option>
         </mat-select>
@@ -19,13 +19,13 @@
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always">
         <mat-icon matPrefix>event</mat-icon>
         <mat-label>Fecha inicial</mat-label>
-        <input matInput type="date" formControlName="date" />
+        <input matInput type="date" formControlName="date" (change)="buscar()" />
       </mat-form-field>
 
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always">
         <mat-icon matPrefix>event</mat-icon>
         <mat-label>Fecha final</mat-label>
-        <input matInput type="date" formControlName="date2" />
+        <input matInput type="date" formControlName="date2" (change)="buscar()" />
       </mat-form-field>
 
       <div class="field-action flex-none">
@@ -100,6 +100,16 @@
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
   </table>
+
+  <mat-paginator
+    [length]="total"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="pageSizeOptions"
+    [showFirstLastButtons]="true"
+    (page)="onPageChange($event)"
+    class="mt-4">
+  </mat-paginator>
 
   <div *ngIf="movimientos.length === 0" class="p-8 text-center text-gray-500">
     No hay movimientos registrados

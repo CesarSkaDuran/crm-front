@@ -1,0 +1,165 @@
+<div class="w-full p-6">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="page-title">Datos de la Empresa</h1>
+      <p class="text-gray-500 mt-1">Información legal, contacto, branding y configuración fiscal</p>
+    </div>
+    <button mat-raised-button color="primary" (click)="guardar()" [disabled]="form.invalid || guardando">
+      <mat-icon>save</mat-icon>
+      {{ guardando ? 'Guardando...' : 'Guardar cambios' }}
+    </button>
+  </div>
+
+  <form [formGroup]="form" *ngIf="!cargando">
+    <!-- Información Legal -->
+    <mat-card class="p-4 mb-4">
+      <h2 class="section-title mb-4">
+        <mat-icon class="align-middle mr-1">store</mat-icon>
+        Información Legal
+      </h2>
+      <div class="form-row">
+        <mat-form-field class="blue-input flex-2" subscriptSizing="dynamic">
+          <mat-icon matPrefix>business</mat-icon>
+          <mat-label>Razón Social *</mat-label>
+          <input matInput formControlName="nombre" required />
+        </mat-form-field>
+
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>badge</mat-icon>
+          <mat-label>NIT</mat-label>
+          <input matInput formControlName="nit" />
+        </mat-form-field>
+
+        <mat-form-field class="blue-input" style="max-width: 90px" subscriptSizing="dynamic">
+          <mat-label>DV</mat-label>
+          <input matInput formControlName="dv" maxlength="1" />
+        </mat-form-field>
+      </div>
+    </mat-card>
+
+    <!-- Contacto -->
+    <mat-card class="p-4 mb-4">
+      <h2 class="section-title mb-4">
+        <mat-icon class="align-middle mr-1">contact_phone</mat-icon>
+        Contacto
+      </h2>
+      <div class="form-row mb-3">
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>phone</mat-icon>
+          <mat-label>Teléfono</mat-label>
+          <input matInput formControlName="telefono" />
+        </mat-form-field>
+
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>email</mat-icon>
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" />
+        </mat-form-field>
+
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>location_city</mat-icon>
+          <mat-label>Ciudad</mat-label>
+          <input matInput formControlName="ciudad" />
+        </mat-form-field>
+      </div>
+      <div class="form-row">
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>place</mat-icon>
+          <mat-label>Dirección</mat-label>
+          <input matInput formControlName="direccion" />
+        </mat-form-field>
+      </div>
+    </mat-card>
+
+    <!-- Branding -->
+    <mat-card class="p-4 mb-4">
+      <h2 class="section-title mb-4">
+        <mat-icon class="align-middle mr-1">palette</mat-icon>
+        Branding (Logo y Colores)
+      </h2>
+      <div class="form-row items-center">
+        <div class="flex flex-col items-start gap-2" style="min-width: 200px">
+          <span class="text-sm text-gray-600">Logo de la empresa</span>
+          <div class="logo-preview">
+            <img *ngIf="logoPreview" [src]="logoPreview" alt="Logo" />
+            <mat-icon *ngIf="!logoPreview" class="text-gray-400">image</mat-icon>
+          </div>
+          <label class="cursor-pointer">
+            <input type="file" accept="image/*" class="hidden" (change)="onLogoSeleccionado($event)" [disabled]="subiendoLogo" />
+            <span class="inline-flex items-center gap-1 px-3 py-1.5 rounded bg-blue-600 text-white text-sm hover:bg-blue-700">
+              <mat-icon class="text-base">upload</mat-icon>
+              {{ subiendoLogo ? 'Subiendo...' : 'Cambiar logo' }}
+            </span>
+          </label>
+          <span class="text-xs text-gray-400">JPG, PNG, GIF o WebP — máx. 5 MB</span>
+        </div>
+
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>format_color_fill</mat-icon>
+          <mat-label>Color primario</mat-label>
+          <input matInput type="color" formControlName="color_primario" class="color-input" />
+        </mat-form-field>
+
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>format_color_fill</mat-icon>
+          <mat-label>Color secundario</mat-label>
+          <input matInput type="color" formControlName="color_secundario" class="color-input" />
+        </mat-form-field>
+      </div>
+    </mat-card>
+
+    <!-- Configuración Fiscal -->
+    <mat-card class="p-4 mb-4">
+      <h2 class="section-title mb-4">
+        <mat-icon class="align-middle mr-1">gavel</mat-icon>
+        Configuración Fiscal (Régimen y Obligaciones)
+      </h2>
+      <div class="form-row">
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>gavel</mat-icon>
+          <mat-label>Régimen tributario</mat-label>
+          <mat-select formControlName="regimen">
+            <mat-option *ngFor="let r of regimenes" [value]="r">{{ r }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="blue-input flex-2" subscriptSizing="dynamic">
+          <mat-icon matPrefix>list_alt</mat-icon>
+          <mat-label>Obligaciones fiscales</mat-label>
+          <textarea matInput formControlName="obligaciones" rows="2" placeholder="Ej: IVA, Retención en la fuente, ICA"></textarea>
+        </mat-form-field>
+      </div>
+    </mat-card>
+
+    <!-- Parámetros Generales -->
+    <mat-card class="p-4 mb-4">
+      <h2 class="section-title mb-4">
+        <mat-icon class="align-middle mr-1">public</mat-icon>
+        Parámetros Generales (Moneda y País)
+      </h2>
+      <div class="form-row">
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>payments</mat-icon>
+          <mat-label>Moneda principal</mat-label>
+          <mat-select formControlName="moneda_id">
+            <mat-option [value]="null">— Selecciona una moneda —</mat-option>
+            <mat-option *ngFor="let m of monedas" [value]="m.id">
+              {{ m.codigo }} - {{ m.nombre }} ({{ m.simbolo }})
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>flag</mat-icon>
+          <mat-label>País</mat-label>
+          <input matInput formControlName="pais" />
+        </mat-form-field>
+      </div>
+    </mat-card>
+  </form>
+
+  <div *ngIf="cargando" class="text-center py-12 text-gray-500">
+    <mat-icon class="text-4xl animate-spin">autorenew</mat-icon>
+    <p>Cargando datos de la empresa...</p>
+  </div>
+</div>

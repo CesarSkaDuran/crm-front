@@ -1,3 +1,4 @@
+import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -33,6 +34,7 @@ interface TipoImportacion {
   styleUrl: './migracion.component.scss',
 })
 export class MigracionComponent {
+  private noti = inject(NotificacionesService);
   private importSvc = inject(ImportService);
   private products = inject(ProductsService);
   private thirds = inject(ThirdsService);

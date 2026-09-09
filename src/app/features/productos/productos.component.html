@@ -13,7 +13,8 @@
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>tag</mat-icon>
         <mat-label>Código</mat-label>
-        <input matInput formControlName="codigo" required />
+        <input matInput formControlName="codigo" placeholder="Se genera automáticamente" />
+        <!-- <mat-hint>Opcional: si lo dejas vacío se asigna PDT0001, PDT0002...</mat-hint> -->
       </mat-form-field>
 
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
@@ -33,7 +34,10 @@
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>straighten</mat-icon>
         <mat-label>Unidad de medida</mat-label>
-        <input matInput formControlName="unidad_medida" />
+        <mat-select formControlName="unidad_medida">
+          <mat-option value="">— Sin unidad —</mat-option>
+          <mat-option *ngFor="let u of unidades" [value]="u.codigo">{{ u.codigo }} - {{ u.nombre }}</mat-option>
+        </mat-select>
       </mat-form-field>
 
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
@@ -112,19 +116,19 @@
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>attach_money</mat-icon>
         <mat-label>PVP 2</mat-label>
-        <input matInput type="number" formControlName="pvp2" />
+        <input matInput type="text" inputmode="decimal" formControlName="pvp2" [appCurrencyInput]="currencySymbol" />
       </mat-form-field>
 
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>attach_money</mat-icon>
         <mat-label>PVP 3</mat-label>
-        <input matInput type="number" formControlName="pvp3" />
+        <input matInput type="text" inputmode="decimal" formControlName="pvp3" [appCurrencyInput]="currencySymbol" />
       </mat-form-field>
 
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>attach_money</mat-icon>
         <mat-label>PVP 5</mat-label>
-        <input matInput type="number" formControlName="pvp5" />
+        <input matInput type="text" inputmode="decimal" formControlName="pvp5" [appCurrencyInput]="currencySymbol" />
       </mat-form-field>
     </div>
 
@@ -132,13 +136,16 @@
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>percent</mat-icon>
         <mat-label>Impuesto (%)</mat-label>
-        <input matInput type="number" formControlName="impuesto" (input)="recalcularPvp4()" />
+        <mat-select formControlName="impuesto" (selectionChange)="recalcularPvp4()">
+          <mat-option [value]="0">0% - Exento</mat-option>
+          <mat-option *ngFor="let i of opcionesImpuesto" [value]="i.porcentaje">{{ i.codigo }} - {{ i.nombre }} ({{ i.porcentaje }}%)</mat-option>
+        </mat-select>
       </mat-form-field>
 
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
         <mat-icon matPrefix>local_shipping</mat-icon>
         <mat-label>Costo flete (prorrateado)</mat-label>
-        <input matInput type="number" formControlName="costo_flete" />
+        <input matInput type="text" inputmode="decimal" formControlName="costo_flete" [appCurrencyInput]="currencySymbol" />
       </mat-form-field>
 
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
@@ -152,6 +159,23 @@
         <mat-label>Descripción</mat-label>
         <input matInput formControlName="descripcion" />
       </mat-form-field>
+    </div>
+
+    <div class="form-row mb-3">
+      <div class="flex-1">
+        <label class="block text-sm text-gray-600 mb-1">Imagen 1</label>
+        <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" (change)="onImagen1Change($event)" class="block w-full text-sm text-gray-700 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700" />
+        <div class="mt-2" *ngIf="previewImagen1 || imagen1Actual">
+          <img [src]="previewImagen1 || imagenUrl(imagen1Actual)" class="h-24 object-contain rounded border" alt="Imagen 1" />
+        </div>
+      </div>
+      <div class="flex-1">
+        <label class="block text-sm text-gray-600 mb-1">Imagen 2</label>
+        <input type="file" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" (change)="onImagen2Change($event)" class="block w-full text-sm text-gray-700 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-sm file:bg-blue-50 file:text-blue-700" />
+        <div class="mt-2" *ngIf="previewImagen2 || imagen2Actual">
+          <img [src]="previewImagen2 || imagenUrl(imagen2Actual)" class="h-24 object-contain rounded border" alt="Imagen 2" />
+        </div>
+      </div>
     </div>
 
     <div class="form-row">
@@ -197,7 +221,7 @@
       <mat-form-field class="blue-input w-72" subscriptSizing="dynamic">
         <mat-icon matPrefix>search</mat-icon>
         <mat-label>Buscar</mat-label>
-        <input matInput [(ngModel)]="search" [ngModelOptions]="{ standalone: true }" (keyup.enter)="cargar()" />
+        <input matInput [(ngModel)]="search" [ngModelOptions]="{ standalone: true }" (keyup.enter)="buscar()" />
       </mat-form-field>
       <mat-form-field class="blue-input w-72" subscriptSizing="dynamic">
         <mat-icon matPrefix>filter_list</mat-icon>
@@ -217,6 +241,13 @@
     <ng-container matColumnDef="codigo">
       <th mat-header-cell *matHeaderCellDef>Código</th>
       <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="imagen">
+      <th mat-header-cell *matHeaderCellDef>Imagen</th>
+      <td mat-cell *matCellDef="let row">
+        <img *ngIf="row.imagen1" [src]="imagenUrl(row.imagen1)" class="h-10 w-10 object-cover rounded" alt="" />
+      </td>
     </ng-container>
 
     <ng-container matColumnDef="nombre">
@@ -264,6 +295,8 @@
     <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
     <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
   </table>
+
+  <mat-paginator [length]="total" [pageIndex]="pageIndex" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions" (page)="onPage($event)" class="mt-4"></mat-paginator>
 
   <div *ngIf="lista.length === 0" class="p-8 text-center text-gray-500">
     No hay productos registrados
