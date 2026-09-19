@@ -19,13 +19,17 @@
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always">
         <mat-icon matPrefix>event</mat-icon>
         <mat-label>Fecha inicial</mat-label>
-        <input matInput type="date" formControlName="date" (change)="buscar()" />
+        <input matInput [matDatepicker]="pIni" formControlName="date" (dateChange)="buscar()" />
+        <mat-datepicker-toggle matIconSuffix [for]="pIni"></mat-datepicker-toggle>
+        <mat-datepicker #pIni></mat-datepicker>
       </mat-form-field>
 
       <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always">
         <mat-icon matPrefix>event</mat-icon>
         <mat-label>Fecha final</mat-label>
-        <input matInput type="date" formControlName="date2" (change)="buscar()" />
+        <input matInput [matDatepicker]="pFin" formControlName="date2" (dateChange)="buscar()" />
+        <mat-datepicker-toggle matIconSuffix [for]="pFin"></mat-datepicker-toggle>
+        <mat-datepicker #pFin></mat-datepicker>
       </mat-form-field>
 
       <div class="field-action flex-none">

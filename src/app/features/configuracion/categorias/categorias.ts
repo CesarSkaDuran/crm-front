@@ -1,6 +1,7 @@
 import { NotificacionesService } from '../../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import {
   ReactiveFormsModule,
   FormBuilder,
@@ -34,6 +35,7 @@ interface FilaPlana {
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     ReactiveFormsModule,
     MatTableModule,
     MatFormFieldModule,

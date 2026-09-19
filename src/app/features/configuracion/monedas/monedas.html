@@ -1,7 +1,58 @@
-<div class="mb-6">
-  <h1 class="page-title">Monedas</h1>
-  <p class="text-gray-500 mt-1">Registra las monedas y tasas de cambio de la empresa</p>
+<div class="mb-6 flex items-start justify-between gap-4">
+  <div>
+    <h1 class="page-title">Monedas</h1>
+    <p class="text-gray-500 mt-1">Registra las monedas y tasas de cambio de la empresa</p>
+  </div>
+  <div class="flex items-center gap-2">
+    <a mat-stroked-button routerLink="/configuracion">
+      <mat-icon>arrow_back</mat-icon>
+      Volver
+    </a>
+    <button mat-raised-button color="accent" class="fuse-mat-button-rounded" (click)="sincronizarTrm()" [disabled]="sincronizando">
+      <mat-icon>sync</mat-icon>
+      <span class="ml-2">{{ sincronizando ? 'Sincronizando...' : 'Sincronizar TRM' }}</span>
+    </button>
+  </div>
 </div>
+
+<mat-card class="p-4 mb-6" *ngIf="trm">
+  <h2 class="section-title mb-2">TRM del día (USD → COP)</h2>
+  <div *ngIf="trm.disponible; else sinUsd" class="flex flex-wrap items-center gap-3">
+    <span class="text-2xl font-bold text-primary">{{ trm.tasa | number:'1.2-2' }}</span>
+    <span class="text-sm text-gray-600">
+      {{ trm.fuente === 'trm_oficial' ? 'Oficial Superfinanciera (datos.gov.co)' : 'Fuente alterna' }}
+      · vigencia {{ trm.vigencia || '—' }}
+    </span>
+    <span *ngIf="trm.desactualizada" class="text-xs px-2 py-1 rounded bg-orange-50 text-orange-700 border border-orange-300">
+      Desactualizada (más de 5 días) — sincroniza o digita la tasa al facturar
+    </span>
+  </div>
+  <ng-template #sinUsd>
+    <p class="text-sm text-gray-600">
+      No hay moneda USD registrada. Créala arriba (código USD) y luego usa "Sincronizar TRM" para cargar la tasa oficial.
+    </p>
+  </ng-template>
+
+  <div class="mt-4" *ngIf="historialTrm.length > 0">
+    <h3 class="text-sm font-semibold text-gray-700 mb-2">Historial reciente</h3>
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-left text-gray-500 border-b">
+          <th class="py-1">Fecha vigencia</th>
+          <th class="py-1 text-right">Tasa</th>
+          <th class="py-1">Fuente</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let h of historialTrm" class="border-b border-gray-100">
+          <td class="py-1">{{ h.fecha_vigencia }}</td>
+          <td class="py-1 text-right font-medium">{{ h.tasa | number:'1.2-4' }}</td>
+          <td class="py-1">{{ h.fuente }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</mat-card>
 
 <mat-card class="p-4 mb-6">
   <h2 class="section-title">

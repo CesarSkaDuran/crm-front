@@ -8,7 +8,7 @@
  *   1. Libro Mayor       — GET /informes/libro
  *   2. Libro por Rango   — GET /informes/rango
  *   3. Libro por Terceros — GET /informes/terceros
- *   4. Balance General   — GET /informes/balance
+ *   4. Estado de Situación Financiera   — GET /informes/balance
  *   5. Estado de Resultados (P&G) — GET /informes/pyg
  */
 
@@ -23,7 +23,7 @@ export type Naturaleza = 'D' | 'C';
 export type ModoLibro = 'detallado' | 'resumido' | 'porComprobante' | 'discriminado';
 
 /** Tipo de informe seleccionable en el frontend. */
-export type TipoInforme = 'libro' | 'rango' | 'terceros' | 'balance' | 'pyg';
+export type TipoInforme = 'libro' | 'rango' | 'terceros' | 'balance' | 'pyg' | 'cartera' | 'cxp' | 'flujo' | 'iva' | 'retenciones' | 'diferencia';
 
 // =============================================================================
 // ENTIDADES USADAS EN SELECTORES
@@ -163,11 +163,11 @@ export type LibroFila =
   | LibroFilaDiscriminado;
 
 // =============================================================================
-// 4. BALANCE GENERAL
+// 4. Estado de Situación Financiera
 // =============================================================================
 
 /**
- * Respuesta del Balance General.
+ * Respuesta del Estado de Situación Financiera.
  *
  * Muestra Activo, Pasivo y Patrimonio a una fecha de corte,
  * con la ecuación contable: Activo = Pasivo + Patrimonio.
@@ -180,7 +180,7 @@ export interface BalanceGeneralResponse {
   saldo_final: number;
 }
 
-/** Totales consolidados del Balance General. */
+/** Totales consolidados del Estado de Situación Financiera. */
 export interface BalanceTotales {
   activo: number;
   pasivo: number;
@@ -189,7 +189,7 @@ export interface BalanceTotales {
   pasivo_mas_patrimonio: number;
 }
 
-/** Fila del Balance General. */
+/** Fila del Estado de Situación Financiera. */
 export interface BalanceFila {
   id: number;
   codigo: string;
@@ -301,7 +301,7 @@ export interface LibroTercerosQuery {
 }
 
 /**
- * Query params para el Balance General.
+ * Query params para el Estado de Situación Financiera.
  *
  * Nota: en el backend `date` se ignora porque el balance es un saldo
  * acumulado a una fecha de corte. Solo se usa `date2`.

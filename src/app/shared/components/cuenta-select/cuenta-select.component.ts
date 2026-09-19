@@ -188,9 +188,9 @@ export class CuentaSelectComponent implements ControlValueAccessor, OnInit, OnDe
   private applyFilter(term: string): void {
     const t = (term || '').trim().toLowerCase();
     if (!t) {
-      // No mostramos opciones al abrir con el input vacío, evita que el usuario
-      // haga clic accidentalmente en la primera cuenta del listado.
-      this.filtered = [];
+      // Sin término mostramos las primeras cuentas para que el usuario vea
+      // opciones al abrir el panel (antes quedaba vacío y parecía roto).
+      this.filtered = this._cuentas.slice(0, 50);
       return;
     }
     this.filtered = this._cuentas

@@ -24,7 +24,10 @@
       Sin resultados para "{{ searchText }}"
     </mat-option>
     <mat-option *ngIf="!searchText && filtered.length === 0" disabled>
-      Escribe para buscar cuenta...
+      No hay cuentas cargadas
+    </mat-option>
+    <mat-option *ngIf="!searchText && cuentas.length > 50" disabled>
+      — Escribe para buscar entre {{ cuentas.length }} cuentas —
     </mat-option>
   </mat-autocomplete>
 </mat-form-field>

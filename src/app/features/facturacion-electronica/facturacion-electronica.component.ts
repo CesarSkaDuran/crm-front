@@ -10,7 +10,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { FacturacionElectronicaService } from '../../core/services/facturacion-electronica.service';
+import { toIsoDate, isoToLocalDate } from '../../core/utils/date.util';
 import {
   FacturacionElectronicaConfig,
   EstadoFacturacion,
@@ -33,6 +35,7 @@ import {
     MatChipsModule,
     MatSnackBarModule,
     MatSlideToggleModule,
+    MatDatepickerModule,
   ],
   templateUrl: './facturacion-electronica.component.html',
   styleUrl: './facturacion-electronica.component.scss',
@@ -142,8 +145,8 @@ export class FacturacionElectronicaComponent implements OnInit {
       prefijo: cfg.prefijo ?? '',
       rango_inicio: cfg.rango_inicio ?? null,
       rango_fin: cfg.rango_fin ?? null,
-      fecha_resolucion: cfg.fecha_resolucion ?? '',
-      fecha_vencimiento: cfg.fecha_vencimiento ?? '',
+      fecha_resolucion: isoToLocalDate(cfg.fecha_resolucion),
+      fecha_vencimiento: isoToLocalDate(cfg.fecha_vencimiento),
       company_link: cfg.company_link ?? '',
     });
   }
@@ -162,8 +165,8 @@ export class FacturacionElectronicaComponent implements OnInit {
         prefijo: '',
         rango_inicio: null,
         rango_fin: null,
-        fecha_resolucion: '',
-        fecha_vencimiento: '',
+        fecha_resolucion: null,
+        fecha_vencimiento: null,
         company_link: '',
       });
     }
@@ -177,7 +180,11 @@ export class FacturacionElectronicaComponent implements OnInit {
   guardarConfig() {
     if (this.configForm.invalid) return;
     this.guardandoConfig = true;
-    const dto: ConfigurarFacturacionDto = this.configForm.value;
+    const dto: ConfigurarFacturacionDto = {
+      ...this.configForm.value,
+      fecha_resolucion: toIsoDate(this.configForm.value.fecha_resolucion),
+      fecha_vencimiento: toIsoDate(this.configForm.value.fecha_vencimiento),
+    };
     this.facturacionService.configurar(dto).subscribe({
       next: (res) => {
         this.guardandoConfig = false;

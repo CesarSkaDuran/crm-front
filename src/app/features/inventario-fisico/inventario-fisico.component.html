@@ -9,7 +9,8 @@
         <mat-icon>inventory_2</mat-icon>
         {{ mostrandoValorizacion ? 'Ocultar valorización' : 'Valorización' }}
       </button>
-      <button mat-raised-button color="primary" (click)="nuevoInventario()" [disabled]="creando || !!pendiente">
+      <button mat-raised-button color="primary" (click)="nuevoInventario()" [disabled]="creando || !!pendiente"
+              [matTooltip]="pendiente ? 'Ya hay un inventario en proceso (' + pendiente.codigo + '). Finalícelo o anúlelo primero.' : ''">
         <mat-icon>add</mat-icon>
         {{ creando ? 'Creando...' : 'Nuevo inventario' }}
       </button>
@@ -328,13 +329,17 @@
     <mat-form-field class="blue-input filtro-fecha" subscriptSizing="dynamic" floatLabel="always">
       <mat-icon matPrefix>event</mat-icon>
       <mat-label>Desde</mat-label>
-      <input matInput type="date" [(ngModel)]="date" (change)="buscarHistorial()" />
+      <input matInput [matDatepicker]="pDesde" [(ngModel)]="date" (dateChange)="buscarHistorial()" />
+      <mat-datepicker-toggle matIconSuffix [for]="pDesde"></mat-datepicker-toggle>
+      <mat-datepicker #pDesde></mat-datepicker>
     </mat-form-field>
 
     <mat-form-field class="blue-input filtro-fecha" subscriptSizing="dynamic" floatLabel="always">
       <mat-icon matPrefix>event</mat-icon>
       <mat-label>Hasta</mat-label>
-      <input matInput type="date" [(ngModel)]="date2" (change)="buscarHistorial()" />
+      <input matInput [matDatepicker]="pHasta" [(ngModel)]="date2" (dateChange)="buscarHistorial()" />
+      <mat-datepicker-toggle matIconSuffix [for]="pHasta"></mat-datepicker-toggle>
+      <mat-datepicker #pHasta></mat-datepicker>
     </mat-form-field>
 
     <div class="filtro-actions">

@@ -1,7 +1,7 @@
 import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ViewChildren, QueryList, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 
 import { MatTableModule } from '@angular/material/table';
@@ -13,10 +13,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { InformesService } from '../../core/services/informes.service';
+import { CarteraService } from '../../core/services/cartera.service';
+import { CuentasPorPagarService } from '../../core/services/cuentas-por-pagar.service';
 import { AccountsService } from '../../core/services/accounts.service';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { ExportService, ExportColumn, ExportKpi } from '../../core/services/export.service';
+import { toIsoDate } from '../../core/utils/date.util';
 import {
   Cuenta,
   Tercero,
@@ -38,6 +42,7 @@ import {
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     MatTableModule,
     MatFormFieldModule,
     MatInputModule,
@@ -47,6 +52,7 @@ import {
     MatIconModule,
     MatCardModule,
     MatTooltipModule,
+    MatDatepickerModule,
   ],
   templateUrl: './informes.component.html',
   styleUrl: './informes.component.scss',
@@ -55,6 +61,8 @@ export class InformesComponent implements OnInit {
   private noti = inject(NotificacionesService);
   private fb = inject(FormBuilder);
   private informes = inject(InformesService);
+  private cartera = inject(CarteraService);
+  private cxpService = inject(CuentasPorPagarService);
   private accounts = inject(AccountsService);
   private thirds = inject(ThirdsService);
   private cdr = inject(ChangeDetectorRef);
@@ -84,8 +92,33 @@ export class InformesComponent implements OnInit {
     { id: 'libro', nombre: 'Libros Auxiliares' },
     { id: 'rango', nombre: 'Libros Auxiliares Por Rango' },
     { id: 'terceros', nombre: 'Libros Auxiliares Por terceros' },
-    { id: 'balance', nombre: 'Balance General' },
+    { id: 'balance', nombre: 'Estado de Situación Financiera' },
     { id: 'pyg', nombre: 'Estado de resultado G y P' },
+    { id: 'cartera', nombre: 'Análisis de vencimiento de cartera' },
+    { id: 'cxp', nombre: 'Análisis de vencimiento cuentas por pagar' },
+    { id: 'flujo', nombre: 'Flujo de caja proyectado' },
+    { id: 'iva', nombre: 'IVA generado vs. descontable' },
+    { id: 'retenciones', nombre: 'Retenciones practicadas' },
+    { id: 'diferencia', nombre: 'Diferencia en cambio (USD)' },
+  ];
+
+  /** Opciones del flujo de caja proyectado */
+  horizontes = [1, 2, 3, 6, 12];
+  granularidades = [
+    { id: 'mes', nombre: 'Mensual' },
+    { id: 'semana', nombre: 'Semanal' },
+  ];
+
+  /** Rangos de mora para el análisis de vencimiento (tasas de provisión editables) */
+  rangosVencimiento = [
+    { key: 'al_dia', label: 'Al día', tasa: 0 },
+    { key: 'd1_30', label: '1-30 días', tasa: 1 },
+    { key: 'd31_60', label: '31-60 días', tasa: 3 },
+    { key: 'd61_90', label: '61-90 días', tasa: 5 },
+    { key: 'd91_180', label: '91-180 días', tasa: 10 },
+    { key: 'd181_360', label: '181-360 días', tasa: 20 },
+    { key: 'd361_720', label: '361-720 días', tasa: 50 },
+    { key: 'mas_720', label: '>720 días', tasa: 100 },
   ];
 
   modos = [
@@ -107,6 +140,9 @@ export class InformesComponent implements OnInit {
       modo: ['detallado'],
       date: [''],
       date2: [''],
+      horizonte: [3],
+      granularidad: ['mes'],
+      incluir_recurrentes: [true],
     });
 
     this.form.get('tipo')?.valueChanges.subscribe((tipo) => {
@@ -120,21 +156,25 @@ export class InformesComponent implements OnInit {
         tercero?.clearValidators();
         desde?.clearValidators();
         hasta?.clearValidators();
+        this.cdr.detectChanges();
       } else if (tipo === 'terceros') {
         cuenta?.setValidators([Validators.required]);
         tercero?.setValidators([Validators.required]);
         desde?.clearValidators();
         hasta?.clearValidators();
+        this.cdr.detectChanges();
       } else if (tipo === 'rango') {
         cuenta?.clearValidators();
         tercero?.clearValidators();
         desde?.setValidators([Validators.required]);
         hasta?.setValidators([Validators.required]);
+        this.cdr.detectChanges();
       } else {
         cuenta?.clearValidators();
         tercero?.clearValidators();
         desde?.clearValidators();
         hasta?.clearValidators();
+        this.cdr.detectChanges();
       }
       cuenta?.updateValueAndValidity();
       tercero?.updateValueAndValidity();
@@ -317,7 +357,11 @@ export class InformesComponent implements OnInit {
   generar() {
     if (this.form.invalid) return;
 
-    const params = this.form.value;
+    const params = {
+      ...this.form.value,
+      date: toIsoDate(this.form.value.date),
+      date2: toIsoDate(this.form.value.date2),
+    };
     const tipo = params.tipo as TipoInforme;
     this.cargando = true;
     this.resultado = null;
@@ -341,6 +385,70 @@ export class InformesComponent implements OnInit {
     if (tipo === 'rango') {
       if (params.desde_id) (req as LibroRangoQuery).desde_id = params.desde_id;
       if (params.hasta_id) (req as LibroRangoQuery).hasta_id = params.hasta_id;
+    }
+
+    if (tipo === 'iva' || tipo === 'retenciones' || tipo === 'diferencia') {
+      const call$ =
+        tipo === 'iva'
+          ? this.informes.getIva(params.date, params.date2)
+          : tipo === 'retenciones'
+            ? this.informes.getRetenciones(params.date, params.date2)
+            : this.informes.getDiferenciaCambio(params.date, params.date2);
+      call$.subscribe({
+        next: (res: any) => {
+          this.resultado = { ...res, tipo } as InformeResultado;
+          this.cargando = false;
+          setTimeout(() => this.cdr.detectChanges());
+          this.noti.success('Informe generado');
+        },
+        error: (err: any) => {
+          this.noti.error(err.error?.message || 'Error al generar el informe');
+          this.cargando = false;
+          setTimeout(() => this.cdr.detectChanges());
+        },
+      });
+      return;
+    }
+
+    if (tipo === 'flujo') {
+      this.informes
+        .getFlujoCajaProyectado(
+          this.form.get('horizonte')?.value || 3,
+          this.form.get('granularidad')?.value || 'mes',
+          this.form.get('incluir_recurrentes')?.value !== false,
+        )
+        .subscribe({
+          next: (res: any) => {
+            this.resultado = { ...res, tipo } as InformeResultado;
+            this.cargando = false;
+            setTimeout(() => this.cdr.detectChanges());
+            this.noti.success('Informe generado');
+          },
+          error: (err: any) => {
+            this.noti.error(err.error?.message || 'Error al generar el informe');
+            this.cargando = false;
+            setTimeout(() => this.cdr.detectChanges());
+          },
+        });
+      return;
+    }
+
+    if (tipo === 'cartera' || tipo === 'cxp') {
+      const svc = tipo === 'cartera' ? this.cartera : this.cxpService;
+      svc.analisisVencimiento().subscribe({
+        next: (res: any) => {
+          this.resultado = { ...res, tipo } as InformeResultado;
+          this.cargando = false;
+          setTimeout(() => this.cdr.detectChanges());
+          this.noti.success('Informe generado');
+        },
+        error: (err: any) => {
+          this.noti.error(err.error?.message || 'Error al generar el informe');
+          this.cargando = false;
+          setTimeout(() => this.cdr.detectChanges());
+        },
+      });
+      return;
     }
 
     let call$: Observable<LibroResponse | BalanceGeneralResponse | PygResponse>;
@@ -381,6 +489,9 @@ export class InformesComponent implements OnInit {
 
   get columnas() {
     const tipo = this.resultado?.tipo || this.form.get('tipo')?.value;
+    if (tipo === 'cartera' || tipo === 'cxp' || tipo === 'flujo' || tipo === 'iva' || tipo === 'retenciones' || tipo === 'diferencia') {
+      return [];
+    }
     if (tipo === 'balance' || tipo === 'pyg') {
       return ['codigo', 'nombre', 'clase', 'debito', 'credito', 'saldo'];
     }
@@ -406,6 +517,77 @@ export class InformesComponent implements OnInit {
   get tablaData(): any[] {
     if (!this.resultado) return [];
     return this.resultado.detalle ?? this.resultado.data ?? [];
+  }
+
+  // ===========================================================================
+  // ANÁLISIS DE VENCIMIENTO DE CARTERA (tipo 'cartera')
+  // ===========================================================================
+
+  /** Acceso libre al resultado para el bloque de cartera (matriz de vencimiento) */
+  get resultadoAny(): any {
+    return this.resultado;
+  }
+
+  // ===========================================================================
+  // FLUJO DE CAJA PROYECTADO (tipo 'flujo')
+  // ===========================================================================
+
+  totalEntradas(): number {
+    return (this.resultadoAny?.periodos ?? []).reduce(
+      (acc: number, p: any) => acc + Number(p.entradas || 0),
+      0,
+    );
+  }
+
+  totalSalidas(): number {
+    return (this.resultadoAny?.periodos ?? []).reduce(
+      (acc: number, p: any) => acc + Number(p.salidas || 0),
+      0,
+    );
+  }
+
+  saldoFinalProyectado(): number {
+    const periodos = this.resultadoAny?.periodos ?? [];
+    if (!periodos.length) return Number(this.resultadoAny?.saldo_inicial || 0);
+    return Number(periodos[periodos.length - 1].saldo_acumulado || 0);
+  }
+
+  provisionCliente(row: any): number {
+    return this.rangosVencimiento.reduce(
+      (acc, r) => acc + (Number(row.buckets?.[r.key] || 0) * r.tasa) / 100,
+      0,
+    );
+  }
+
+  provisionTotal(): number {
+    const totales = (this.resultado as any)?.totales;
+    if (!totales) return 0;
+    return this.rangosVencimiento.reduce(
+      (acc, r) => acc + (Number(totales[r.key] || 0) * r.tasa) / 100,
+      0,
+    );
+  }
+
+  calificacionColor(c: string): string {
+    const map: Record<string, string> = {
+      A: 'bg-green-100 text-green-800',
+      B: 'bg-yellow-100 text-yellow-800',
+      C: 'bg-orange-100 text-orange-800',
+      D: 'bg-red-100 text-red-800',
+      E: 'bg-red-200 text-red-900',
+    };
+    return map[c] || 'bg-gray-100 text-gray-800';
+  }
+
+  calificacionLabel(c: string): string {
+    const map: Record<string, string> = {
+      A: 'A — Normal',
+      B: 'B — Aceptable',
+      C: 'C — Apreciable',
+      D: 'D — Medio',
+      E: 'E — Irrecuperable',
+    };
+    return map[c] || c;
   }
 
   // ===========================================================================
@@ -460,8 +642,8 @@ export class InformesComponent implements OnInit {
 
     const tipo = this.resultado.tipo;
     const tipoNombre = this.tiposInforme.find((t) => t.id === tipo)?.nombre || 'Informe';
-    const date = this.form.get('date')?.value;
-    const date2 = this.form.get('date2')?.value;
+    const date = toIsoDate(this.form.get('date')?.value);
+    const date2 = toIsoDate(this.form.get('date2')?.value);
 
     // --- Subtítulo con rango de fechas ---
     let subtitle = '';
@@ -479,22 +661,67 @@ export class InformesComponent implements OnInit {
     // --- KPIs según el tipo de informe ---
     const kpis: ExportKpi[] = this.getExportKpis(tipo);
 
+    // --- Filas según el tipo de informe ---
+    const rows =
+      tipo === 'cartera' || tipo === 'cxp'
+        ? this.buildCarteraExportRows(tipo)
+        : tipo === 'flujo'
+          ? (this.resultadoAny?.periodos ?? [])
+          : tipo === 'iva'
+            ? [
+                ...(this.resultadoAny?.detalle_ventas ?? []).map((d: any) => ({ ...d, movimiento: 'Venta' })),
+                ...(this.resultadoAny?.detalle_compras ?? []).map((d: any) => ({ ...d, movimiento: 'Compra' })),
+              ]
+            : tipo === 'retenciones'
+              ? (this.resultadoAny?.terceros ?? [])
+              : tipo === 'diferencia'
+                ? (this.resultadoAny?.movimientos ?? [])
+                : this.tablaData;
+
     // --- Identificar filas totales (padres o virtuales) ---
     const totalRowIndices: number[] = [];
-    this.tablaData.forEach((row, idx) => {
-      if (row.esPadre || row.esVirtual || row.nivel === 1) {
-        totalRowIndices.push(idx);
-      }
-    });
+    if (tipo !== 'cartera') {
+      this.tablaData.forEach((row, idx) => {
+        if (row.esPadre || row.esVirtual || row.nivel === 1) {
+          totalRowIndices.push(idx);
+        }
+      });
+    }
 
     return {
       title: tipoNombre,
       subtitle,
       columns,
-      rows: this.tablaData,
+      rows,
       kpis: kpis.length > 0 ? kpis : undefined,
       totalRowIndices,
     };
+  }
+
+  /**
+   * Aplana la matriz de vencimiento de cartera para exportar:
+   * cliente + valor por cada rango + interés + total + calificación + provisión.
+   */
+  private buildCarteraExportRows(tipo: string): any[] {
+    const data = (this.resultado as any)?.data ?? [];
+    const rows = data.map((r: any) => {
+      const obj: any = {
+        nombre: r.nombre,
+        documento: r.documento,
+      };
+      for (const ran of this.rangosVencimiento) {
+        obj[`rango_${ran.key}`] = Number(r.buckets?.[ran.key] || 0);
+      }
+      obj.interes_mora = Number(r.interes_mora || 0);
+      obj.total = Number(r.total || 0);
+      obj.dias_mora_max = r.dias_mora_max;
+      if (tipo === 'cartera') {
+        obj.calificacion = this.calificacionLabel(r.calificacion);
+        obj.provision = Math.round(this.provisionCliente(r));
+      }
+      return obj;
+    });
+    return rows;
   }
 
   /**
@@ -502,6 +729,70 @@ export class InformesComponent implements OnInit {
    * Cada columna incluye key, header, ancho y alineación.
    */
   private getExportColumns(tipo: string): ExportColumn[] {
+    if (tipo === 'flujo') {
+      return [
+        { header: 'Periodo', key: 'etiqueta', width: 24 },
+        { header: 'Entradas', key: 'entradas', width: 16, align: 'right' },
+        { header: 'Salidas', key: 'salidas', width: 16, align: 'right' },
+        { header: 'Flujo neto', key: 'flujo_neto', width: 16, align: 'right' },
+        { header: 'Saldo acumulado', key: 'saldo_acumulado', width: 18, align: 'right' },
+      ];
+    }
+    if (tipo === 'iva') {
+      return [
+        { header: 'Movimiento', key: 'movimiento', width: 12, align: 'center' },
+        { header: 'Fecha', key: 'fecha', width: 14 },
+        { header: 'Consecutivo', key: 'consecutivo', width: 16 },
+        { header: 'Factura', key: 'factura', width: 14 },
+        { header: 'Tercero', key: 'tercero', width: 35 },
+        { header: 'Base gravable', key: 'base_gravable', width: 16, align: 'right' },
+        { header: 'IVA', key: 'iva', width: 14, align: 'right' },
+      ];
+    }
+    if (tipo === 'retenciones') {
+      return [
+        { header: 'Tercero', key: 'tercero', width: 40 },
+        { header: 'Documento', key: 'documento', width: 16 },
+        { header: 'Concepto', key: 'concepto', width: 24 },
+        { header: 'Compras', key: 'compras', width: 10, align: 'center' },
+        { header: 'Base gravable', key: 'base_gravable', width: 16, align: 'right' },
+        { header: 'Retención', key: 'retencion', width: 14, align: 'right' },
+        { header: 'Tarifa %', key: 'tarifa_efectiva', width: 10, align: 'right' },
+      ];
+    }
+    if (tipo === 'diferencia') {
+      return [
+        { header: 'Fecha', key: 'fecha', width: 14 },
+        { header: 'Comprobante', key: 'consecutivo', width: 16 },
+        { header: 'Tercero', key: 'tercero', width: 32 },
+        { header: 'Cuenta', key: 'cuenta', width: 12 },
+        { header: 'Tipo', key: 'tipo', width: 12, align: 'center' },
+        { header: 'Valor', key: 'valor', width: 16, align: 'right' },
+        { header: 'Descripción', key: 'descripcion', width: 40 },
+      ];
+    }
+    if (tipo === 'cartera' || tipo === 'cxp') {
+      const cols: ExportColumn[] = [
+        { header: tipo === 'cartera' ? 'Cliente' : 'Proveedor', key: 'nombre', width: 30 },
+        { header: 'Documento', key: 'documento', width: 16 },
+        ...this.rangosVencimiento.map((r) => ({
+          header: r.label,
+          key: `rango_${r.key}`,
+          width: 14,
+          align: 'right' as const,
+        })),
+        { header: 'Interés mora', key: 'interes_mora', width: 14, align: 'right' },
+        { header: 'Total', key: 'total', width: 16, align: 'right' },
+        { header: 'Mora máx (días)', key: 'dias_mora_max', width: 12, align: 'center' },
+      ];
+      if (tipo === 'cartera') {
+        cols.push(
+          { header: 'Calificación', key: 'calificacion', width: 18, align: 'center' },
+          { header: 'Provisión sugerida', key: 'provision', width: 16, align: 'right' },
+        );
+      }
+      return cols;
+    }
     if (tipo === 'balance' || tipo === 'pyg') {
       return [
         { header: 'Código', key: 'codigo', width: 14, align: 'left' },
@@ -582,6 +873,33 @@ export class InformesComponent implements OnInit {
         { label: 'Total Costos', value: fmt(this.resultado.totalCostos) },
         { label: 'Total Gastos', value: fmt(this.resultado.totalGastos) },
         { label: 'Utilidad/Pérdida', value: fmt(this.resultado.utilidadPerdida) },
+      ];
+    }
+
+    if (tipo === 'iva' && this.resultado.tipo === 'iva') {
+      const r = this.resultadoAny;
+      return [
+        { label: 'IVA generado (ventas)', value: fmt(r?.ventas?.iva_generado) },
+        { label: 'IVA descontable (compras)', value: fmt(r?.compras?.iva_descontable) },
+        { label: 'Saldo del período', value: fmt(r?.saldo) },
+      ];
+    }
+
+    if (tipo === 'diferencia' && this.resultado.tipo === 'diferencia') {
+      const r = this.resultadoAny;
+      return [
+        { label: 'Ganancias (4.2.10)', value: fmt(r?.ganancias) },
+        { label: 'Pérdidas (5.3.05)', value: fmt(r?.perdidas) },
+        { label: 'Diferencia neta', value: fmt(r?.neto) },
+      ];
+    }
+
+    if (tipo === 'retenciones' && this.resultado.tipo === 'retenciones') {
+      const r = this.resultadoAny;
+      return [
+        { label: 'Total retenido', value: fmt(r?.total_retenido) },
+        { label: 'Base gravable total', value: fmt(r?.total_base) },
+        { label: 'Terceros', value: String(r?.terceros?.length ?? 0) },
       ];
     }
 

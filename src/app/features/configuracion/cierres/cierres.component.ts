@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -9,14 +10,18 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { CierresService } from '../../../core/services/cierres.service';
+import { toIsoDate } from '../../../core/utils/date.util';
 import { NotificacionesService } from '../../../core/services/notificaciones.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-cierres',
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     ReactiveFormsModule,
     MatTableModule,
     MatFormFieldModule,
@@ -26,6 +31,7 @@ import { NotificacionesService } from '../../../core/services/notificaciones.ser
     MatCardModule,
     MatChipsModule,
     MatTooltipModule,
+    MatDatepickerModule,
   ],
   templateUrl: './cierres.component.html',
   styleUrl: './cierres.component.scss',
@@ -35,6 +41,11 @@ export class CierresComponent implements OnInit {
   private fb = inject(FormBuilder);
   private cdr = inject(ChangeDetectorRef);
   private noti = inject(NotificacionesService);
+  private auth = inject(AuthService);
+
+  get esAdmin(): boolean {
+    return this.auth.getUsuario()?.rol === 'admin';
+  }
 
   lista: any[] = [];
   displayedColumns = ['periodo', 'fecha_inicio', 'fecha_fin', 'estado', 'usuario', 'acciones'];
@@ -70,7 +81,11 @@ export class CierresComponent implements OnInit {
   guardar() {
     if (this.form.invalid) return;
 
-    const body = this.form.value as any;
+    const body = {
+      ...this.form.value,
+      fecha_inicio: toIsoDate(this.form.value.fecha_inicio),
+      fecha_fin: toIsoDate(this.form.value.fecha_fin),
+    } as any;
     this.cierres.crear(body).subscribe({
       next: () => {
         this.noti.success('Cierre creado');
@@ -98,15 +113,57 @@ export class CierresComponent implements OnInit {
   }
 
   anular(cierre: any) {
-    if (!confirm(`¿Anular el cierre del período ${cierre.periodo}?`)) return;
+    const motivo = prompt(
+      `ANULAR el cierre del período ${cierre.periodo}\n\n` +
+      `Esto reabre el período para nuevos movimientos y queda registrado en auditoría.\n` +
+      `Indique el motivo (obligatorio):`,
+    );
+    if (!motivo?.trim()) return;
 
-    this.cierres.anular(cierre.id).subscribe({
+    this.cierres.anular(cierre.id, motivo.trim()).subscribe({
       next: () => {
         this.noti.success('Cierre anulado');
         this.cargar();
       },
       error: (err: any) => {
         this.noti.error(err.error?.message || 'Error al anular cierre');
+      },
+    });
+  }
+
+  generarAsiento(cierre: any) {
+    if (!confirm(
+      `¿Generar el asiento de cierre del período ${cierre.periodo}?\n\n` +
+      `Esto pondrá en cero las cuentas de ingresos (4), gastos (5) y costos (6) ` +
+      `y trasladará el resultado a la cuenta de patrimonio.`,
+    )) return;
+
+    this.cierres.asientoCierre(cierre.id).subscribe({
+      next: (res: any) => {
+        this.noti.success(res?.mensaje || 'Asiento de cierre generado');
+        this.cargar();
+      },
+      error: (err: any) => {
+        this.noti.error(err.error?.message || 'Error al generar asiento de cierre');
+      },
+    });
+  }
+
+  reabrir(cierre: any) {
+    const motivo = prompt(
+      `REAPERTURA del período ${cierre.periodo}\n\n` +
+      `Esta acción queda registrada en auditoría.\n` +
+      `Indique el motivo (obligatorio):`,
+    );
+    if (!motivo?.trim()) return;
+
+    this.cierres.reabrir(cierre.id, motivo.trim()).subscribe({
+      next: (res: any) => {
+        this.noti.success(res?.mensaje || 'Período reabierto');
+        this.cargar();
+      },
+      error: (err: any) => {
+        this.noti.error(err.error?.message || 'Error al reabrir período');
       },
     });
   }

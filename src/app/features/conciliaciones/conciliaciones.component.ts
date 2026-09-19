@@ -13,6 +13,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { ConciliacionesService } from '../../core/services/conciliaciones.service';
 import { BancosService } from '../../core/services/bancos.service';
+import { FormasPagoService } from '../../core/services/formas-pago.service';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
 import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
 import { MovimientoDialogComponent } from './movimiento-dialog.component';
@@ -43,18 +44,20 @@ export class ConciliacionesComponent implements OnInit {
   private fb = inject(FormBuilder);
   private svc = inject(ConciliacionesService);
   private bancosSvc = inject(BancosService);
+  private formasPagoSvc = inject(FormasPagoService);
   private dialog = inject(MatDialog);
   private cdr = inject(ChangeDetectorRef);
 
   currencySymbol = '$';
   lista: any[] = [];
   bancos: any[] = [];
+  formasPago: any[] = [];
   editandoId: number | null = null;
   selectedConciliacion: any = null;
   resumen: any = null;
 
   displayedColumns = ['banco', 'periodo', 'saldo_inicial_libros', 'saldo_extracto', 'diferencia', 'estado', 'acciones'];
-  movColumns = ['fecha', 'origen', 'tipo_movimiento', 'descripcion', 'valor', 'acciones'];
+  movColumns = ['fecha', 'origen', 'tipo_movimiento', 'descripcion', 'forma', 'valor', 'acciones'];
 
   form = this.fb.group({
     banco_id: ['', Validators.required],
@@ -66,6 +69,10 @@ export class ConciliacionesComponent implements OnInit {
   ngOnInit(): void {
     this.cargarBancos();
     this.cargar();
+    this.formasPagoSvc.getAll({ limit: 100 }).subscribe((res: any) => {
+      this.formasPago = res.data ?? res ?? [];
+      this.cdr.detectChanges();
+    });
   }
 
   cargarBancos() {
@@ -201,6 +208,11 @@ export class ConciliacionesComponent implements OnInit {
     return this.bancos.find((b) => b.id === id)?.nombre || 'N/A';
   }
 
+  nombreFormaPago(codigo: number): string {
+    if (!codigo) return '—';
+    return this.formasPago.find((f) => f.codigo_dian === Number(codigo))?.nombre || `Código ${codigo}`;
+  }
+
   estadoLabel(e: number): string {
     return e === 0 ? 'Borrador' : e === 1 ? 'Conciliado' : 'Anulado';
   }
@@ -211,6 +223,18 @@ export class ConciliacionesComponent implements OnInit {
 
   origenLabel(o: string): string {
     return o === 'libro' ? 'Libros' : 'Extracto';
+  }
+
+  conceptoLabel(c: string): string {
+    const map: Record<string, string> = {
+      nota_debito: 'Nota débito bancaria',
+      nota_credito: 'Nota crédito bancaria',
+      cheque_circulacion: 'Cheque en circulación',
+      consignacion_transito: 'Consignación en tránsito',
+      error_libros: 'Error en libros',
+      error_extracto: 'Error en extracto',
+    };
+    return map[c] || c;
   }
 
   tipoLabel(t: number): string {

@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -21,6 +22,7 @@ import { API_SERVER_URL } from '../../../core/api-url';
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     ReactiveFormsModule,
     MatTableModule,
     MatFormFieldModule,
@@ -31,7 +33,6 @@ import { API_SERVER_URL } from '../../../core/api-url';
     MatCardModule,
     MatDialogModule,
     MatTooltipModule,
-    FotoDialogComponent,
   ],
   templateUrl: './usuarios.component.html',
   styleUrl: './usuarios.component.scss',

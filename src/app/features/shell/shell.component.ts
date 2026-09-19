@@ -90,12 +90,6 @@ const MENU: MenuGroup[] = [
     link: '/inventario-fisico'
   },
   {
-    id: 'facturacion-electronica',
-    title: 'Facturación DIAN',
-    icon: 'receipt_long',
-    link: '/facturacion-electronica'
-  },
-  {
     id: 'migracion',
     title: 'Migración de datos',
     icon: 'cloud_upload',

@@ -38,7 +38,7 @@ tr.mat-mdc-row:hover {
 }
 
 // =========================================================================
-// Estilos jerárquicos para Balance General y P&G
+// Estilos jerárquicos para Estado de Situación Financiera y P&G
 //
 // Las filas se estilizan según el 'nivel' de la cuenta:
 //   nivel 1 = Clase (Activo, Pasivo, Patrimonio) -> negrita, fondo claro
@@ -205,4 +205,35 @@ table.mat-mdc-table {
   width: 100%;
   min-width: 1100px; // Fuerza el scroll horizontal si la tabla no cabe
   table-layout: auto;
+}
+
+// ============ AN�LISIS DE VENCIMIENTO ============
+.aging-table {
+  border-collapse: collapse;
+
+  th {
+    font-weight: 700;
+    background-color: var(--countable-input);
+    color: var(--countable-text-secondary);
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    padding: 8px 10px;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    white-space: nowrap;
+  }
+
+  tbody tr:hover td {
+    background-color: rgba(56, 138, 243, 0.04);
+  }
+
+  .totals-row td {
+    border-top: 2px solid rgba(0, 0, 0, 0.12);
+    border-bottom: none;
+    background-color: rgba(56, 138, 243, 0.05);
+  }
 }

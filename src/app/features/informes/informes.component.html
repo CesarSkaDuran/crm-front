@@ -108,17 +108,41 @@
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always">
+          <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always" *ngIf="tipo !== 'cartera' && tipo !== 'cxp' && tipo !== 'flujo'">
             <mat-icon matPrefix>event</mat-icon>
             <mat-label>Fecha Inicial</mat-label>
-            <input matInput type="date" formControlName="date" />
+            <input matInput [matDatepicker]="pIni" formControlName="date" />
+            <mat-datepicker-toggle matIconSuffix [for]="pIni"></mat-datepicker-toggle>
+            <mat-datepicker #pIni></mat-datepicker>
           </mat-form-field>
 
-          <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always">
+          <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always" *ngIf="tipo !== 'cartera' && tipo !== 'cxp' && tipo !== 'flujo'">
             <mat-icon matPrefix>event</mat-icon>
             <mat-label>Fecha Final</mat-label>
-            <input matInput type="date" formControlName="date2" />
+            <input matInput [matDatepicker]="pFin" formControlName="date2" />
+            <mat-datepicker-toggle matIconSuffix [for]="pFin"></mat-datepicker-toggle>
+            <mat-datepicker #pFin></mat-datepicker>
           </mat-form-field>
+
+          <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" *ngIf="tipo === 'flujo'">
+            <mat-icon matPrefix>calendar_view_month</mat-icon>
+            <mat-label>Horizonte (meses)</mat-label>
+            <mat-select formControlName="horizonte">
+              <mat-option *ngFor="let h of horizontes" [value]="h">{{ h }} {{ h === 1 ? 'mes' : 'meses' }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" *ngIf="tipo === 'flujo'">
+            <mat-icon matPrefix>view_week</mat-icon>
+            <mat-label>Granularidad</mat-label>
+            <mat-select formControlName="granularidad">
+              <mat-option *ngFor="let g of granularidades" [value]="g.id">{{ g.nombre }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <label class="flex items-center gap-2" *ngIf="tipo === 'flujo'">
+            <mat-checkbox formControlName="incluir_recurrentes">Incluir partidas recurrentes</mat-checkbox>
+          </label>
 
           <div class="field-action flex-none">
             <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded" [disabled]="cargando || form.invalid">
@@ -186,6 +210,381 @@
       </p>
     </div>
   </div>
+
+  <!-- Análisis de vencimiento de cartera / CxP -->
+  <ng-container *ngIf="resultado.tipo === 'cartera' || resultado.tipo === 'cxp'">
+    <div class="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200" *ngIf="resultado.tipo === 'cartera'">
+      <p class="text-xs font-semibold text-gray-600 uppercase mb-2">Tasas de provisión sugerida por rango (%)</p>
+      <div class="flex flex-wrap gap-3">
+        <div *ngFor="let r of rangosVencimiento" class="flex items-center gap-1">
+          <span class="text-xs text-gray-500">{{ r.label }}:</span>
+          <input type="number" min="0" max="100" [(ngModel)]="r.tasa"
+                 class="w-16 px-2 py-1 text-xs border border-gray-300 rounded text-center" />
+        </div>
+      </div>
+      <p class="text-xs text-gray-500 mt-2">
+        Provisión total sugerida: <strong class="text-blue-700">{{ provisionTotal() | number: '1.2-2' }}</strong>
+      </p>
+    </div>
+
+    <div class="table-responsive">
+      <table class="w-full text-sm aging-table">
+        <thead>
+          <tr>
+            <th class="text-left">{{ resultado.tipo === 'cartera' ? 'Cliente' : 'Proveedor' }}</th>
+            <th *ngFor="let r of rangosVencimiento" class="text-right">{{ r.label }}</th>
+            <th class="text-right">Interés</th>
+            <th class="text-right">Total</th>
+            <th *ngIf="resultado.tipo === 'cartera'" class="text-center">Calif.</th>
+            <th *ngIf="resultado.tipo === 'cartera'" class="text-right">Provisión</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of tablaData">
+            <td>
+              <div class="font-medium">{{ row.nombre }}</div>
+              <div class="text-xs text-gray-400">{{ row.documento }}</div>
+            </td>
+            <td *ngFor="let r of rangosVencimiento" class="text-right"
+                [class.text-red-600]="r.key !== 'al_dia' && row.buckets[r.key] > 0"
+                [class.font-semibold]="r.key !== 'al_dia' && row.buckets[r.key] > 0">
+              {{ row.buckets[r.key] > 0 ? (row.buckets[r.key] | number: '1.2-2') : '—' }}
+            </td>
+            <td class="text-right" [class.text-red-600]="row.interes_mora > 0">{{ row.interes_mora | number: '1.2-2' }}</td>
+            <td class="text-right font-bold">{{ row.total | number: '1.2-2' }}</td>
+            <td class="text-center" *ngIf="resultado.tipo === 'cartera'">
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold" [ngClass]="calificacionColor(row.calificacion)"
+                    [title]="calificacionLabel(row.calificacion)">
+                {{ row.calificacion }}
+              </span>
+            </td>
+            <td class="text-right text-blue-700 font-semibold" *ngIf="resultado.tipo === 'cartera'">{{ provisionCliente(row) | number: '1.2-2' }}</td>
+          </tr>
+          <tr class="totals-row">
+            <td class="font-bold">TOTALES</td>
+            <td *ngFor="let r of rangosVencimiento" class="text-right font-bold">
+              {{ resultadoAny?.totales?.[r.key] > 0 ? (resultadoAny.totales[r.key] | number: '1.2-2') : '—' }}
+            </td>
+            <td class="text-right font-bold">{{ resultadoAny?.interes_total | number: '1.2-2' }}</td>
+            <td class="text-right font-bold">{{ resultadoAny?.total_general | number: '1.2-2' }}</td>
+            <td *ngIf="resultado.tipo === 'cartera'"></td>
+            <td class="text-right font-bold text-blue-700" *ngIf="resultado.tipo === 'cartera'">{{ provisionTotal() | number: '1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- Flujo de caja proyectado -->
+  <ng-container *ngIf="resultado.tipo === 'flujo'">
+    <!-- Resumen -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <div class="resumen-card blue">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Saldo inicial bancos</p>
+        <p class="text-xl font-bold text-blue-600">{{ resultadoAny?.saldo_inicial | number: '1.2-2' }}</p>
+      </div>
+      <div class="resumen-card green">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Entradas proyectadas</p>
+        <p class="text-xl font-bold text-green-600">{{ totalEntradas() | number: '1.2-2' }}</p>
+      </div>
+      <div class="resumen-card red">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Salidas proyectadas</p>
+        <p class="text-xl font-bold text-red-600">{{ totalSalidas() | number: '1.2-2' }}</p>
+      </div>
+      <div class="resumen-card" [ngClass]="saldoFinalProyectado() >= 0 ? 'blue' : 'red'">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Saldo final proyectado</p>
+        <p class="text-xl font-bold" [ngClass]="saldoFinalProyectado() >= 0 ? 'text-blue-600' : 'text-red-600'">
+          {{ saldoFinalProyectado() | number: '1.2-2' }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Tabla por periodos -->
+    <div class="overflow-x-auto mb-4">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-gray-50">
+            <th class="text-left p-2 font-semibold">Periodo</th>
+            <th class="text-right p-2 font-semibold">Entradas</th>
+            <th class="text-right p-2 font-semibold">Salidas</th>
+            <th class="text-right p-2 font-semibold">Flujo neto</th>
+            <th class="text-right p-2 font-semibold">Saldo acumulado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of resultadoAny?.periodos" class="border-b border-gray-100">
+            <td class="p-2 font-medium">{{ p.etiqueta }}</td>
+            <td class="p-2 text-right text-green-700">{{ p.entradas | number: '1.2-2' }}</td>
+            <td class="p-2 text-right text-red-700">{{ p.salidas | number: '1.2-2' }}</td>
+            <td class="p-2 text-right font-semibold" [ngClass]="p.flujo_neto >= 0 ? 'text-green-700' : 'text-red-700'">
+              {{ p.flujo_neto | number: '1.2-2' }}
+            </td>
+            <td class="p-2 text-right font-bold" [ngClass]="p.saldo_acumulado >= 0 ? 'text-blue-700' : 'text-red-700'">
+              {{ p.saldo_acumulado | number: '1.2-2' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Detalle de movimientos esperados -->
+    <details class="mt-2" *ngIf="resultadoAny?.detalle?.length">
+      <summary class="cursor-pointer text-sm font-semibold text-gray-600 py-2">
+        Ver detalle de cobros y pagos proyectados ({{ resultadoAny.detalle.length }})
+      </summary>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50">
+              <th class="text-left p-2 font-semibold">Periodo</th>
+              <th class="text-left p-2 font-semibold">Tipo</th>
+              <th class="text-left p-2 font-semibold">Tercero</th>
+              <th class="text-left p-2 font-semibold">Crédito / Cuota</th>
+              <th class="text-left p-2 font-semibold">Fecha esperada</th>
+              <th class="text-right p-2 font-semibold">Valor</th>
+              <th class="text-right p-2 font-semibold">Interés</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of resultadoAny.detalle" class="border-b border-gray-100">
+              <td class="p-2">{{ d.periodo }}</td>
+              <td class="p-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold"
+                      [ngClass]="d.tipo === 'entrada' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
+                  {{ d.recurrente ? 'Recurrente' : (d.tipo === 'entrada' ? 'Cobro' : 'Pago') }}
+                </span>
+              </td>
+              <td class="p-2">{{ d.tercero }}</td>
+              <td class="p-2">{{ d.recurrente ? '—' : '#' + d.credito_id + ' / cuota ' + d.cuota }}</td>
+              <td class="p-2">{{ d.fecha | date: 'dd/MM/yyyy' }}</td>
+              <td class="p-2 text-right">{{ d.valor | number: '1.2-2' }}</td>
+              <td class="p-2 text-right">{{ d.interes | number: '1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </ng-container>
+
+  <!-- ==================== IVA GENERADO VS DESCONTABLE ==================== -->
+  <ng-container *ngIf="resultado.tipo === 'iva'">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div class="resumen-card green">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">IVA generado (ventas)</p>
+        <p class="text-xl font-bold text-green-600">{{ resultadoAny?.ventas?.iva_generado | number: '1.2-2' }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ resultadoAny?.ventas?.cantidad }} facturas · base {{ resultadoAny?.ventas?.base_gravable | number: '1.2-2' }}</p>
+      </div>
+      <div class="resumen-card blue">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">IVA descontable (compras)</p>
+        <p class="text-xl font-bold text-blue-600">{{ resultadoAny?.compras?.iva_descontable | number: '1.2-2' }}</p>
+        <p class="text-xs text-gray-500 mt-1">{{ resultadoAny?.compras?.cantidad }} facturas · base {{ resultadoAny?.compras?.base_gravable | number: '1.2-2' }}</p>
+      </div>
+      <div class="resumen-card" [ngClass]="resultadoAny?.saldo > 0 ? 'red' : 'blue'">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Saldo del período</p>
+        <p class="text-xl font-bold" [ngClass]="resultadoAny?.saldo > 0 ? 'text-red-600' : 'text-blue-600'">
+          {{ resultadoAny?.saldo | number: '1.2-2' }}
+        </p>
+        <p class="text-xs text-gray-500 mt-1">{{ resultadoAny?.interpretacion }}</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div>
+        <h3 class="section-title">Ventas (IVA generado)</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-gray-50">
+                <th class="text-left p-2 font-semibold">Fecha</th>
+                <th class="text-left p-2 font-semibold">Consecutivo</th>
+                <th class="text-left p-2 font-semibold">Tercero</th>
+                <th class="text-right p-2 font-semibold">Base</th>
+                <th class="text-right p-2 font-semibold">IVA</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let d of resultadoAny?.detalle_ventas" class="border-b border-gray-100">
+                <td class="p-2">{{ d.fecha | date: 'dd/MM/yyyy' }}</td>
+                <td class="p-2 font-mono text-xs">{{ d.consecutivo }}</td>
+                <td class="p-2">{{ d.tercero }}</td>
+                <td class="p-2 text-right">{{ d.base_gravable | number: '1.2-2' }}</td>
+                <td class="p-2 text-right font-semibold text-green-700">{{ d.iva | number: '1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <h3 class="section-title">Compras (IVA descontable)</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-gray-50">
+                <th class="text-left p-2 font-semibold">Fecha</th>
+                <th class="text-left p-2 font-semibold">Consecutivo</th>
+                <th class="text-left p-2 font-semibold">Factura</th>
+                <th class="text-left p-2 font-semibold">Tercero</th>
+                <th class="text-right p-2 font-semibold">Base</th>
+                <th class="text-right p-2 font-semibold">IVA</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let d of resultadoAny?.detalle_compras" class="border-b border-gray-100">
+                <td class="p-2">{{ d.fecha | date: 'dd/MM/yyyy' }}</td>
+                <td class="p-2 font-mono text-xs">{{ d.consecutivo }}</td>
+                <td class="p-2">{{ d.factura || '—' }}</td>
+                <td class="p-2">{{ d.tercero }}</td>
+                <td class="p-2 text-right">{{ d.base_gravable | number: '1.2-2' }}</td>
+                <td class="p-2 text-right font-semibold text-blue-700">{{ d.iva | number: '1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ==================== RETENCIONES PRACTICADAS ==================== -->
+  <ng-container *ngIf="resultado.tipo === 'retenciones'">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div class="resumen-card red">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Total retenido</p>
+        <p class="text-xl font-bold text-red-600">{{ resultadoAny?.total_retenido | number: '1.2-2' }}</p>
+      </div>
+      <div class="resumen-card blue">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Base gravable</p>
+        <p class="text-xl font-bold text-blue-600">{{ resultadoAny?.total_base | number: '1.2-2' }}</p>
+      </div>
+      <div class="resumen-card">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Proveedores con retención</p>
+        <p class="text-xl font-bold">{{ resultadoAny?.terceros?.length ?? 0 }}</p>
+      </div>
+    </div>
+
+    <h3 class="section-title">Por tercero</h3>
+    <div class="overflow-x-auto mb-4">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-gray-50">
+            <th class="text-left p-2 font-semibold">Tercero</th>
+            <th class="text-left p-2 font-semibold">Documento</th>
+            <th class="text-left p-2 font-semibold">Concepto</th>
+            <th class="text-center p-2 font-semibold">Compras</th>
+            <th class="text-right p-2 font-semibold">Base gravable</th>
+            <th class="text-right p-2 font-semibold">Retención</th>
+            <th class="text-right p-2 font-semibold">Tarifa %</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of resultadoAny?.terceros" class="border-b border-gray-100">
+            <td class="p-2 font-medium">{{ t.tercero }}</td>
+            <td class="p-2">{{ t.documento || '—' }}</td>
+            <td class="p-2">{{ t.concepto }}</td>
+            <td class="p-2 text-center">{{ t.compras }}</td>
+            <td class="p-2 text-right">{{ t.base_gravable | number: '1.2-2' }}</td>
+            <td class="p-2 text-right font-semibold text-red-700">{{ t.retencion | number: '1.2-2' }}</td>
+            <td class="p-2 text-right">{{ t.tarifa_efectiva | number: '1.2-2' }}%</td>
+          </tr>
+        </tbody>
+      </table>
+      <div *ngIf="!resultadoAny?.terceros?.length" class="p-8 text-center text-gray-500">
+        No hay retenciones practicadas en el período
+      </div>
+    </div>
+
+    <details class="mt-2" *ngIf="resultadoAny?.detalle?.length">
+      <summary class="cursor-pointer text-sm font-semibold text-gray-600 py-2">
+        Ver detalle por factura ({{ resultadoAny.detalle.length }})
+      </summary>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50">
+              <th class="text-left p-2 font-semibold">Fecha</th>
+              <th class="text-left p-2 font-semibold">Consecutivo</th>
+              <th class="text-left p-2 font-semibold">Factura</th>
+              <th class="text-left p-2 font-semibold">Tercero</th>
+              <th class="text-right p-2 font-semibold">Base</th>
+              <th class="text-right p-2 font-semibold">Retención</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of resultadoAny.detalle" class="border-b border-gray-100">
+              <td class="p-2">{{ d.fecha | date: 'dd/MM/yyyy' }}</td>
+              <td class="p-2 font-mono text-xs">{{ d.consecutivo }}</td>
+              <td class="p-2">{{ d.factura || '—' }}</td>
+              <td class="p-2">{{ d.tercero }}</td>
+              <td class="p-2 text-right">{{ d.base_gravable | number: '1.2-2' }}</td>
+              <td class="p-2 text-right font-semibold text-red-700">{{ d.retencion | number: '1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </ng-container>
+
+  <!-- ==================== DIFERENCIA EN CAMBIO (USD) ==================== -->
+  <ng-container *ngIf="resultado.tipo === 'diferencia'">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+      <div class="resumen-card green">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Ganancias (4.2.10)</p>
+        <p class="text-xl font-bold text-green-600">{{ resultadoAny?.ganancias | number: '1.2-2' }}</p>
+      </div>
+      <div class="resumen-card red">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Pérdidas (5.3.05)</p>
+        <p class="text-xl font-bold text-red-600">{{ resultadoAny?.perdidas | number: '1.2-2' }}</p>
+      </div>
+      <div class="resumen-card blue">
+        <p class="text-xs text-gray-600 uppercase font-semibold mb-1">Diferencia neta</p>
+        <p class="text-xl font-bold"
+          [class.text-green-600]="(resultadoAny?.neto ?? 0) >= 0"
+          [class.text-red-600]="(resultadoAny?.neto ?? 0) < 0">
+          {{ resultadoAny?.neto | number: '1.2-2' }}
+        </p>
+      </div>
+    </div>
+
+    <p *ngIf="resultadoAny?.nota" class="text-sm text-orange-700 bg-orange-50 border border-orange-200 rounded p-3 mb-4">
+      {{ resultadoAny.nota }}
+    </p>
+
+    <h3 class="section-title">Movimientos del período</h3>
+    <div class="overflow-x-auto mb-4">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-gray-50">
+            <th class="text-left p-2 font-semibold">Fecha</th>
+            <th class="text-left p-2 font-semibold">Comprobante</th>
+            <th class="text-left p-2 font-semibold">Tercero</th>
+            <th class="text-left p-2 font-semibold">Cuenta</th>
+            <th class="text-center p-2 font-semibold">Tipo</th>
+            <th class="text-right p-2 font-semibold">Valor</th>
+            <th class="text-left p-2 font-semibold">Descripción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let m of resultadoAny?.movimientos" class="border-b border-gray-100">
+            <td class="p-2">{{ m.fecha | date: 'dd/MM/yyyy' }}</td>
+            <td class="p-2 font-mono text-xs">{{ m.consecutivo || '—' }}</td>
+            <td class="p-2">{{ m.tercero || '—' }}</td>
+            <td class="p-2">{{ m.cuenta }}</td>
+            <td class="p-2 text-center">
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
+                [class.bg-green-100]="m.tipo === 'ganancia'" [class.text-green-800]="m.tipo === 'ganancia'"
+                [class.bg-red-100]="m.tipo === 'perdida'" [class.text-red-800]="m.tipo === 'perdida'">
+                {{ m.tipo === 'ganancia' ? 'Ganancia' : 'Pérdida' }}
+              </span>
+            </td>
+            <td class="p-2 text-right font-semibold">{{ m.valor | number: '1.2-2' }}</td>
+            <td class="p-2 text-xs">{{ m.descripcion }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div *ngIf="!resultadoAny?.movimientos?.length" class="p-8 text-center text-gray-500">
+        No hay diferencias en cambio registradas en el período
+      </div>
+    </div>
+  </ng-container>
 
   <div class="table-responsive" *ngIf="columnas.length">
     <table mat-table [dataSource]="tablaData" class="w-full">
@@ -309,12 +708,12 @@
   </table>
   </div>
 
-  <div *ngIf="tablaData.length === 0" class="p-8 text-center text-gray-500">
+  <div *ngIf="tablaData.length === 0 && resultado.tipo !== 'iva' && resultado.tipo !== 'retenciones'" class="p-8 text-center text-gray-500">
     No hay registros para los filtros seleccionados
   </div>
 
   <!-- Botones de exportación -->
-  <div class="mt-4 flex items-center gap-3" *ngIf="tablaData.length > 0">
+  <div class="mt-4 flex items-center gap-3" *ngIf="tablaData.length > 0 || resultado.tipo === 'iva' || resultado.tipo === 'retenciones'">
     <span class="text-sm text-gray-500 mr-2">Exportar:</span>
     <button mat-stroked-button color="primary" (click)="exportar('excel')" [disabled]="exportando">
       <mat-icon>table_view</mat-icon>

@@ -1,0 +1,38 @@
+:host {
+  display: block;
+  padding: 1.5rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+
+  .field-action {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 10px;
+  }
+}
+
+.flex-2 {
+  flex: 2;
+  min-width: 240px;
+}
+
+th.mat-mdc-header-cell {
+  font-weight: 700;
+  background-color: var(--countable-input);
+  color: var(--countable-text-secondary);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+td.mat-mdc-cell,
+th.mat-mdc-header-cell {
+  padding: 0 16px;
+}
+
+tr.mat-mdc-row:hover {
+  background-color: rgba(56, 138, 243, 0.04);
+}

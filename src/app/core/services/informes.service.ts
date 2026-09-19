@@ -37,4 +37,33 @@ export class InformesService {
   getTerceros(query: LibroTercerosQuery): Observable<LibroResponse> {
     return this.api.get('informes/terceros', query as Record<string, any>);
   }
+
+  getFlujoCajaProyectado(horizonte: number, granularidad: string, incluirRecurrentes = true): Observable<any> {
+    return this.api.get('reportes/flujo-caja-proyectado', {
+      horizonte,
+      granularidad,
+      incluir_recurrentes: incluirRecurrentes,
+    });
+  }
+
+  getIva(fechaInicio?: string, fechaFin?: string): Observable<any> {
+    return this.api.get('reportes/iva', {
+      fecha_inicio: fechaInicio,
+      fecha_fin: fechaFin,
+    });
+  }
+
+  getRetenciones(fechaInicio?: string, fechaFin?: string): Observable<any> {
+    return this.api.get('reportes/retenciones', {
+      fecha_inicio: fechaInicio,
+      fecha_fin: fechaFin,
+    });
+  }
+
+  getDiferenciaCambio(fechaInicio?: string, fechaFin?: string): Observable<any> {
+    return this.api.get('reportes/diferencia-cambio', {
+      fecha_inicio: fechaInicio,
+      fecha_fin: fechaFin,
+    });
+  }
 }

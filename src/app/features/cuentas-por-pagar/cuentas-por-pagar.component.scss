@@ -366,3 +366,34 @@ button[mat-icon-button] {
     }
   }
 }
+
+// ============ ANÁLISIS DE VENCIMIENTO ============
+.aging-table {
+  border-collapse: collapse;
+
+  th {
+    font-weight: 700;
+    background-color: var(--countable-input);
+    color: var(--countable-text-secondary);
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    padding: 8px 10px;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    white-space: nowrap;
+  }
+
+  tbody tr:hover td {
+    background-color: rgba(56, 138, 243, 0.04);
+  }
+
+  .totals-row td {
+    border-top: 2px solid rgba(0, 0, 0, 0.12);
+    border-bottom: none;
+    background-color: rgba(56, 138, 243, 0.05);
+  }
+}

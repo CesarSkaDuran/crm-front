@@ -17,6 +17,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { PurchasesService } from '../../core/services/purchases.service';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { ProductsService } from '../../core/services/products.service';
@@ -26,8 +29,15 @@ import { ExcelExportService } from '../../core/services/excel-export.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { ImpuestosService } from '../../core/services/impuestos.service';
 import { TiposTerceroService } from '../../core/services/tipos-tercero.service';
+import { FormasPagoService } from '../../core/services/formas-pago.service';
+import { MonedasService } from '../../core/services/monedas.service';
+import { TrmService, TrmActual } from '../../core/services/trm.service';
+import { EmpresasService } from '../../core/services/empresas.service';
+import { FacturaPrintService } from '../../core/services/factura-print.service';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
+import { API_SERVER_URL } from '../../core/api-url';
 import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
+import { toIsoDate } from '../../core/utils/date.util';
 
 interface DetalleResumen {
   producto_id: number;
@@ -65,6 +75,9 @@ interface TotalesCompra {
     MatIconModule,
     MatCardModule,
     MatPaginatorModule,
+    MatDatepickerModule,
+    MatTooltipModule,
+    MatSlideToggleModule,
     CurrencyFormatPipe,
     CurrencyInputDirective,
   ],
@@ -83,9 +96,18 @@ export class ComprasComponent implements OnInit {
   private currency = inject(CurrencyService);
   private impuestosSvc = inject(ImpuestosService);
   private tiposTerceroSvc = inject(TiposTerceroService);
+  private empresasSvc = inject(EmpresasService);
+  private print = inject(FacturaPrintService);
+  private formasPagoSvc = inject(FormasPagoService);
+  private monedasSvc = inject(MonedasService);
+  private trmSvc = inject(TrmService);
+
+  monedas: any[] = [];
+  trm: TrmActual | null = null;
 
   impuestos: any[] = [];
   tiposTercero: any[] = [];
+  formasPago: any[] = [];
 
   compras: any[] = [];
   comprasFiltradas: any[] = [];
@@ -97,6 +119,7 @@ export class ComprasComponent implements OnInit {
   mostrarFormulario = false;
   compraSeleccionada: any = null;
   guardando = false;
+  empresa: any = null;
 
   // Paginación (servidor)
   total = 0;
@@ -122,7 +145,7 @@ export class ComprasComponent implements OnInit {
 
   form = this.fb.group({
     proveedor_id: [null as number | null, Validators.required],
-    fecha: ['', Validators.required],
+    fecha: [null as Date | null, Validators.required],
     numero_factura: [''],
     codigo_guia_compra: [''],
     descuento: [0],
@@ -132,11 +155,13 @@ export class ComprasComponent implements OnInit {
     concepto: ['Compra de mercancía'],
     almacen: ['PRINCIPAL'],
     modo: [1],
-    forma: [1],
+    forma: [10],
     banco_id: [null as number | null],
     numero_cuotas: [1],
     periodo_cuotas: [3],
     tasa_mora: [0],
+    moneda_id: [null as number | null],
+    tasa_cambio: [0],
     detalles: this.fb.array<FormGroup>([]),
   });
 
@@ -158,8 +183,79 @@ export class ComprasComponent implements OnInit {
       this.cdr.detectChanges();
     });
     this.cargarCompras();
+    this.empresasSvc.getMiEmpresa().subscribe({
+      next: (e: any) => { this.empresa = e; this.cdr.detectChanges(); },
+      error: () => {},
+    });
     this.cargarCatalogos();
     this.cargarImpuestos();
+    this.cargarMonedas();
+  }
+
+  cargarMonedas() {
+    this.monedasSvc.getAll().subscribe({
+      next: (res: any) => {
+        const lista = res.data ?? res ?? [];
+        this.monedas = lista.filter((m: any) => Number(m.estado) === 1);
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
+    this.trmSvc.getActual().subscribe({
+      next: (t: TrmActual) => {
+        this.trm = t;
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
+  }
+
+  /** Moneda seleccionada en el formulario (null/COP = pesos). */
+  get monedaSeleccionada(): any | null {
+    const id = this.form.get('moneda_id')?.value;
+    if (!id) return null;
+    return this.monedas.find((m) => Number(m.id) === Number(id)) || null;
+  }
+
+  get esUsd(): boolean {
+    const m = this.monedaSeleccionada;
+    return !!m && m.codigo !== 'COP' && !Number(m.es_local);
+  }
+
+  /** Equivalente en COP del total digitado en la moneda extranjera. */
+  get totalCop(): number {
+    if (!this.esUsd) return this.totales.total;
+    const tasa = Number(this.form.get('tasa_cambio')?.value) || 0;
+    return Math.round(this.totales.total * tasa * 100) / 100;
+  }
+
+  /** Toggle COP/USD: activa moneda USD, desactiva vuelve a COP. */
+  toggleUsd(on: boolean) {
+    const usd = this.monedas.find((m) => m.codigo === 'USD');
+    if (on && !usd) {
+      this.noti.error('No hay moneda USD registrada. Créala en Configuración → Monedas.');
+      return;
+    }
+    this.form.get('moneda_id')?.setValue(on ? usd.id : null);
+    this.onMonedaChange();
+  }
+
+  onMonedaChange() {
+    const tasaControl = this.form.get('tasa_cambio');
+    if (!this.esUsd) {
+      tasaControl?.setValue(1);
+      return;
+    }
+    if (this.trm?.tasa) {
+      tasaControl?.setValue(this.trm.tasa);
+      if (this.trm.desactualizada) {
+        this.noti.error(
+          'La TRM registrada tiene más de 5 días de antigüedad. Sincronízala en Configuración → Monedas o digita la tasa manualmente.',
+        );
+      }
+    } else {
+      this.noti.error('No hay TRM registrada. Sincroniza en Configuración → Monedas o digita la tasa manualmente.');
+    }
   }
 
   cargarImpuestos() {
@@ -175,8 +271,11 @@ export class ComprasComponent implements OnInit {
   }
 
   cargarCompras() {
+    const v = this.filters.value;
     const query = {
-      ...this.filters.value,
+      ...v,
+      date: toIsoDate(v.date),
+      date2: toIsoDate(v.date2),
       page: this.pageIndex + 1,
       limit: this.pageSize,
     };
@@ -230,6 +329,10 @@ export class ComprasComponent implements OnInit {
       this.bancos = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
+    this.formasPagoSvc.getAll({ limit: 100 }).subscribe((res: any) => {
+      this.formasPago = (res.data ?? res ?? []).filter((f: any) => f.estado === 1);
+      this.cdr.detectChanges();
+    });
   }
 
   private cargarProveedores() {
@@ -251,7 +354,7 @@ export class ComprasComponent implements OnInit {
     this.totales = { baseGrava: 0, descuento: 0, impuesto: 0, flete: 0, total: 0, totalConFlete: 0 };
     this.form.reset({
       proveedor_id: null,
-      fecha: new Date().toISOString().split('T')[0],
+      fecha: new Date(),
       numero_factura: '',
       codigo_guia_compra: '',
       descuento: 0,
@@ -261,11 +364,13 @@ export class ComprasComponent implements OnInit {
       concepto: 'Compra de mercancía',
       almacen: 'PRINCIPAL',
       modo: 1,
-      forma: 1,
+      forma: 10,
       banco_id: null,
       numero_cuotas: 1,
       periodo_cuotas: 3,
       tasa_mora: 0,
+      moneda_id: null,
+      tasa_cambio: 0,
     });
     this.detalles.clear();
     this.nuevoDetalle.reset({
@@ -282,6 +387,27 @@ export class ComprasComponent implements OnInit {
       this.compraSeleccionada = res;
       this.mostrarFormulario = true;
       this.cdr.detectChanges();
+    });
+  }
+
+  get fillerRows(): any[] {
+    const n = Math.max(0, 10 - (this.compraSeleccionada?.detalles?.length || 0));
+    return new Array(n);
+  }
+
+  get logoEmpresa(): string | null {
+    const logo = this.empresa?.logo;
+    if (!logo) return null;
+    if (logo.startsWith('data:') || logo.startsWith('http')) return logo;
+    return `${API_SERVER_URL}${logo}`;
+  }
+
+  imprimirFactura() {
+    this.empresasSvc.getMiEmpresa().subscribe({
+      next: (empresa: any) =>
+        this.print.imprimir({ doc: this.compraSeleccionada, empresa, tipo: 'compra' }),
+      error: () =>
+        this.print.imprimir({ doc: this.compraSeleccionada, empresa: null, tipo: 'compra' }),
     });
   }
 
@@ -571,7 +697,16 @@ export class ComprasComponent implements OnInit {
     }
 
     this.guardando = true;
-    const body = { ...this.form.value, detalles: this.detalles.value };
+    const body: any = {
+      ...this.form.value,
+      fecha: toIsoDate(this.form.value.fecha),
+      detalles: this.detalles.value,
+    };
+    // En COP la moneda no viaja; en USD debe ir la tasa
+    if (!this.esUsd) {
+      delete body.moneda_id;
+      delete body.tasa_cambio;
+    }
     this.purchases.create(body as any).subscribe({
       next: (res: any) => {
         this.guardando = false;

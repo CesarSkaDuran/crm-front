@@ -31,6 +31,21 @@ export class CarteraService {
     return this.api.get('cartera/cuotas-vencidas', query);
   }
 
+  analisisVencimiento(): Observable<any> {
+    return this.api.get('cartera/analisis-vencimiento');
+  }
+
+  generarAsientoProvision(dto: {
+    fecha: string;
+    tipo_comprobante_id: number;
+    descripcion?: string;
+    tasas?: Record<string, number>;
+    cuenta_gasto_id?: number;
+    cuenta_provision_id?: number;
+  }): Observable<any> {
+    return this.api.post('cartera/asiento-provision', dto);
+  }
+
   crearCredito(dto: CreateCreditoDto): Observable<CreditoDetalleResponse> {
     return this.api.post('cartera/credito', dto);
   }

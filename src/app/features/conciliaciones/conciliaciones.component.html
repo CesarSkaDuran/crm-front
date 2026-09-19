@@ -113,7 +113,14 @@
       </ng-container>
       <ng-container matColumnDef="descripcion">
         <th mat-header-cell *matHeaderCellDef>Descripción</th>
-        <td mat-cell *matCellDef="let m">{{ m.descripcion }}</td>
+        <td mat-cell *matCellDef="let m">
+          {{ m.descripcion }}
+          <div *ngIf="m.concepto" class="text-xs text-gray-500">{{ conceptoLabel(m.concepto) }}</div>
+        </td>
+      </ng-container>
+      <ng-container matColumnDef="forma">
+        <th mat-header-cell *matHeaderCellDef>F. Pago</th>
+        <td mat-cell *matCellDef="let m">{{ nombreFormaPago(m.forma) }}</td>
       </ng-container>
       <ng-container matColumnDef="valor">
         <th mat-header-cell *matHeaderCellDef class="text-right">Valor</th>

@@ -18,6 +18,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { SalesService } from '../../core/services/sales.service';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { ProductsService } from '../../core/services/products.service';
@@ -28,8 +31,15 @@ import { CurrencyService } from '../../core/services/currency.service';
 import { FacturacionElectronicaService } from '../../core/services/facturacion-electronica.service';
 import { ImpuestosService } from '../../core/services/impuestos.service';
 import { TiposTerceroService } from '../../core/services/tipos-tercero.service';
+import { FormasPagoService } from '../../core/services/formas-pago.service';
+import { MonedasService } from '../../core/services/monedas.service';
+import { TrmService, TrmActual } from '../../core/services/trm.service';
+import { EmpresasService } from '../../core/services/empresas.service';
+import { FacturaPrintService } from '../../core/services/factura-print.service';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
+import { API_SERVER_URL } from '../../core/api-url';
 import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
+import { toIsoDate } from '../../core/utils/date.util';
 
 interface DetalleResumen {
   producto_id: number;
@@ -66,6 +76,9 @@ interface TotalesVenta {
     MatCardModule,
     MatCheckboxModule,
     MatPaginatorModule,
+    MatDatepickerModule,
+    MatTooltipModule,
+    MatSlideToggleModule,
     CurrencyFormatPipe,
     CurrencyInputDirective,
   ],
@@ -85,9 +98,18 @@ export class VentasComponent implements OnInit {
   private factElectronica = inject(FacturacionElectronicaService);
   private impuestosSvc = inject(ImpuestosService);
   private tiposTerceroSvc = inject(TiposTerceroService);
+  private formasPagoSvc = inject(FormasPagoService);
+  private monedasSvc = inject(MonedasService);
+  private trmSvc = inject(TrmService);
+  private empresasSvc = inject(EmpresasService);
+  private print = inject(FacturaPrintService);
+
+  monedas: any[] = [];
+  trm: TrmActual | null = null;
 
   impuestos: any[] = [];
   tiposTercero: any[] = [];
+  formasPago: any[] = [];
 
   ventas: any[] = [];
   ventasFiltradas: any[] = [];
@@ -102,6 +124,7 @@ export class VentasComponent implements OnInit {
   mostrarFormulario = false;
   ventaSeleccionada: any = null;
   guardando = false;
+  empresa: any = null;
 
   // Paginación (servidor)
   total = 0;
@@ -129,7 +152,7 @@ export class VentasComponent implements OnInit {
   form = this.fb.group({
     cliente_id: [null as number | null, Validators.required],
     vendedor_id: [null as number | null],
-    fecha: ['', Validators.required],
+    fecha: [null as Date | null, Validators.required],
     numero_factura: [''],
     codigo_guia_venta: [''],
     banco_id: [null as number | null],
@@ -140,11 +163,13 @@ export class VentasComponent implements OnInit {
     concepto: ['Venta de mercancía'],
     almacen: ['PRINCIPAL'],
     modo: [1],
-    forma: [1],
+    forma: [10],
     numero_cuotas: [1],
     periodo_cuotas: [3],
     tasa_mora: [0],
     emitir_factura_electronica: [false],
+    moneda_id: [null as number | null],
+    tasa_cambio: [0],
     detalles: this.fb.array<FormGroup>([]),
   });
 
@@ -166,9 +191,81 @@ export class VentasComponent implements OnInit {
       this.cdr.detectChanges();
     });
     this.cargarVentas();
+    this.empresasSvc.getMiEmpresa().subscribe({
+      next: (e: any) => { this.empresa = e; this.cdr.detectChanges(); },
+      error: () => {},
+    });
     this.cargarCatalogos();
     this.cargarImpuestos();
+    this.cargarMonedas();
     this.verificarFacturacionElectronica();
+  }
+
+  cargarMonedas() {
+    this.monedasSvc.getAll().subscribe({
+      next: (res: any) => {
+        const lista = res.data ?? res ?? [];
+        this.monedas = lista.filter((m: any) => Number(m.estado) === 1);
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
+    this.trmSvc.getActual().subscribe({
+      next: (t: TrmActual) => {
+        this.trm = t;
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
+  }
+
+  /** Moneda seleccionada en el formulario (null/COP = pesos). */
+  get monedaSeleccionada(): any | null {
+    const id = this.form.get('moneda_id')?.value;
+    if (!id) return null;
+    return this.monedas.find((m) => Number(m.id) === Number(id)) || null;
+  }
+
+  get esUsd(): boolean {
+    const m = this.monedaSeleccionada;
+    return !!m && m.codigo !== 'COP' && !Number(m.es_local);
+  }
+
+  /** Equivalente en COP del total digitado en la moneda extranjera. */
+  get totalCop(): number {
+    if (!this.esUsd) return this.totales.total;
+    const tasa = Number(this.form.get('tasa_cambio')?.value) || 0;
+    return Math.round(this.totales.total * tasa * 100) / 100;
+  }
+
+  /** Toggle COP/USD: activa moneda USD, desactiva vuelve a COP. */
+  toggleUsd(on: boolean) {
+    const usd = this.monedas.find((m) => m.codigo === 'USD');
+    if (on && !usd) {
+      this.noti.error('No hay moneda USD registrada. Créala en Configuración → Monedas.');
+      return;
+    }
+    this.form.get('moneda_id')?.setValue(on ? usd.id : null);
+    this.onMonedaChange();
+  }
+
+  onMonedaChange() {
+    const tasaControl = this.form.get('tasa_cambio');
+    if (!this.esUsd) {
+      tasaControl?.setValue(1);
+      return;
+    }
+    // Autocargar la TRM registrada; queda editable para el contador
+    if (this.trm?.tasa) {
+      tasaControl?.setValue(this.trm.tasa);
+      if (this.trm.desactualizada) {
+        this.noti.error(
+          'La TRM registrada tiene más de 5 días de antigüedad. Sincronízala en Configuración → Monedas o digita la tasa manualmente.',
+        );
+      }
+    } else {
+      this.noti.error('No hay TRM registrada. Sincroniza en Configuración → Monedas o digita la tasa manualmente.');
+    }
   }
 
   verificarFacturacionElectronica() {
@@ -186,8 +283,11 @@ export class VentasComponent implements OnInit {
   }
 
   cargarVentas() {
+    const v = this.filters.value;
     const query = {
-      ...this.filters.value,
+      ...v,
+      date: toIsoDate(v.date),
+      date2: toIsoDate(v.date2),
       page: this.pageIndex + 1,
       limit: this.pageSize,
     };
@@ -255,6 +355,10 @@ export class VentasComponent implements OnInit {
       this.bancos = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
+    this.formasPagoSvc.getAll({ limit: 100 }).subscribe((res: any) => {
+      this.formasPago = (res.data ?? res ?? []).filter((f: any) => f.estado === 1);
+      this.cdr.detectChanges();
+    });
   }
 
   private cargarTerceros() {
@@ -281,7 +385,7 @@ export class VentasComponent implements OnInit {
     this.form.reset({
       cliente_id: null,
       vendedor_id: null,
-      fecha: new Date().toISOString().split('T')[0],
+      fecha: new Date(),
       numero_factura: '',
       codigo_guia_venta: '',
       banco_id: null,
@@ -292,11 +396,13 @@ export class VentasComponent implements OnInit {
       concepto: 'Venta de mercancía',
       almacen: 'PRINCIPAL',
       modo: 1,
-      forma: 1,
+      forma: 10,
       numero_cuotas: 1,
       periodo_cuotas: 3,
       tasa_mora: 0,
       emitir_factura_electronica: false,
+      moneda_id: null,
+      tasa_cambio: 0,
     });
     this.detalles.clear();
     this.nuevoDetalle.reset({
@@ -313,6 +419,27 @@ export class VentasComponent implements OnInit {
       this.ventaSeleccionada = res;
       this.mostrarFormulario = true;
       this.cdr.detectChanges();
+    });
+  }
+
+  get fillerRows(): any[] {
+    const n = Math.max(0, 10 - (this.ventaSeleccionada?.detalles?.length || 0));
+    return new Array(n);
+  }
+
+  get logoEmpresa(): string | null {
+    const logo = this.empresa?.logo;
+    if (!logo) return null;
+    if (logo.startsWith('data:') || logo.startsWith('http')) return logo;
+    return `${API_SERVER_URL}${logo}`;
+  }
+
+  imprimirFactura() {
+    this.empresasSvc.getMiEmpresa().subscribe({
+      next: (empresa: any) =>
+        this.print.imprimir({ doc: this.ventaSeleccionada, empresa, tipo: 'venta' }),
+      error: () =>
+        this.print.imprimir({ doc: this.ventaSeleccionada, empresa: null, tipo: 'venta' }),
     });
   }
 
@@ -527,7 +654,16 @@ export class VentasComponent implements OnInit {
 
     this.guardando = true;
     const { emitir_factura_electronica, ...formValues } = this.form.value;
-    const body = { ...formValues, detalles: this.detalles.value };
+    const body: any = {
+      ...formValues,
+      fecha: toIsoDate(formValues.fecha),
+      detalles: this.detalles.value,
+    };
+    // En COP la moneda no viaja; en USD debe ir la tasa
+    if (!this.esUsd) {
+      delete body.moneda_id;
+      delete body.tasa_cambio;
+    }
     const emitirElectronica = !!emitir_factura_electronica;
     this.sales.create(body as any).subscribe({
       next: (res: any) => {

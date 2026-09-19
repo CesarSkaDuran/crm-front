@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
@@ -11,6 +12,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { toIsoDate } from '../../../core/utils/date.util';
 import {
   AuditoriaService,
   AuditoriaItem,
@@ -44,6 +47,7 @@ const TABLAS_DISPONIBLES = [
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     ReactiveFormsModule,
     MatTableModule,
     MatPaginatorModule,
@@ -55,6 +59,7 @@ const TABLAS_DISPONIBLES = [
     MatCardModule,
     MatTooltipModule,
     MatDialogModule,
+    MatDatepickerModule,
   ],
   templateUrl: './auditoria.component.html',
   styleUrl: './auditoria.component.scss',
@@ -96,6 +101,8 @@ export class AuditoriaComponent implements OnInit {
     this.auditoriaService
       .getAll({
         ...filtros,
+        fecha_inicio: toIsoDate(filtros.fecha_inicio),
+        fecha_fin: toIsoDate(filtros.fecha_fin),
         page: this.page,
         limit: this.limit,
       })

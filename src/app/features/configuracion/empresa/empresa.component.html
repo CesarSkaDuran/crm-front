@@ -4,10 +4,16 @@
       <h1 class="page-title">Datos de la Empresa</h1>
       <p class="text-gray-500 mt-1">Información legal, contacto, branding y configuración fiscal</p>
     </div>
-    <button mat-raised-button color="primary" (click)="guardar()" [disabled]="form.invalid || guardando">
-      <mat-icon>save</mat-icon>
-      {{ guardando ? 'Guardando...' : 'Guardar cambios' }}
-    </button>
+    <div class="flex items-center gap-2">
+      <a mat-stroked-button routerLink="/configuracion">
+        <mat-icon>arrow_back</mat-icon>
+        Volver
+      </a>
+      <button mat-raised-button color="primary" (click)="guardar()" [disabled]="form.invalid || guardando">
+        <mat-icon>save</mat-icon>
+        {{ guardando ? 'Guardando...' : 'Guardar cambios' }}
+      </button>
+    </div>
   </div>
 
   <form [formGroup]="form" *ngIf="!cargando">

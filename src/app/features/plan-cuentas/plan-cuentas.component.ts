@@ -1,6 +1,7 @@
 import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import {
   ReactiveFormsModule,
   FormsModule,
@@ -14,6 +15,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AccountsService } from '../../core/services/accounts.service';
 
 @Component({
@@ -21,6 +23,7 @@ import { AccountsService } from '../../core/services/accounts.service';
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     ReactiveFormsModule,
     FormsModule,
     MatTableModule,
@@ -30,6 +33,7 @@ import { AccountsService } from '../../core/services/accounts.service';
     MatButtonModule,
     MatIconModule,
     MatCardModule,
+    MatTooltipModule,
   ],
   templateUrl: './plan-cuentas.component.html',
   styleUrl: './plan-cuentas.component.scss',

@@ -183,7 +183,7 @@ body {
   background-color: rgba(56, 138, 243, 0.04) !important;
 }
 
-// ============ EST�NDAR: tarjetas de indicadores (resumen-card) ============
+// ============ EST�NDAR: tarjetas de indicadores (resumen-card) ============
 // Usar: <div class="resumen-card blue|orange|green|red|indigo|slate">
 // Estructura: etiqueta uppercase + valor grande + sparkline/progreso/info
 .resumen-card {
@@ -205,4 +205,136 @@ body {
   &.green  { border-left: 4px solid #22c55e; }
   &.indigo { border-left: 4px solid #6366f1; }
   &.slate  { border-left: 4px solid #64748b; }
+}
+
+/* ============ Documento de factura (detalle venta/compra) ============ */
+$fact-dark: #1f2430;
+$fact-accent: #2b3346;
+
+.factura-doc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e6e8ee;
+  border-radius: 12px;
+  max-width: 816px;      /* ancho carta a 96dpi */
+  min-height: 1056px;    /* alto carta a 96dpi */
+  margin: 0 auto;
+  font-size: 13px;
+  color: #1f2937;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, .08);
+}
+.factura-anulada {
+  position: absolute;
+  top: 45%; left: 50%;
+  transform: translate(-50%, -50%) rotate(-25deg);
+  font-size: 90px; font-weight: 900;
+  color: rgba(200, 0, 0, .13);
+  letter-spacing: 12px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Cabecera oscura con acento diagonal */
+.factura-topbar {
+  position: relative;
+  background: $fact-dark;
+  color: #fff;
+  padding: 26px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  overflow: hidden;
+  border-bottom-right-radius: 60px;
+}
+.factura-topbar::after {
+  content: "";
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 45%;
+  background:
+    repeating-linear-gradient(115deg, transparent 0 12px, rgba(255,255,255,.05) 12px 14px);
+  clip-path: polygon(25% 0, 100% 0, 100% 100%, 0 100%);
+  pointer-events: none;
+}
+.factura-topbar .logo { display: flex; align-items: center; gap: 14px; z-index: 1; }
+.factura-topbar .logo img { max-height: 64px; max-width: 150px; object-fit: contain; }
+.factura-topbar .logo .empresa-nombre { font-size: 18px; font-weight: 800; letter-spacing: .5px; }
+.factura-topbar .logo .empresa-sub { font-size: 11px; color: #c7cbd6; margin-top: 2px; }
+.factura-topbar h1 {
+  font-size: 30px; font-weight: 800; letter-spacing: 6px; margin: 0; z-index: 1;
+}
+
+.factura-body { padding: 28px 40px 0; flex: 1 1 auto; display: flex; flex-direction: column; }
+
+/* Fila "Facturar a" + Total a pagar */
+.factura-to-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 24px; margin-bottom: 24px;
+}
+.factura-to h2 {
+  font-size: 16px; font-weight: 800; margin: 0 0 6px; color: #111827;
+}
+.factura-to .name { font-weight: 700; font-size: 14px; }
+.factura-to .sub { color: #6b7280; font-size: 12px; margin-top: 2px; }
+.factura-total-due { text-align: right; min-width: 220px; }
+.factura-total-due .pill {
+  display: inline-block; background: $fact-dark; color: #fff;
+  padding: 6px 22px; border-radius: 20px; font-weight: 700; font-size: 13px;
+}
+.factura-total-due .amount { font-size: 22px; font-weight: 800; margin: 8px 0 14px; }
+.factura-total-due .meta { display: grid; grid-template-columns: auto auto; gap: 4px 18px; justify-content: end; }
+.factura-total-due .meta .lbl { font-weight: 700; font-size: 11px; color: #6b7280; }
+.factura-total-due .meta .val { font-size: 12px; }
+
+/* Tabla de items */
+.factura-items { width: 100%; border-collapse: collapse; margin-top: 8px; }
+.factura-items th {
+  background: #eceef3; color: #374151; padding: 11px 10px;
+  font-size: 11px; letter-spacing: .5px; text-align: center; text-transform: uppercase;
+  font-weight: 700;
+}
+.factura-items th:first-child { text-align: left; border-top-left-radius: 6px; }
+.factura-items th:last-child { text-align: right; border-top-right-radius: 6px; }
+.factura-items td { padding: 11px 10px; text-align: center; border-bottom: 1px solid #eef0f4; }
+.factura-items .td-left { text-align: left; }
+.factura-items .td-right { text-align: right; }
+.factura-items tr.filler td { height: 34px; padding: 0 10px; border-bottom: 1px solid #f3f4f7; }
+
+/* Totales */
+.factura-totales { margin-top: 14px; display: flex; justify-content: flex-end; }
+.factura-totales table { min-width: 320px; border-collapse: collapse; }
+.factura-totales td { padding: 5px 12px; font-size: 13px; }
+.factura-totales td.val { text-align: right; }
+.factura-totales tr.total td {
+  background: $fact-dark; color: #fff; font-size: 15px; font-weight: 800; padding: 10px 12px;
+}
+.factura-totales tr.total td:first-child { border-top-left-radius: 6px; border-bottom-left-radius: 6px; }
+.factura-totales tr.total td:last-child { border-top-right-radius: 6px; border-bottom-right-radius: 6px; }
+.factura-usd { margin-top: 6px; text-align: right; color: #6b7280; font-size: 11px; }
+.factura-obs {
+  margin-top: 20px; padding: 12px; background: #f5f6f8;
+  border-radius: 8px; font-size: 12px; color: #374151;
+}
+
+/* Pie: métodos de pago, términos y firma — anclado al fondo del cuerpo */
+.factura-pie {
+  margin-top: auto; padding: 24px 0 20px;
+  display: grid; grid-template-columns: 1fr 1fr 220px; gap: 24px;
+}
+.factura-pie h2 { font-size: 13px; font-weight: 800; margin: 0 0 8px; color: #111827; }
+.factura-pie .row-sub { font-size: 12px; color: #4b5563; margin-top: 2px; }
+.factura-firma { align-self: end; }
+.factura-firma .linea {
+  border-top: 1.5px solid #111827; margin-top: 40px; padding-top: 6px;
+  font-size: 11px; letter-spacing: 1px; text-align: center; text-transform: uppercase;
+}
+
+/* Barra inferior — siempre al final del documento */
+.factura-bottombar {
+  background: $fact-dark; color: #fff; text-align: right;
+  padding: 14px 40px; font-weight: 600; letter-spacing: .5px;
+  border-top-left-radius: 60px; margin-top: 0; flex-shrink: 0;
 }

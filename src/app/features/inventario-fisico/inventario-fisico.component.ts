@@ -10,7 +10,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { InventarioFisicoService } from '../../core/services/inventario-fisico.service';
+import { toIsoDate } from '../../core/utils/date.util';
 import { ExcelExportService } from '../../core/services/excel-export.service';
 import {
   InventarioFisico,
@@ -36,6 +38,7 @@ import {
     MatInputModule,
     MatTooltipModule,
     MatPaginatorModule,
+    MatDatepickerModule,
   ],
   templateUrl: './inventario-fisico.component.html',
   styleUrl: './inventario-fisico.component.scss',
@@ -55,8 +58,8 @@ export class InventarioFisicoComponent implements OnInit {
   pageSizeOptions = [5, 10, 25, 50];
 
   // Filtros del histórico
-  date = '';
-  date2 = '';
+  date: Date | '' = '';
+  date2: Date | '' = '';
 
   // Inventario pendiente (activo) para registrar conteos
   pendiente: InventarioFisico | null = null;
@@ -111,8 +114,8 @@ export class InventarioFisicoComponent implements OnInit {
     const query = {
       page: this.pageIndex + 1,
       limit: this.pageSize,
-      date: this.date,
-      date2: this.date2,
+      date: toIsoDate(this.date) ?? '',
+      date2: toIsoDate(this.date2) ?? '',
     };
     this.service.getAll(query).subscribe({
       next: (res: any) => {
@@ -250,6 +253,7 @@ export class InventarioFisicoComponent implements OnInit {
       next: (inv) => {
         this.consolidando = false;
         this.pendiente = inv;
+        if (inv?.detalles) this.inicializarConteos(inv.detalles);
         this.cargar();
         this.cdr.detectChanges();
         this.noti.success('Inventario consolidado');
@@ -264,6 +268,43 @@ export class InventarioFisicoComponent implements OnInit {
 
   finalizar() {
     if (!this.pendiente) return;
+
+    // Si hay conteos en pantalla que aún no se han consolidado, enviarlos
+    // primero — el backend exige que TODOS los productos estén contados.
+    const pendientesPorContar = (this.pendiente.detalles ?? []).filter(
+      (d) => Number(d.estado) !== 2 && this.conteos[d.producto_id] == null,
+    ).length;
+    if (pendientesPorContar > 0) {
+      this.noti.warning(
+        `Faltan ${pendientesPorContar} producto(s) por registrar conteo. ` +
+          'Digite el conteo o cárguelo antes de finalizar.',
+      );
+      return;
+    }
+
+    const conteosSinEnviar = (this.pendiente.detalles ?? []).filter(
+      (d) => this.conteos[d.producto_id] != null && Number(d.estado) !== 2,
+    );
+    const ejecutarFinalizar = () => {
+      const dto = { observacion: this.observacionFinalizar || undefined };
+      this.service.finalizar(this.pendiente!.id, dto).subscribe({
+        next: (res: any) => {
+          this.finalizando = false;
+          this.resultadoFinalizar = res;
+          this.pendiente = null;
+          this.observacionFinalizar = '';
+          this.cargar();
+          this.cdr.detectChanges();
+          this.noti.success('Inventario finalizado');
+        },
+        error: (err: { error?: { message?: string } }) => {
+          this.finalizando = false;
+          this.noti.error(err?.error?.message || 'Error al finalizar');
+          this.cdr.detectChanges();
+        },
+      });
+    };
+
     const diff = this.totalDiferencia;
     const msg =
       diff === 0
@@ -272,23 +313,26 @@ export class InventarioFisicoComponent implements OnInit {
     if (!confirm(msg)) return;
     this.finalizando = true;
     this.resultadoFinalizar = null;
-    const dto = { observacion: this.observacionFinalizar || undefined };
-    this.service.finalizar(this.pendiente.id, dto).subscribe({
-      next: (res: any) => {
-        this.finalizando = false;
-        this.resultadoFinalizar = res;
-        this.pendiente = null;
-        this.observacionFinalizar = '';
-        this.cargar();
-        this.cdr.detectChanges();
-        this.noti.success('Inventario finalizado');
-      },
-      error: (err: { error?: { message?: string } }) => {
-        this.finalizando = false;
-        this.noti.error(err?.error?.message || 'Error al finalizar');
-        this.cdr.detectChanges();
-      },
-    });
+
+    if (conteosSinEnviar.length > 0) {
+      // Consolidar primero y luego finalizar
+      const dtoCon: ConsolidarInventarioDto = {
+        conteos: conteosSinEnviar.map((d) => ({
+          producto_id: d.producto_id,
+          conteo: Number(this.conteos[d.producto_id]),
+        })),
+      };
+      this.service.consolidar(this.pendiente.id, dtoCon).subscribe({
+        next: () => ejecutarFinalizar(),
+        error: (err: { error?: { message?: string } }) => {
+          this.finalizando = false;
+          this.noti.error(err?.error?.message || 'Error al consolidar conteos');
+          this.cdr.detectChanges();
+        },
+      });
+    } else {
+      ejecutarFinalizar();
+    }
   }
 
   cerrarResultadoFinalizar() {

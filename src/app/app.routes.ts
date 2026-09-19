@@ -33,6 +33,8 @@ import { TiposTerceroComponent } from './features/configuracion/tipos-tercero/ti
 import { ImpuestosComponent } from './features/configuracion/impuestos/impuestos.component';
 import { UnidadesMedidaComponent } from './features/configuracion/unidades-medida/unidades-medida.component';
 import { EmpresaComponent } from './features/configuracion/empresa/empresa.component';
+import { FormasPagoComponent } from './features/configuracion/formas-pago/formas-pago.component';
+import { PartidasRecurrentesComponent } from './features/configuracion/partidas-recurrentes/partidas-recurrentes.component';
 import { authGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
@@ -71,6 +73,8 @@ export const routes: Routes = [
       { path: 'configuracion/impuestos', component: ImpuestosComponent },
       { path: 'configuracion/unidades', component: UnidadesMedidaComponent },
       { path: 'configuracion/empresa', component: EmpresaComponent },
+      { path: 'configuracion/formas-pago', component: FormasPagoComponent },
+      { path: 'configuracion/partidas-recurrentes', component: PartidasRecurrentesComponent },
       { path: 'inventario-fisico', component: InventarioFisicoComponent },
       { path: 'facturacion-electronica', component: FacturacionElectronicaComponent },
       { path: 'migracion', component: MigracionComponent },

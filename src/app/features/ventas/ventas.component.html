@@ -29,13 +29,17 @@
         <mat-form-field class="blue-input" subscriptSizing="dynamic" floatLabel="always">
           <mat-icon matPrefix>event</mat-icon>
           <mat-label>Desde</mat-label>
-          <input matInput type="date" formControlName="date" />
+          <input matInput [matDatepicker]="pDesde" formControlName="date" />
+          <mat-datepicker-toggle matIconSuffix [for]="pDesde"></mat-datepicker-toggle>
+          <mat-datepicker #pDesde></mat-datepicker>
         </mat-form-field>
 
         <mat-form-field class="blue-input" subscriptSizing="dynamic" floatLabel="always">
           <mat-icon matPrefix>event</mat-icon>
           <mat-label>Hasta</mat-label>
-          <input matInput type="date" formControlName="date2" />
+          <input matInput [matDatepicker]="pHasta" formControlName="date2" />
+          <mat-datepicker-toggle matIconSuffix [for]="pHasta"></mat-datepicker-toggle>
+          <mat-datepicker #pHasta></mat-datepicker>
         </mat-form-field>
 
         <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded">
@@ -63,7 +67,14 @@
 
       <ng-container matColumnDef="total">
         <th mat-header-cell *matHeaderCellDef>Total</th>
-        <td mat-cell *matCellDef="let row" class="text-right">{{ row.total | currencyFormat:currencySymbol }}</td>
+        <td mat-cell *matCellDef="let row" class="text-right">
+          {{ row.total | currencyFormat:currencySymbol }}
+          <span *ngIf="row.moneda_codigo && row.moneda_codigo !== 'COP'"
+            class="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+            [matTooltip]="'USD ' + (row.valor_moneda_extranjera | number:'1.2-2') + ' — TRM ' + (row.tasa_cambio | number:'1.2-2')">
+            {{ row.moneda_codigo }}
+          </span>
+        </td>
       </ng-container>
 
       <ng-container matColumnDef="estado">
@@ -114,63 +125,129 @@
       <h1 class="page-title">Detalle de venta</h1>
       <p class="text-gray-500 mt-1">{{ ventaSeleccionada.codigo }}</p>
     </div>
-    <button mat-stroked-button (click)="volverAlListado()">
-      <mat-icon>arrow_back</mat-icon>
-      Volver
-    </button>
+    <div class="flex items-center gap-2">
+      <button mat-stroked-button (click)="imprimirFactura()">
+        <mat-icon>print</mat-icon>
+        Imprimir
+      </button>
+      <button mat-stroked-button (click)="volverAlListado()">
+        <mat-icon>arrow_back</mat-icon>
+        Volver
+      </button>
+    </div>
   </div>
 
-  <mat-card class="p-4 mb-6">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div>
-        <label class="text-xs text-gray-500">Fecha</label>
-        <p>{{ ventaSeleccionada.fecha | date: 'dd/MM/yyyy' }}</p>
-      </div>
-      <div>
-        <label class="text-xs text-gray-500">Cliente</label>
-        <p>{{ nombreCliente(ventaSeleccionada.cliente_id) }}</p>
-      </div>
-      <div>
-        <label class="text-xs text-gray-500">Total</label>
-        <p class="font-semibold">{{ ventaSeleccionada.total | currencyFormat:currencySymbol }}</p>
-      </div>
-      <div>
-        <label class="text-xs text-gray-500">Estado</label>
-        <p>
-          <span *ngIf="ventaSeleccionada.estado === 1" class="text-green-600">Aprobada</span>
-          <span *ngIf="ventaSeleccionada.estado === 0" class="text-red-600">Anulada</span>
-        </p>
-      </div>
-    </div>
-    <div *ngIf="ventaSeleccionada.observacion" class="mt-4">
-      <label class="text-xs text-gray-500">Observación</label>
-      <p>{{ ventaSeleccionada.observacion }}</p>
-    </div>
-  </mat-card>
+  <!-- Documento con formato de factura -->
+  <div class="factura-doc">
+    <div *ngIf="ventaSeleccionada.estado === 0" class="factura-anulada">ANULADA</div>
 
-  <mat-card class="p-4">
-    <h3 class="section-title mb-4">Productos de la venta</h3>
-    <table mat-table [dataSource]="ventaSeleccionada.detalles" class="w-full">
-      <ng-container matColumnDef="producto">
-        <th mat-header-cell *matHeaderCellDef>Producto</th>
-        <td mat-cell *matCellDef="let d">{{ d.producto?.nombre || d.producto_id }}</td>
-      </ng-container>
-      <ng-container matColumnDef="cantidad">
-        <th mat-header-cell *matHeaderCellDef>Cantidad</th>
-        <td mat-cell *matCellDef="let d" class="text-right">{{ d.cantidad }}</td>
-      </ng-container>
-      <ng-container matColumnDef="precio">
-        <th mat-header-cell *matHeaderCellDef>Precio unit.</th>
-        <td mat-cell *matCellDef="let d" class="text-right">{{ d.precio_unitario | currencyFormat:currencySymbol }}</td>
-      </ng-container>
-      <ng-container matColumnDef="subtotal">
-        <th mat-header-cell *matHeaderCellDef>Subtotal</th>
-        <td mat-cell *matCellDef="let d" class="text-right">{{ d.subtotal | currencyFormat:currencySymbol }}</td>
-      </ng-container>
-      <tr mat-header-row *matHeaderRowDef="detalleColumns"></tr>
-      <tr mat-row *matRowDef="let d; columns: detalleColumns;"></tr>
-    </table>
-  </mat-card>
+    <div class="factura-topbar">
+      <div class="logo">
+        <img *ngIf="logoEmpresa" [src]="logoEmpresa" alt="logo">
+        <div>
+          <div class="empresa-nombre">{{ empresa?.razon_social || empresa?.nombre }}</div>
+          <div class="empresa-sub">NIT: {{ empresa?.nit }}{{ empresa?.dv ? '-' + empresa.dv : '' }}</div>
+        </div>
+      </div>
+      <h1>FACTURA</h1>
+    </div>
+
+    <div class="factura-body">
+      <div class="factura-to-row">
+        <div class="factura-to">
+          <h2>Facturar a:</h2>
+          <div class="name">{{ ventaSeleccionada.cliente?.nombre }} {{ ventaSeleccionada.cliente?.apellido }}</div>
+          <div class="sub" *ngIf="ventaSeleccionada.cliente?.documento">NIT/CC: {{ ventaSeleccionada.cliente?.documento }}{{ ventaSeleccionada.cliente?.dv ? '-' + ventaSeleccionada.cliente.dv : '' }}</div>
+          <div class="sub" *ngIf="ventaSeleccionada.cliente?.direccion">{{ ventaSeleccionada.cliente?.direccion }}<span *ngIf="ventaSeleccionada.cliente?.ciudad">, {{ ventaSeleccionada.cliente.ciudad }}</span></div>
+          <div class="sub" *ngIf="ventaSeleccionada.cliente?.telefono">Tel: {{ ventaSeleccionada.cliente?.telefono }}</div>
+          <div class="sub" *ngIf="ventaSeleccionada.cliente?.email && ventaSeleccionada.cliente?.email !== 'null'">{{ ventaSeleccionada.cliente?.email }}</div>
+        </div>
+        <div class="factura-total-due">
+          <div class="pill">Total a pagar</div>
+          <div class="amount">
+            {{ ventaSeleccionada.moneda_codigo !== 'COP'
+               ? ('US$' + (ventaSeleccionada.valor_moneda_extranjera | number:'1.2-2'))
+               : (ventaSeleccionada.total | currencyFormat:currencySymbol) }}
+          </div>
+          <div class="meta">
+            <span class="lbl">Fecha:</span><span class="val">{{ ventaSeleccionada.fecha | date:'dd/MM/yyyy' }}</span>
+            <span class="lbl">Factura N°:</span><span class="val">{{ ventaSeleccionada.numero_factura || ventaSeleccionada.codigo }}</span>
+            <span class="lbl">Pago:</span><span class="val">{{ ventaSeleccionada.modo === 2 ? 'Crédito' : 'Contado' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <table class="factura-items">
+        <thead>
+          <tr>
+            <th class="td-left">Descripción</th>
+            <th>Precio</th>
+            <th>Cantidad</th>
+            <th>Dcto.</th>
+            <th>IVA</th>
+            <th class="td-right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let d of ventaSeleccionada.detalles">
+            <td class="td-left">{{ d.producto?.nombre || d.producto_id }}</td>
+            <td>{{ d.precio_unitario | currencyFormat:currencySymbol }}</td>
+            <td>{{ d.cantidad | number:'1.0-2' }}</td>
+            <td>{{ d.descuento | number:'1.0-2' }}%</td>
+            <td>{{ d.impuesto | number:'1.0-2' }}%</td>
+            <td class="td-right">{{ d.subtotal | currencyFormat:currencySymbol }}</td>
+          </tr>
+          <tr class="filler" *ngFor="let f of fillerRows">
+            <td class="td-left"></td><td></td><td></td><td></td><td></td><td class="td-right"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="factura-totales">
+        <table>
+          <tr><td>Sub-total</td><td class="val">{{ ventaSeleccionada.base_grava | currencyFormat:currencySymbol }}</td></tr>
+          <tr *ngIf="+ventaSeleccionada.descuento"><td>Descuento</td><td class="val">-{{ ventaSeleccionada.descuento | currencyFormat:currencySymbol }}</td></tr>
+          <tr><td>IVA</td><td class="val">{{ ventaSeleccionada.impuesto | currencyFormat:currencySymbol }}</td></tr>
+          <tr *ngIf="+ventaSeleccionada.retencion"><td>Retención</td><td class="val">-{{ ventaSeleccionada.retencion | currencyFormat:currencySymbol }}</td></tr>
+          <tr *ngIf="+ventaSeleccionada.flete"><td>Flete</td><td class="val">{{ ventaSeleccionada.flete | currencyFormat:currencySymbol }}</td></tr>
+          <tr class="total">
+            <td>Total {{ ventaSeleccionada.moneda_codigo !== 'COP' ? ventaSeleccionada.moneda_codigo : 'COP' }}</td>
+            <td class="val">
+              {{ ventaSeleccionada.moneda_codigo !== 'COP'
+                 ? ('US$' + (ventaSeleccionada.valor_moneda_extranjera | number:'1.2-2'))
+                 : (ventaSeleccionada.total | currencyFormat:currencySymbol) }}
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div *ngIf="ventaSeleccionada.moneda_codigo && ventaSeleccionada.moneda_codigo !== 'COP'" class="factura-usd">
+        TRM: {{ ventaSeleccionada.tasa_cambio | number:'1.2-2' }} · Equivalente COP: {{ (ventaSeleccionada.valor_cop || ventaSeleccionada.total) | currencyFormat:currencySymbol }}
+      </div>
+
+      <div *ngIf="ventaSeleccionada.observacion" class="factura-obs">
+        <strong>Observaciones:</strong> {{ ventaSeleccionada.observacion }}
+      </div>
+
+      <div class="factura-pie">
+        <div>
+          <h2>Métodos de pago</h2>
+          <div class="row-sub">Forma: {{ ventaSeleccionada.modo === 2 ? 'Crédito' : 'Contado' }}</div>
+          <div class="row-sub" *ngIf="ventaSeleccionada.concepto">Concepto: {{ ventaSeleccionada.concepto }}</div>
+        </div>
+        <div>
+          <h2>Contacto</h2>
+          <div class="row-sub" *ngIf="empresa?.telefono">{{ empresa?.telefono }}</div>
+          <div class="row-sub" *ngIf="empresa?.email">{{ empresa?.email }}</div>
+          <div class="row-sub" *ngIf="empresa?.direccion">{{ empresa?.direccion }}</div>
+        </div>
+        <div class="factura-firma">
+          <div class="linea">Firma autorizada</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="factura-bottombar">Gracias por su compra</div>
+  </div>
 </div>
 
 <!-- Vista de creación -->
@@ -194,7 +271,9 @@
         <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always">
           <mat-icon matPrefix>event</mat-icon>
           <mat-label>Fecha</mat-label>
-          <input matInput type="date" formControlName="fecha" required />
+          <input matInput [matDatepicker]="pFecha" formControlName="fecha" required />
+          <mat-datepicker-toggle matIconSuffix [for]="pFecha"></mat-datepicker-toggle>
+          <mat-datepicker #pFecha></mat-datepicker>
           <mat-error *ngIf="mensajeError(form.get('fecha'))">{{ mensajeError(form.get('fecha')) }}</mat-error>
         </mat-form-field>
 
@@ -250,6 +329,29 @@
             <mat-icon class="align-middle text-orange-500">receipt_long</mat-icon>
             Emitir factura electrónica (DIAN)
           </mat-checkbox>
+        </div>
+      </div>
+
+      <div class="form-row mb-4 items-center">
+        <mat-slide-toggle color="primary" [checked]="esUsd" (change)="toggleUsd($event.checked)">
+          <mat-icon class="align-middle mr-1">currency_exchange</mat-icon>
+          {{ esUsd ? 'Factura en USD — los precios se digitan en dólares' : 'Moneda: COP' }}
+        </mat-slide-toggle>
+
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic" floatLabel="always" *ngIf="esUsd">
+          <mat-icon matPrefix>price_change</mat-icon>
+          <mat-label>TRM del día (COP por USD)</mat-label>
+          <input matInput type="number" step="0.01" min="0" formControlName="tasa_cambio" />
+          <mat-hint>Autocargada; el contador puede ajustarla</mat-hint>
+        </mat-form-field>
+
+        <div class="flex items-center" *ngIf="esUsd && trm">
+          <span class="text-xs px-3 py-2 rounded border"
+            [ngClass]="trm.desactualizada ? 'text-orange-700 border-orange-300 bg-orange-50' : 'text-green-700 border-green-300 bg-green-50'">
+            TRM {{ trm.fuente === 'trm_oficial' ? 'oficial Superfinanciera' : 'alternativa' }}:
+            {{ trm.tasa | number:'1.2-2' }} (vigencia {{ trm.vigencia || '—' }})
+            <ng-container *ngIf="trm.desactualizada"> · desactualizada</ng-container>
+          </span>
         </div>
       </div>
     </mat-card>
@@ -398,9 +500,16 @@
             <span class="font-medium">{{ totales.impuesto | currencyFormat:currencySymbol }}</span>
           </div>
           <div class="flex justify-between pt-2 border-t border-gray-200">
-            <span class="font-semibold text-gray-800">Total:</span>
-            <span class="font-bold text-lg text-primary">{{ totales.total | currencyFormat:currencySymbol }}</span>
+            <span class="font-semibold text-gray-800">Total{{ esUsd ? ' USD' : '' }}:</span>
+            <span class="font-bold text-lg text-primary">{{ totales.total | currencyFormat:(esUsd ? 'US$' : currencySymbol) }}</span>
           </div>
+          <div class="flex justify-between pt-2 mt-1 border-t border-dashed border-gray-300" *ngIf="esUsd">
+            <span class="font-semibold text-gray-800">Equivalente COP:</span>
+            <span class="font-bold text-lg text-green-700">{{ totalCop | currencyFormat:currencySymbol }}</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-1" *ngIf="esUsd">
+            TRM aplicada: {{ form.get('tasa_cambio')?.value | number:'1.2-2' }} — el asiento contable se registra en COP
+          </p>
         </div>
       </div>
     </mat-card>
@@ -414,6 +523,14 @@
           <mat-select formControlName="modo" (selectionChange)="onModoChange()">
             <mat-option [value]="1">Contado</mat-option>
             <mat-option [value]="2">Crédito</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+          <mat-icon matPrefix>credit_card</mat-icon>
+          <mat-label>Forma de pago</mat-label>
+          <mat-select formControlName="forma">
+            <mat-option *ngFor="let f of formasPago" [value]="f.codigo_dian">{{ f.nombre }}</mat-option>
           </mat-select>
         </mat-form-field>
 

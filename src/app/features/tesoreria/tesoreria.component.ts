@@ -10,14 +10,17 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { TesoreriaService } from '../../core/services/tesoreria.service';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { AccountsService } from '../../core/services/accounts.service';
 import { BancosService } from '../../core/services/bancos.service';
+import { FormasPagoService } from '../../core/services/formas-pago.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
 import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
 import { CuentaSelectComponent } from '../../shared/components/cuenta-select/cuenta-select.component';
+import { toIsoDate, isoToLocalDate } from '../../core/utils/date.util';
 
 @Component({
   selector: 'app-tesoreria',
@@ -33,6 +36,7 @@ import { CuentaSelectComponent } from '../../shared/components/cuenta-select/cue
     MatIconModule,
     MatCardModule,
     MatPaginatorModule,
+    MatDatepickerModule,
     CurrencyFormatPipe,
     CurrencyInputDirective,
     CuentaSelectComponent,
@@ -47,6 +51,7 @@ export class TesoreriaComponent implements OnInit {
   private thirds = inject(ThirdsService);
   private accounts = inject(AccountsService);
   private bancosSvc = inject(BancosService);
+  private formasPagoSvc = inject(FormasPagoService);
   private currency = inject(CurrencyService);
   private cdr = inject(ChangeDetectorRef);
 
@@ -56,6 +61,7 @@ export class TesoreriaComponent implements OnInit {
   terceros: any[] = [];
   cuentas: any[] = [];
   bancos: any[] = [];
+  formasPago: any[] = [];
   editandoId: number | null = null;
 
   // Paginación
@@ -69,6 +75,7 @@ export class TesoreriaComponent implements OnInit {
     'fecha',
     'tipo',
     'nombre_tercero',
+    'forma',
     'banco',
     'valor',
     'acciones',
@@ -79,6 +86,7 @@ export class TesoreriaComponent implements OnInit {
     codigo: ['', Validators.required],
     tipo: [1, Validators.required],
     banco_id: [null as number | null, Validators.required],
+    forma: [10],
     cuenta_contrapartida_id: [null as number | null, Validators.required],
     nombre_tercero: [''],
     tercero: [''],
@@ -120,17 +128,25 @@ export class TesoreriaComponent implements OnInit {
         const nivel = (c.codigo || '').split('.').length;
         return nivel >= 3;
       });
+      this.aplicarCuentaSugerida();
       this.cdr.detectChanges();
     });
     this.bancosSvc.getAll().subscribe((res: any) => {
       this.bancos = res.data ?? res ?? [];
       this.cdr.detectChanges();
     });
+    this.formasPagoSvc.getAll({ limit: 100 }).subscribe((res: any) => {
+      this.formasPago = (res.data ?? res ?? []).filter((f: any) => f.estado === 1);
+      this.cdr.detectChanges();
+    });
   }
 
   cargar() {
+    const v = this.filters.value;
     const query = {
-      ...this.filters.value,
+      ...v,
+      date: toIsoDate(v.date),
+      date2: toIsoDate(v.date2),
       page: this.pageIndex + 1,
       limit: this.pageSize,
     };
@@ -169,7 +185,10 @@ export class TesoreriaComponent implements OnInit {
 
   guardar() {
     if (this.form.invalid) return;
-    const body = this.form.value as any;
+    const body = {
+      ...this.form.value,
+      fecha: toIsoDate(this.form.value.fecha),
+    } as any;
 
     const req = this.editandoId
       ? this.tesoreria.update(this.editandoId, body)
@@ -189,12 +208,12 @@ export class TesoreriaComponent implements OnInit {
 
   editar(row: any) {
     this.editandoId = row.id;
-    this.form.patchValue(row);
+    this.form.patchValue({ ...row, fecha: isoToLocalDate(row.fecha) });
   }
 
   cancelar() {
     this.editandoId = null;
-    this.form.reset({ tipo: 1, valor: 0 });
+    this.form.reset({ tipo: 1, valor: 0, forma: 10 });
   }
 
   eliminar(row: any) {
@@ -220,7 +239,33 @@ export class TesoreriaComponent implements OnInit {
     return b?.nombre || id;
   }
 
+  nombreFormaPago(codigo: number) {
+    const f = this.formasPago.find((x) => x.codigo_dian === Number(codigo));
+    return f?.nombre || (codigo ? `Código ${codigo}` : '—');
+  }
+
   tipoLabel(tipo: number) {
     return tipo === 1 ? 'Ingreso' : 'Egreso';
+  }
+
+  /**
+   * Sugiere la cuenta contrapartida según el tipo de movimiento:
+   * - Ingreso -> 4.2.95 DIVERSOS
+   * - Egreso  -> 5.3.05.05 GASTOS BANCOS
+   * Solo aplica si el campo está vacío o tiene la otra cuenta sugerida
+   * (no pisa una selección manual del usuario).
+   */
+  aplicarCuentaSugerida() {
+    const codigoSugerido =
+      this.form.get('tipo')?.value === 1 ? '4.2.95' : '5.3.05.05';
+    const codigosSugeridos = ['4.2.95', '5.3.05.05'];
+    const actual = this.cuentas.find(
+      (c) => c.id === this.form.get('cuenta_contrapartida_id')?.value,
+    );
+    if (actual && !codigosSugeridos.includes(actual.codigo)) return;
+    const sugerida = this.cuentas.find((c) => c.codigo === codigoSugerido);
+    if (sugerida) {
+      this.form.get('cuenta_contrapartida_id')?.setValue(sugerida.id);
+    }
   }
 }

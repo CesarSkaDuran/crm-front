@@ -131,12 +131,16 @@
 
       <mat-form-field class="blue-input" subscriptSizing="dynamic">
         <mat-label>Fecha resolución</mat-label>
-        <input matInput type="date" formControlName="fecha_resolucion" />
+        <input matInput [matDatepicker]="pResol" formControlName="fecha_resolucion" />
+        <mat-datepicker-toggle matIconSuffix [for]="pResol"></mat-datepicker-toggle>
+        <mat-datepicker #pResol></mat-datepicker>
       </mat-form-field>
 
       <mat-form-field class="blue-input" subscriptSizing="dynamic">
         <mat-label>Fecha vencimiento</mat-label>
-        <input matInput type="date" formControlName="fecha_vencimiento" />
+        <input matInput [matDatepicker]="pVenc" formControlName="fecha_vencimiento" />
+        <mat-datepicker-toggle matIconSuffix [for]="pVenc"></mat-datepicker-toggle>
+        <mat-datepicker #pVenc></mat-datepicker>
       </mat-form-field>
 
       <mat-form-field class="blue-input col-span-2" subscriptSizing="dynamic">

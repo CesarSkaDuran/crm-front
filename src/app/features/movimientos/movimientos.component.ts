@@ -9,7 +9,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { AccountingService } from '../../core/services/accounting.service';
+import { toIsoDate } from '../../core/utils/date.util';
 
 @Component({
   selector: 'app-movimientos',
@@ -24,6 +26,7 @@ import { AccountingService } from '../../core/services/accounting.service';
     MatIconModule,
     MatCardModule,
     MatPaginatorModule,
+    MatDatepickerModule,
   ],
   templateUrl: './movimientos.component.html',
   styleUrl: './movimientos.component.scss',
@@ -68,7 +71,13 @@ export class MovimientosComponent implements OnInit {
 
   cargar() {
     this.accounting
-      .getMovimientos({ ...this.filters.value, page: this.pageIndex + 1, limit: this.pageSize })
+      .getMovimientos({
+        ...this.filters.value,
+        date: toIsoDate(this.filters.value.date),
+        date2: toIsoDate(this.filters.value.date2),
+        page: this.pageIndex + 1,
+        limit: this.pageSize,
+      })
       .subscribe((res: any) => {
         this.movimientos = res.data ?? [];
         this.totalDebito = res.total_debito ?? 0;

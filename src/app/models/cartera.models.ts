@@ -21,6 +21,10 @@ export interface Credito {
   observacion: string | null;
   cuotas?: CuotaCredito[];
   pago_minimo?: number;
+  // Datos de moneda (si el documento origen es en USD)
+  moneda_codigo?: string;
+  tasa_cambio?: number;
+  valor_moneda_extranjera?: number;
   created_at: string;
   updated_at: string;
 }
@@ -108,9 +112,21 @@ export interface CarteraDetalleResponse {
   movimientos: MovimientoContable[];
 }
 
+export interface MonedaCredito {
+  codigo: string;
+  tasa_factura: number;
+  valor_moneda_extranjera: number;
+  tasa_hoy: number;
+  trm_desactualizada: boolean;
+  saldo_moneda: number;
+  saldo_esperado_cop: number;
+}
+
 export interface CreditoDetalleResponse extends Credito {
   cuotas: CuotaCredito[];
   pago_minimo: number;
+  /** Datos de moneda si la factura origen es en USD */
+  moneda?: MonedaCredito | null;
 }
 
 export interface CuotasVencidasResponse {
@@ -167,7 +183,17 @@ export interface RegistrarCobroDto {
   banco_id: number;
   valor: number;
   descripcion?: string;
+  descuento?: number;
+  cuenta_descuento_id?: number;
   pagar_todo?: boolean;
+  /** TRM del día del cobro (solo documentos en USD) */
+  tasa_pago?: number;
+  /** Comisión bancaria % que descuenta el banco (0 = sin comisión) */
+  comision_porcentaje?: number;
+  /** Si true, la comisión causa IVA 19% descontable (por defecto excluida, Art. 476 E.T.) */
+  comision_gravada?: boolean;
+  /** Si true, descuenta GMF 4x1000 (0.4%) como gasto bancario */
+  aplicar_gmf?: boolean;
 }
 
 export interface PosfecharCuotaDto {

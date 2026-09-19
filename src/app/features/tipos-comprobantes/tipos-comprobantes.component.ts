@@ -1,6 +1,7 @@
 import { NotificacionesService } from '../../core/services/notificaciones.service'
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import {
   ReactiveFormsModule,
   FormsModule,
@@ -21,6 +22,7 @@ import { AccountingService } from '../../core/services/accounting.service';
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     ReactiveFormsModule,
     FormsModule,
     MatTableModule,

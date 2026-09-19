@@ -11,10 +11,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NotificacionesService } from '../../../core/services/notificaciones.service';
-import { ImpuestosService } from '../../../core/services/impuestos.service';
+import { FormasPagoService } from '../../../core/services/formas-pago.service';
 
 @Component({
-  selector: 'app-impuestos',
+  selector: 'app-formas-pago',
   standalone: true,
   imports: [
     CommonModule,
@@ -30,25 +30,24 @@ import { ImpuestosService } from '../../../core/services/impuestos.service';
     MatCardModule,
     MatTooltipModule,
   ],
-  templateUrl: './impuestos.component.html',
-  styleUrl: './impuestos.component.scss',
+  templateUrl: './formas-pago.component.html',
+  styleUrl: './formas-pago.component.scss',
 })
-export class ImpuestosComponent implements OnInit {
+export class FormasPagoComponent implements OnInit {
   private fb = inject(FormBuilder);
   private cdr = inject(ChangeDetectorRef);
   private noti = inject(NotificacionesService);
-  private service = inject(ImpuestosService);
+  private service = inject(FormasPagoService);
 
   lista: any[] = [];
   editandoId: number | null = null;
   search = '';
 
-  displayedColumns = ['codigo', 'nombre', 'porcentaje', 'estado', 'acciones'];
+  displayedColumns = ['codigo_dian', 'nombre', 'estado', 'acciones'];
 
   form = this.fb.group({
-    codigo: ['', Validators.required],
+    codigo_dian: [null as number | null, Validators.required],
     nombre: ['', Validators.required],
-    porcentaje: [0, [Validators.required, Validators.min(0)]],
     estado: [1, Validators.required],
   });
 
@@ -62,7 +61,7 @@ export class ImpuestosComponent implements OnInit {
         this.lista = res.data ?? res ?? [];
         this.cdr.detectChanges();
       },
-      error: () => this.noti.error('Error al cargar impuestos'),
+      error: () => this.noti.error('Error al cargar formas de pago'),
     });
   }
 
@@ -102,7 +101,7 @@ export class ImpuestosComponent implements OnInit {
 
   cancelar() {
     this.editandoId = null;
-    this.form.reset({ estado: 1, porcentaje: 0 });
+    this.form.reset({ estado: 1, codigo_dian: null, nombre: '' });
   }
 
   nombreEstado(estado: number): string {

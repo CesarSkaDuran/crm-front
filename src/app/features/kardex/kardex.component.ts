@@ -15,7 +15,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatCardModule } from '@angular/material/card';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { KardexService } from '../../core/services/kardex.service';
+import { toIsoDate } from '../../core/utils/date.util';
 import { ProductsService } from '../../core/services/products.service';
 import { ExcelExportService } from '../../core/services/excel-export.service';
 
@@ -34,6 +36,7 @@ import { ExcelExportService } from '../../core/services/excel-export.service';
     MatCardModule,
     MatTooltipModule,
     MatPaginatorModule,
+    MatDatepickerModule,
   ],
   templateUrl: './kardex.component.html',
   styleUrl: './kardex.component.scss',
@@ -90,8 +93,11 @@ export class KardexComponent implements OnInit {
   }
 
   cargarKardex() {
+    const v = this.filters.value;
     const query = {
-      ...this.filters.value,
+      ...v,
+      date: toIsoDate(v.date),
+      date2: toIsoDate(v.date2),
       page: this.pageIndex + 1,
       limit: this.pageSize,
     };
@@ -112,6 +118,8 @@ export class KardexComponent implements OnInit {
     this.pageIndex = 0;
     this.cargarKardex();
   }
+
+
 
   onPageChange(e: PageEvent) {
     this.pageIndex = e.pageIndex;

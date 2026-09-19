@@ -58,7 +58,15 @@ export class CierresService {
     return this.api.post(`cierres/${id}/cerrar`, {});
   }
 
-  anular(id: number): Observable<any> {
-    return this.api.post(`cierres/${id}/anular`, {});
+  anular(id: number, motivo: string): Observable<any> {
+    return this.api.post(`cierres/${id}/anular`, { motivo });
+  }
+
+  asientoCierre(id: number): Observable<any> {
+    return this.api.post(`cierres/${id}/asiento-cierre`, {});
+  }
+
+  reabrir(id: number, motivo: string): Observable<any> {
+    return this.api.post(`cierres/${id}/reabrir`, { motivo });
   }
 }

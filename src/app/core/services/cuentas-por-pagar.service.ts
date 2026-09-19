@@ -31,6 +31,10 @@ export class CuentasPorPagarService {
     return this.api.get('cuentas-por-pagar/cuotas-vencidas', query);
   }
 
+  analisisVencimiento(): Observable<any> {
+    return this.api.get('cuentas-por-pagar/analisis-vencimiento');
+  }
+
   crearCredito(dto: CreateCreditoDto): Observable<CreditoDetalleResponse> {
     return this.api.post('cuentas-por-pagar/credito', dto);
   }
