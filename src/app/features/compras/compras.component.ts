@@ -422,14 +422,9 @@ export class ComprasComponent implements OnInit {
     if (!productoId) return;
     const producto = this.productos.find((p) => p.id === productoId);
     if (producto) {
-      const costo =
-        Number(producto.ultimo_precio) ||
-        Number(producto.promedio) ||
-        Number(producto.pvp1) ||
-        0;
-      if (costo > 0 && !this.nuevoDetalle.get('costo_unitario')?.dirty) {
-        this.nuevoDetalle.get('costo_unitario')?.setValue(costo);
-      }
+      const costo = Number(producto.ultimo_precio) || Number(producto.promedio) || 0;
+      const costoControl = this.nuevoDetalle.get('costo_unitario');
+      if (!costoControl?.dirty) costoControl?.setValue(costo);
       const impuesto = Number(producto.impuesto) || 0;
       this.nuevoDetalle.get('impuesto')?.setValue(impuesto);
       // Mostrar vista previa del nuevo PVP si el producto tiene margen
@@ -476,8 +471,8 @@ export class ComprasComponent implements OnInit {
 
   calcularNuevoPvpVistaPrevia(producto: any, costo: number) {
     const margen = Number(producto.margen) || 0;
-    if (costo > 0 && margen > 0) {
-      const nuevoPvp1 = Math.round(costo * (1 + margen / 100) * 100) / 100;
+    if (costo > 0 && margen > 0 && margen < 100) {
+      const nuevoPvp1 = Math.round((costo / (1 - margen / 100)) * 100) / 100;
       this.nuevoPvpPreview = { pvp1: nuevoPvp1, margen };
     } else {
       this.nuevoPvpPreview = null;
@@ -620,11 +615,7 @@ export class ComprasComponent implements OnInit {
     const productoId = group.get('producto_id')?.value;
     const producto = this.productos.find((p) => p.id === productoId);
     if (producto) {
-      const costo =
-        Number(producto.ultimo_precio) ||
-        Number(producto.promedio) ||
-        Number(producto.pvp1) ||
-        0;
+      const costo = Number(producto.ultimo_precio) || Number(producto.promedio) || 0;
       const actual = Number(group.get('costo_unitario')?.value) || 0;
       const dirty = group.get('costo_unitario')?.dirty;
       if (costo > 0 && (!dirty || actual === 0)) {

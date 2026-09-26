@@ -60,12 +60,33 @@ export class CurrencyInputDirective implements OnInit {
 
   private toNumber(value: any): number | null {
     if (value === null || value === undefined || value === '') return null;
-    const s = String(value)
-      .replace(/[^\d.,-]/g, '')
-      .replace(/\./g, '')
-      .replace(',', '.');
-    const n = parseFloat(s);
-    return isNaN(n) ? null : Math.round(n * 100) / 100;
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? Math.round(value * 100) / 100 : null;
+    }
+
+    const s = String(value).trim().replace(/[^\d.,-]/g, '');
+    if (!s) return null;
+
+    const lastComma = s.lastIndexOf(',');
+    const lastDot = s.lastIndexOf('.');
+    let normalized: string;
+
+    if (lastComma >= 0 && lastDot >= 0) {
+      const decimalSeparator = lastComma > lastDot ? ',' : '.';
+      const groupingSeparator = decimalSeparator === ',' ? /\./g : /,/g;
+      normalized = s.replace(groupingSeparator, '').replace(decimalSeparator, '.');
+    } else if (lastComma >= 0) {
+      normalized = s.replace(/\./g, '').replace(',', '.');
+    } else if (lastDot >= 0) {
+      const separators = (s.match(/\./g) || []).length;
+      const decimals = s.length - lastDot - 1;
+      normalized = separators > 1 || decimals > this.decimals ? s.replace(/\./g, '') : s;
+    } else {
+      normalized = s;
+    }
+
+    const n = parseFloat(normalized);
+    return Number.isFinite(n) ? Math.round(n * 100) / 100 : null;
   }
 
   private format() {

@@ -14,7 +14,6 @@ import { BancosService } from '../../core/services/bancos.service';
 import { AccountsService } from '../../core/services/accounts.service';
 import { CurrencyService } from '../../core/services/currency.service';
 import { CurrencyFormatPipe } from '../../shared/pipes/currency-format.pipe';
-import { CurrencyInputDirective } from '../../shared/directives/currency-input.directive';
 
 @Component({
   selector: 'app-bancos',
@@ -31,7 +30,6 @@ import { CurrencyInputDirective } from '../../shared/directives/currency-input.d
     MatIconModule,
     MatCardModule,
     CurrencyFormatPipe,
-    CurrencyInputDirective,
   ],
   templateUrl: './bancos.component.html',
   styleUrl: './bancos.component.scss',
@@ -68,8 +66,6 @@ export class BancosComponent implements OnInit {
     nombre: ['', Validators.required],
     tipo: [1],
     cuenta_id: [''],
-    monto: [0],
-    monto_dia: [0],
   });
 
   get totalMonto() {
@@ -126,7 +122,7 @@ export class BancosComponent implements OnInit {
 
   cancelar() {
     this.editandoId = null;
-    this.form.reset({ tipo: 1, monto: 0, monto_dia: 0 });
+    this.form.reset({ tipo: 1 });
   }
 
   eliminar(row: any) {
