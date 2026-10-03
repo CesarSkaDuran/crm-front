@@ -2,6 +2,7 @@ import { NotificacionesService } from '../../core/services/notificaciones.servic
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { MatSidenav, MatSidenavContainer, MatSidenavContent } from '@angular/material/sidenav';
 import { MatIcon } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -129,14 +130,21 @@ export class ShellComponent implements OnInit {
   private router = inject(Router);
   private users = inject(UsersService);
   private empresas = inject(EmpresasService);
+  private breakpointObserver = inject(BreakpointObserver);
 
-  opened = signal(true);
+  isMobile = signal(this.breakpointObserver.isMatched('(max-width: 767px)'));
+  opened = signal(!this.isMobile());
   menu = signal(MENU);
   expanded = signal<Record<string, boolean>>({});
   usuario = signal(this.auth.getUsuario());
   empresa = signal<any>(null);
 
   ngOnInit() {
+    this.breakpointObserver.observe('(max-width: 767px)').subscribe(({ matches }) => {
+      this.isMobile.set(matches);
+      this.opened.set(!matches);
+    });
+
     // Refrescar datos del usuario (incluida la foto) desde el servidor
     const u = this.usuario();
     if (u?.id) {
@@ -189,6 +197,14 @@ export class ShellComponent implements OnInit {
 
   toggleSidenav() {
     this.opened.update(v => !v);
+  }
+
+  onSidenavOpenedChange(opened: boolean) {
+    this.opened.set(opened);
+  }
+
+  closeSidenavOnMobile() {
+    if (this.isMobile()) this.opened.set(false);
   }
 
   toggleGroup(id: string) {

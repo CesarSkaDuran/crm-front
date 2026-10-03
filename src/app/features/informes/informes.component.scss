@@ -4,15 +4,32 @@
 }
 
 .form-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
+  align-items: start;
+
+  > mat-form-field,
+  > label {
+    width: 100%;
+    min-width: 0;
+  }
 
   .field-action {
-    flex: 0 0 auto;
     display: flex;
     gap: 10px;
+    align-items: center;
+    justify-self: end;
+  }
+}
+
+@media (max-width: 767px) {
+  :host { padding: 1rem; }
+
+  .form-row .field-action {
+    grid-column: 1 / -1;
+    width: 100%;
+    justify-content: flex-end;
   }
 }
 
@@ -197,6 +214,8 @@ tr.mat-mdc-row:hover {
 // Asegurar que la tabla use todo el ancho disponible
 .table-responsive {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }

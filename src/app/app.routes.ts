@@ -36,9 +36,16 @@ import { EmpresaComponent } from './features/configuracion/empresa/empresa.compo
 import { FormasPagoComponent } from './features/configuracion/formas-pago/formas-pago.component';
 import { PartidasRecurrentesComponent } from './features/configuracion/partidas-recurrentes/partidas-recurrentes.component';
 import { authGuard } from './core/guards/auth.guard';
+import { superadminGuard } from './core/guards/superadmin.guard';
+import { AdminComponent } from './features/admin/admin.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
+  {
+    path: 'admin',
+    component: AdminComponent,
+    canActivate: [superadminGuard],
+  },
   {
     path: '',
     component: ShellComponent,

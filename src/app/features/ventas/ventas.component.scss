@@ -3,26 +3,112 @@
   padding: 1.5rem;
 }
 
+@media (max-width: 767px) {
+  :host { padding: 1rem; }
+}
+
 .ventas-header {
   @apply mb-6;
 }
 
-.form-row {
+.ventas-list-header,
+.ventas-form-header,
+.ventas-detail-header {
   display: flex;
-  gap: 10px;
   align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
 
-  .field-action {
-    flex: 0 0 auto;
+.ventas-list-actions,
+.ventas-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ventas-list-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  align-items: start;
+  gap: 1rem;
+
+  > mat-form-field,
+  > button {
+    width: 100%;
+    min-width: 0;
   }
+}
+
+.ventas-table-responsive,
+.sale-details-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ventas-table { min-width: 760px; }
+.sale-details-table { min-width: 900px; }
+
+.ventas-table .mat-column-codigo,
+.ventas-table .mat-column-fecha,
+.ventas-table .mat-column-total,
+.ventas-table .mat-column-estado,
+.ventas-table .mat-column-acciones {
+  white-space: nowrap;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 10px;
+  align-items: start;
+
+  > mat-form-field,
+  > app-currency-input,
+  > .flex-1,
+  > .flex {
+    width: 100%;
+    min-width: 0;
+  }
+
+  > button { justify-self: start; }
 }
 
 .form-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--countable-border);
+}
+
+@media (max-width: 767px) {
+  .ventas-list-header,
+  .ventas-form-header,
+  .ventas-detail-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ventas-list-actions,
+  .ventas-detail-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ventas-list-actions button,
+  .ventas-detail-actions button {
+    min-width: 0;
+    padding: 0 0.5rem !important;
+  }
+
+  .ventas-form-header > button { align-self: flex-start; }
+
+  .form-actions > button { flex: 1 1 140px; }
 }
 
 th.mat-mdc-header-cell {

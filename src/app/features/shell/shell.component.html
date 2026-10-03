@@ -1,10 +1,11 @@
 <mat-sidenav-container class="h-screen w-full" style="background-color: var(--countable-bg);">
   <mat-sidenav
-    [mode]="'side'"
+    [mode]="isMobile() ? 'over' : 'side'"
     [opened]="opened()"
+    (openedChange)="onSidenavOpenedChange($event)"
     class="!border-0"
     style="background-color: var(--countable-sidebar);"
-    [style.width.px]="280">
+    [style.width]="isMobile() ? 'min(280px, 85vw)' : '280px'">
 
     <div class="flex flex-col h-full" style="color: rgba(255,255,255,0.72);">
       <!-- Logo -->
@@ -51,6 +52,7 @@
                 [routerLink]="item.link"
                 routerLinkActive="nav-active"
                 [routerLinkActiveOptions]="{ exact: true }"
+                (click)="closeSidenavOnMobile()"
                 class="nav-link"
               >
                 <mat-icon class="nav-icon">{{ item.icon }}</mat-icon>
@@ -78,6 +80,7 @@
                       [routerLink]="child.link"
                       routerLinkActive="nav-active"
                       [routerLinkActiveOptions]="{ exact: true }"
+                      (click)="closeSidenavOnMobile()"
                       class="nav-sublink"
                     >{{ child.title }}</a>
                   }
@@ -98,10 +101,10 @@
   <mat-sidenav-content style="background-color: var(--countable-bg);">
     <!-- Header -->
     <mat-toolbar class="shell-toolbar !h-16 !px-4 shadow-sm">
-      <button type="button" mat-icon-button (click)="toggleSidenav()" class="mr-2">
+      <button type="button" mat-icon-button (click)="toggleSidenav()" class="mr-2" [attr.aria-label]="opened() ? 'Cerrar menú' : 'Abrir menú'">
         <mat-icon>menu</mat-icon>
       </button>
-      <span class="text-lg font-medium" style="color: var(--countable-text);">Countable</span>
+      <span class="hidden sm:inline text-lg font-medium" style="color: var(--countable-text);">Countable</span>
 
       <span class="flex-1"></span>
 
@@ -140,7 +143,7 @@
       </mat-menu>
     </mat-toolbar>
 
-    <main class="p-6">
+    <main class="w-full min-w-0 p-3 md:p-6">
       <router-outlet />
     </main>
   </mat-sidenav-content>

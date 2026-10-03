@@ -3,17 +3,54 @@
   padding: 1.5rem;
 }
 
+@media (max-width: 767px) {
+  :host {
+    padding: 1rem;
+  }
+}
+
 .comprobantes-header {
   @apply mb-6;
 }
 
 .form-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  align-items: center;
+  align-items: start;
+
+  > mat-form-field,
+  > app-cuenta-select,
+  > app-currency-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .account-field,
+  .description-field,
+  .field-action {
+    grid-column: 1 / -1;
+  }
 
   .field-action {
-    flex: 0 0 auto;
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
+@media (min-width: 1024px) {
+  .form-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: center;
+
+    .type-field,
+    .account-field,
+    .description-field,
+    .amount-field,
+    .third-field,
+    .field-action {
+      grid-column: auto;
+    }
   }
 }
 
@@ -37,6 +74,17 @@
       @apply bg-red-100 text-red-800;
     }
   }
+}
+
+.lineas-table-wrap {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.lineas-table {
+  min-width: 680px;
 }
 
 th.mat-mdc-header-cell {

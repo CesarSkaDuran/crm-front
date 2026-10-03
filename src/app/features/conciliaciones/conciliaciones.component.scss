@@ -11,6 +11,11 @@
   flex-wrap: wrap;
   gap: 1rem;
   align-items: flex-start;
+
+  mat-form-field {
+    flex: 1 1 180px;
+    min-width: 0;
+  }
 }
 
 .field-action {
@@ -18,4 +23,23 @@
   gap: 0.5rem;
   align-items: center;
   padding-top: 0.25rem;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  table {
+    min-width: 680px;
+  }
+}
+
+@media (max-width: 640px) {
+  .form-row mat-form-field {
+    flex: 1 1 100%;
+  }
+
+  .field-action {
+    width: 100%;
+  }
 }

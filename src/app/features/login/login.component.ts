@@ -18,9 +18,9 @@ export class LoginComponent {
   private router = inject(Router);
 
   form = this.fb.nonNullable.group({
-    codigo_empresa: ['DEMO', Validators.required],
-    email: ['admin@demo.com', [Validators.required, Validators.email]],
-    password: ['admin123', Validators.required],
+    codigo_empresa: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', Validators.required],
   });
 
   error = '';
@@ -33,7 +33,11 @@ export class LoginComponent {
     this.error = '';
 
     this.auth.login(this.form.getRawValue()).subscribe({
-      next: () => this.router.navigate(['/dashboard']),
+      next: () => {
+        const destino =
+          this.auth.getUsuario()?.rol === 'superadmin' ? '/admin' : '/dashboard';
+        this.router.navigate([destino]);
+      },
       error: (err) => {
         this.loading = false;
         this.error = err.error?.message || 'Error de autenticación';

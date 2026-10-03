@@ -3,19 +3,89 @@
   padding: 1.5rem;
 }
 
+@media (max-width: 767px) {
+  :host { padding: 1rem; }
+}
+
 .kardex-header {
   @apply mb-6;
 }
 
 .form-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
   gap: 10px;
-  align-items: center;
+  align-items: start;
+
+  > mat-form-field {
+    width: 100%;
+    min-width: 0;
+  }
 
   .field-action {
-    flex: 0 0 auto;
     display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     gap: 10px;
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1024px) {
+  .form-row {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+    align-items: center;
+
+    .field-action { grid-column: auto; }
+  }
+}
+
+.kardex-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.kardex-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.kardex-table {
+  min-width: 850px;
+
+  .mat-column-consecutivo,
+  .mat-column-fecha,
+  .mat-column-tipo_documento,
+  .mat-column-entradas,
+  .mat-column-salidas,
+  .mat-column-valor_unitario,
+  .mat-column-total,
+  .mat-column-cantidad_actual {
+    white-space: nowrap;
+  }
+
+  .mat-column-producto {
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 767px) {
+  .kardex-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .kardex-toolbar button { align-self: flex-start; }
+
+  .kardex-table th.mat-mdc-header-cell,
+  .kardex-table td.mat-mdc-cell {
+    padding-left: 8px;
+    padding-right: 8px;
   }
 }
 

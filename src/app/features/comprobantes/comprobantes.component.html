@@ -4,8 +4,8 @@
 
 <mat-card class="p-4 mb-6">
   <form [formGroup]="lineaForm" (ngSubmit)="agregarLinea()">
-    <div class="form-row flex-nowrap overflow-x-auto">
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+    <div class="form-row">
+      <mat-form-field class="blue-input type-field" subscriptSizing="dynamic">
         <mat-icon matPrefix>assignment</mat-icon>
         <mat-label>Tipo</mat-label>
         <mat-select formControlName="tipo" (selectionChange)="tipoSeleccionado()" required>
@@ -14,27 +14,28 @@
       </mat-form-field>
 
       <app-cuenta-select
+        class="account-field"
         label="Cuenta"
         [cuentas]="cuentas"
         [required]="true"
         formControlName="cuenta_contable_id"
       ></app-cuenta-select>
 
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+      <mat-form-field class="blue-input description-field" subscriptSizing="dynamic">
         <mat-icon matPrefix>edit</mat-icon>
         <mat-label>Descripción</mat-label>
         <input matInput formControlName="descripcion" required />
       </mat-form-field>
 
       <app-currency-input
-        class="flex-1"
+        class="amount-field"
         formControlName="valor"
         label="Valor"
         icon="attach_money"
         [required]="true"
       ></app-currency-input>
 
-      <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
+      <mat-form-field class="blue-input third-field" subscriptSizing="dynamic">
         <mat-icon matPrefix>person</mat-icon>
         <mat-label>Terceros</mat-label>
         <mat-select formControlName="tercero_id">
@@ -55,7 +56,8 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
   <mat-card class="p-4 lg:col-span-2">
     <h2 class="section-title">Líneas del comprobante</h2>
-    <table mat-table [dataSource]="lineas" class="w-full">
+    <div class="lineas-table-wrap">
+      <table mat-table [dataSource]="lineas" class="lineas-table w-full">
       <ng-container matColumnDef="cuenta">
         <th mat-header-cell *matHeaderCellDef>Cuenta</th>
         <td mat-cell *matCellDef="let row">({{ row.cuenta?.codigo }}) {{ row.cuenta?.nombre }}</td>
@@ -90,9 +92,10 @@
         </td>
       </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-    </table>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
 
     <div *ngIf="lineas.length === 0" class="p-8 text-center text-gray-500">
       No hay líneas agregadas

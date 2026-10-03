@@ -3,22 +3,127 @@
   padding: 1.5rem;
 }
 
+@media (max-width: 767px) {
+  :host { padding: 1rem; }
+}
+
+.compras-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+@media (max-width: 767px) {
+  .compras-form-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .compras-form-header > button { align-self: flex-start; }
+}
+
+.compras-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.compras-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.compras-list-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  align-items: start;
+  gap: 1rem;
+
+  > mat-form-field,
+  > button {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.compras-table-responsive {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.compras-table {
+  min-width: 800px;
+
+  .mat-column-codigo,
+  .mat-column-fecha,
+  .mat-column-total,
+  .mat-column-modo,
+  .mat-column-estado,
+  .mat-column-acciones {
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 767px) {
+  .compras-list-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .compras-list-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .compras-list-actions button {
+    min-width: 0;
+    padding: 0 0.5rem !important;
+  }
+}
+
 .compras-header {
   @apply mb-6;
 }
 
 .form-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
   gap: 10px;
-  align-items: center;
+  align-items: start;
 
-  .field-action {
-    flex: 0 0 auto;
+  > mat-form-field,
+  > app-cuenta-select,
+  > app-currency-input,
+  > .flex-1,
+  > .flex {
+    width: 100%;
+    min-width: 0;
   }
+
+  > button { justify-self: start; }
+}
+
+.purchase-details-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.purchase-details-table {
+  min-width: 900px;
 }
 
 .form-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 1rem;
   padding-top: 1rem;

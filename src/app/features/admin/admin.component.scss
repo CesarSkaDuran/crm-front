@@ -1,0 +1,74 @@
+:host {
+  display: block;
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (max-width: 767px) {
+  :host { padding: 1rem; }
+}
+
+.admin-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 10px;
+  align-items: start;
+  margin-bottom: 12px;
+
+  &:last-child { margin-bottom: 0; }
+
+  > mat-form-field {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .field-action {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+}
+
+.admin-table-responsive {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-table { min-width: 700px; }
+
+th.mat-mdc-header-cell {
+  font-weight: 700;
+  background-color: var(--countable-input);
+  color: var(--countable-text-secondary);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+}
+
+td.mat-mdc-cell,
+th.mat-mdc-header-cell {
+  padding: 0 16px;
+}
+
+tr.mat-mdc-row:hover {
+  background-color: rgba(56, 138, 243, 0.04);
+}
+
+.fila-seleccionada {
+  background-color: rgba(56, 138, 243, 0.08);
+}
+
+.text-green-600 { color: #15803d; }
+.text-red-600 { color: #b91c1c; }

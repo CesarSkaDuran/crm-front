@@ -6,7 +6,7 @@
 <!-- ==================== DETALLE DE CONCILIACIÓN ==================== -->
 <ng-container *ngIf="selectedConciliacion; else listView">
   <mat-card class="p-4 mb-6">
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
       <div>
         <h2 class="section-title mb-0">
           <button mat-icon-button (click)="cerrarDetalle()" class="mr-2">
@@ -91,7 +91,8 @@
 
     <!-- Tabla de movimientos -->
     <h3 class="font-semibold mb-2 text-gray-700">Movimientos de conciliación</h3>
-    <table mat-table [dataSource]="selectedConciliacion.movimientos || []" class="w-full">
+    <div class="table-responsive">
+      <table mat-table [dataSource]="selectedConciliacion.movimientos || []" class="w-full">
       <ng-container matColumnDef="fecha">
         <th mat-header-cell *matHeaderCellDef>Fecha</th>
         <td mat-cell *matCellDef="let m">{{ m.fecha }}</td>
@@ -138,7 +139,8 @@
       </ng-container>
       <tr mat-header-row *matHeaderRowDef="selectedConciliacion.estado === 1 ? movColumns.slice(0, -1) : movColumns"></tr>
       <tr mat-row *matRowDef="let m; columns: (selectedConciliacion.estado === 1 ? movColumns.slice(0, -1) : movColumns);"></tr>
-    </table>
+      </table>
+    </div>
     <div *ngIf="!selectedConciliacion.movimientos?.length" class="p-4 text-center text-gray-500">
       No hay movimientos de conciliación. Agregue cheques no cobrados, consignaciones pendientes o notas bancarias.
     </div>
@@ -192,7 +194,8 @@
   <mat-card class="p-4">
     <h2 class="section-title mb-4">Conciliaciones registradas</h2>
 
-    <table mat-table [dataSource]="lista" class="w-full">
+    <div class="table-responsive">
+      <table mat-table [dataSource]="lista" class="w-full">
       <ng-container matColumnDef="banco">
         <th mat-header-cell *matHeaderCellDef>Banco</th>
         <td mat-cell *matCellDef="let row">{{ row.banco_nombre }}</td>
@@ -253,7 +256,8 @@
 
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
       <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-    </table>
+      </table>
+    </div>
 
     <div *ngIf="lista.length === 0" class="p-8 text-center text-gray-500">
       No hay conciliaciones registradas. Cree una nueva para empezar.

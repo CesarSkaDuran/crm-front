@@ -1,11 +1,11 @@
 <!-- Vista de listado -->
 <div *ngIf="!mostrarFormulario">
-  <div class="ventas-header mb-6 flex items-center justify-between">
+  <div class="ventas-header ventas-list-header mb-6">
     <div>
       <h1 class="page-title">Ventas</h1>
       <p class="text-gray-500 mt-1">Listado de ventas registradas</p>
     </div>
-    <div class="flex gap-2">
+    <div class="ventas-list-actions">
       <button mat-stroked-button color="primary" class="fuse-mat-button-rounded" (click)="exportarExcel()" matTooltip="Exportar a Excel">
         <mat-icon>file_download</mat-icon>
         Excel
@@ -19,7 +19,7 @@
 
   <mat-card class="p-4">
     <form [formGroup]="filters" (ngSubmit)="onFilterSubmit()">
-      <div class="flex items-center gap-4 mb-4 flex-wrap">
+      <div class="ventas-list-filters mb-4">
         <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">
           <mat-icon matPrefix>search</mat-icon>
           <mat-label>Buscar</mat-label>
@@ -42,14 +42,15 @@
           <mat-datepicker #pHasta></mat-datepicker>
         </mat-form-field>
 
-        <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded">
+        <button type="submit" mat-raised-button color="primary" class="fuse-mat-button-rounded ventas-filter-button">
           <mat-icon>search</mat-icon>
           Buscar
         </button>
       </div>
     </form>
 
-    <table mat-table [dataSource]="ventasFiltradas" class="w-full">
+    <div class="ventas-table-responsive">
+      <table mat-table [dataSource]="ventasFiltradas" class="ventas-table w-full">
       <ng-container matColumnDef="codigo">
         <th mat-header-cell *matHeaderCellDef>Código</th>
         <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
@@ -98,9 +99,10 @@
         </td>
       </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-    </table>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
 
     <div *ngIf="ventasFiltradas.length === 0" class="text-center py-8 text-gray-400">
       No hay ventas registradas
@@ -120,12 +122,12 @@
 
 <!-- Vista de detalle -->
 <div *ngIf="mostrarFormulario && ventaSeleccionada">
-  <div class="ventas-header mb-6 flex items-center justify-between">
+  <div class="ventas-header ventas-detail-header mb-6">
     <div>
       <h1 class="page-title">Detalle de venta</h1>
       <p class="text-gray-500 mt-1">{{ ventaSeleccionada.codigo }}</p>
     </div>
-    <div class="flex items-center gap-2">
+    <div class="ventas-detail-actions">
       <button mat-stroked-button (click)="imprimirFactura()">
         <mat-icon>print</mat-icon>
         Imprimir
@@ -252,7 +254,7 @@
 
 <!-- Vista de creación -->
 <div *ngIf="mostrarFormulario && !ventaSeleccionada">
-  <div class="ventas-header mb-6 flex items-center justify-between">
+  <div class="ventas-header ventas-form-header mb-6">
     <div>
       <h1 class="page-title">Nueva venta</h1>
       <p class="text-gray-500 mt-1">Registra una nueva factura de venta</p>
@@ -264,7 +266,7 @@
   </div>
 
   <form [formGroup]="form" (ngSubmit)="guardar()">
-    <mat-card class="p-4 mb-6">
+    <mat-card class="sale-form-card p-3 sm:p-4 mb-6">
       <h2 class="section-title">Información de la venta</h2>
 
       <div class="form-row mb-4">
@@ -356,7 +358,7 @@
       </div>
     </mat-card>
 
-    <mat-card class="p-4 mb-6">
+    <mat-card class="sale-form-card p-3 sm:p-4 mb-6">
       <h3 class="section-title">Agregar producto</h3>
 
       <div [formGroup]="nuevoDetalle" class="form-row items-end mb-4">
@@ -408,7 +410,8 @@
 
       <h3 class="section-title">Detalle de Factura</h3>
 
-      <table mat-table [dataSource]="detallesResumen" class="w-full mb-4" *ngIf="detallesResumen.length > 0">
+      <div class="sale-details-table-wrap mb-4" *ngIf="detallesResumen.length > 0">
+        <table mat-table [dataSource]="detallesResumen" class="sale-details-table w-full">
         <ng-container matColumnDef="item">
           <th mat-header-cell *matHeaderCellDef>Item</th>
           <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
@@ -463,9 +466,10 @@
           </td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="resumenColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: resumenColumns;"></tr>
-      </table>
+          <tr mat-header-row *matHeaderRowDef="resumenColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: resumenColumns;"></tr>
+        </table>
+      </div>
 
       <div *ngIf="detallesResumen.length === 0" class="text-center py-6 text-gray-400 border rounded mb-4">
         No se han agregado productos a la factura
@@ -514,7 +518,7 @@
       </div>
     </mat-card>
 
-    <mat-card class="p-4 mb-6">
+    <mat-card class="sale-form-card p-3 sm:p-4 mb-6">
       <h3 class="section-title">Forma de pago</h3>
       <div class="form-row mb-4">
         <mat-form-field class="blue-input flex-1" subscriptSizing="dynamic">

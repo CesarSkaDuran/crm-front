@@ -64,4 +64,16 @@ export class UsersService {
   uploadFoto(id: number, file: File | Blob, fileName = 'foto.png'): Observable<User> {
     return this.api.upload<User>(`usuarios/${id}/foto`, 'foto', file, fileName);
   }
+
+  getByEmpresa(empresaId: number): Observable<User[]> {
+    return this.api.get(`usuarios/empresa/${empresaId}`);
+  }
+
+  createForEmpresa(empresaId: number, dto: CreateUserDto): Observable<User> {
+    return this.api.post(`usuarios/empresa/${empresaId}`, dto);
+  }
+
+  updateForEmpresa(empresaId: number, userId: number, dto: UpdateUserDto): Observable<User> {
+    return this.api.patch(`usuarios/empresa/${empresaId}/${userId}`, dto);
+  }
 }

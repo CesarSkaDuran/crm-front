@@ -1,4 +1,4 @@
-<div class="p-6">
+<div class="p-3 sm:p-4 md:p-6">
   <div class="comprobantes-header mb-6">
     <h1 class="page-title">Resumen general</h1>
     <p class="text-gray-500 mt-1">Visión rápida del estado contable y financiero</p>
@@ -123,9 +123,10 @@
       </div>
     </mat-card>
 
-    <mat-card class="p-6">
+    <mat-card class="comprobantes-card p-4 md:p-6">
       <h2 class="section-title">Últimos comprobantes</h2>
-      <table mat-table [dataSource]="ultimosComprobantes" class="w-full">
+      <div class="comprobantes-table-wrap">
+        <table mat-table [dataSource]="ultimosComprobantes" class="comprobantes-table w-full">
         <ng-container matColumnDef="consecutivo">
           <th mat-header-cell *matHeaderCellDef>Consecutivo</th>
           <td mat-cell *matCellDef="let row">{{ row.consecutivo }}</td>
@@ -143,7 +144,8 @@
 
         <tr mat-header-row *matHeaderRowDef="comprobantesColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: comprobantesColumns;"></tr>
-      </table>
+        </table>
+      </div>
       <div *ngIf="ultimosComprobantes.length === 0" class="p-6 text-center text-gray-500">
         Sin comprobantes
       </div>

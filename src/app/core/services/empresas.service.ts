@@ -6,6 +6,22 @@ import { ApiService } from './api.service';
 export class EmpresasService {
   private api = inject(ApiService);
 
+  getAll(query?: Record<string, any>): Observable<any> {
+    return this.api.get('empresas', query);
+  }
+
+  create(body: any): Observable<any> {
+    return this.api.post('empresas', body);
+  }
+
+  update(id: number, body: any): Observable<any> {
+    return this.api.patch(`empresas/${id}`, body);
+  }
+
+  delete(id: number): Observable<any> {
+    return this.api.delete(`empresas/${id}`);
+  }
+
   getMiEmpresa(): Observable<any> {
     return this.api.getOne('empresas/mi-empresa');
   }

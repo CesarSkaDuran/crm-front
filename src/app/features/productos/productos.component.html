@@ -3,7 +3,7 @@
   <p class="text-gray-500 mt-1">Administra el catálogo de productos y servicios</p>
 </div>
 
-<mat-card class="p-4 mb-6">
+<mat-card class="product-form-card p-3 sm:p-4 mb-6">
   <h2 class="section-title">
     {{ editandoId ? 'Editar producto' : 'Nuevo producto' }}
   </h2>
@@ -50,7 +50,7 @@
         <mat-hint>Solo categorías hoja</mat-hint>
       </mat-form-field>
 
-      <button type="button" mat-icon-button color="primary" (click)="abrirNuevaCategoria()" title="Crear categoría">
+      <button type="button" mat-icon-button color="primary" class="category-add-button" (click)="abrirNuevaCategoria()" title="Crear categoría">
         <mat-icon>add</mat-icon>
       </button>
     </div>
@@ -211,9 +211,9 @@
 </mat-card>
 
 <mat-card class="p-4">
-  <div class="flex items-center justify-between mb-4 gap-4">
+  <div class="products-toolbar mb-4">
     <h2 class="section-title mb-0">Productos registrados</h2>
-    <div class="flex items-center gap-2">
+    <div class="products-toolbar-actions">
       <button mat-stroked-button color="primary" class="fuse-mat-button-rounded" (click)="exportarExcel()" matTooltip="Exportar a Excel">
         <mat-icon>file_download</mat-icon>
         Excel
@@ -237,7 +237,8 @@
     </div>
   </div>
 
-  <table mat-table [dataSource]="lista" class="w-full">
+  <div class="productos-table-responsive">
+    <table mat-table [dataSource]="lista" class="productos-table w-full">
     <ng-container matColumnDef="codigo">
       <th mat-header-cell *matHeaderCellDef>Código</th>
       <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
@@ -292,9 +293,10 @@
       </td>
     </ng-container>
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-  </table>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </div>
 
   <mat-paginator [length]="total" [pageIndex]="pageIndex" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions" (page)="onPage($event)" class="mt-4"></mat-paginator>
 
