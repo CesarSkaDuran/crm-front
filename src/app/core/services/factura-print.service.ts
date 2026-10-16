@@ -7,6 +7,12 @@ export interface FacturaPrintOpts {
   tipo: 'venta' | 'compra';
 }
 
+export interface TicketPrintOpts extends FacturaPrintOpts {
+  cajero?: string;          // nombre del usuario que registró la venta
+  formaPago?: string;       // nombre de la forma de pago (ej. Efectivo)
+  recibido?: number;        // valor recibido; si se envía se calcula el cambio
+}
+
 const fmt = (n: any) =>
   new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     .format(Number(n) || 0);
@@ -213,7 +219,158 @@ ${anulada ? '<div class="anulada">ANULADA</div>' : ''}
 </body>
 </html>`;
 
-    // Iframe oculto: imprime sin abrir una ventana/pestaña emergente.
+    this.printHtml(html);
+  }
+
+  /**
+   * Imprime la venta en formato tirilla (impresora térmica POS de 80 mm).
+   * Estructura compacta: logo, datos de empresa, número, ítems, totales y forma de pago.
+   */
+  imprimirTicket({ doc, empresa, tipo, cajero, formaPago, recibido }: TicketPrintOpts) {
+    const esVenta = tipo === 'venta';
+    const tercero = doc.cliente || doc.proveedor || {};
+    const tituloDoc = esVenta ? 'FACTURA DE VENTA' : 'DOCUMENTO DE COMPRA';
+    const numero = doc.numero_factura || doc.codigo;
+    const simbolo = '$';
+    const anulada = doc.estado === 0;
+
+    const logoUrl = empresa?.logo
+      ? (String(empresa.logo).startsWith('data:') || String(empresa.logo).startsWith('http')
+          ? empresa.logo
+          : `${API_SERVER_URL}${empresa.logo}`)
+      : null;
+
+    const nombreEmpresa = esc(empresa?.nombre || empresa?.razon_social || 'EMPRESA');
+    const razonSocial =
+      empresa?.razon_social && empresa.razon_social !== empresa?.nombre
+        ? esc(empresa.razon_social)
+        : null;
+
+    const fechaDoc = doc.fecha ? String(doc.fecha).substring(0, 10) : '';
+    const horaDoc = doc.created_at
+      ? new Date(doc.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
+      : '';
+
+    const detalles = doc.detalles || [];
+    const filas = detalles.map((d: any) => {
+      const precio = esVenta ? d.precio_unitario : d.costo_unitario;
+      const totalLinea = Number(d.cantidad) * Number(precio);
+      const nombreProd = esc(d.producto?.nombre || 'Producto #' + d.producto_id);
+      const codProd = esc(d.producto?.codigo || '');
+      return `
+        <tr>
+          <td class="td-cod">${codProd}</td>
+          <td class="td-nom"><div>${nombreProd}</div></td>
+          <td class="td-num">${simbolo}${fmt(precio)}</td>
+          <td class="td-num">${fmt(d.cantidad).replace('.00', '')}</td>
+          <td class="td-num td-right">${simbolo}${fmt(totalLinea)}</td>
+        </tr>`;
+    }).join('');
+
+    const cambio = recibido != null ? Number(recibido) - Number(doc.total) : null;
+    const formaPagoTxt = formaPago || (doc.modo === 2 ? 'Crédito' : 'Contado');
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>${esc(tituloDoc)} ${esc(numero)}</title>
+<style>
+  @page { size: 80mm auto; margin: 4mm 4mm 8mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { width: 72mm; font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 11px; }
+  .center { text-align: center; }
+  .logo { display: block; margin: 0 auto 6px; max-width: 56mm; max-height: 22mm;
+          object-fit: contain; filter: grayscale(100%); }
+  .empresa { font-size: 15px; font-weight: 800; letter-spacing: .5px; }
+  .empresa-sub { font-size: 10px; margin-top: 1px; }
+  .sep { border-top: 1px dashed #000; margin: 6px 0; }
+  .doc-num { font-size: 12px; font-weight: 800; text-align: center; }
+  .meta { font-size: 10px; margin-top: 2px; }
+  .meta .row { display: flex; justify-content: space-between; }
+  table.items { width: 100%; border-collapse: collapse; font-size: 10px; }
+  table.items th { border-bottom: 1px solid #000; padding: 2px 2px; text-align: left;
+    font-size: 9px; text-transform: uppercase; }
+  table.items td { padding: 2px 2px; vertical-align: top; }
+  .td-cod { font-size: 9px; white-space: nowrap; }
+  .td-nom div { max-width: 30mm; }
+  .td-num { white-space: nowrap; text-align: right; }
+  .totales { font-size: 11px; margin-top: 2px; }
+  .totales .row { display: flex; justify-content: space-between; padding: 1px 0; }
+  .totales .row.grande { font-size: 16px; font-weight: 800; border-top: 1px solid #000;
+    margin-top: 4px; padding-top: 4px; }
+  .pago { font-size: 11px; }
+  .pago .row { display: flex; justify-content: space-between; padding: 1px 0; }
+  .obs { font-size: 10px; }
+  .gracias { text-align: center; font-weight: 700; margin-top: 8px; }
+  .pie-empresa { text-align: center; font-size: 10px; margin-top: 2px; }
+  .anulada { text-align: center; font-weight: 800; font-size: 13px; border: 2px solid #000;
+    padding: 3px; margin: 4px 0; }
+</style>
+</head>
+<body>
+  ${logoUrl ? `<img class="logo" src="${esc(logoUrl)}" alt="logo">` : ''}
+  <div class="center empresa">${nombreEmpresa}</div>
+  ${razonSocial ? `<div class="center empresa-sub">${razonSocial}</div>` : ''}
+  <div class="center empresa-sub">Nit: ${esc(empresa?.nit || '')}${empresa?.dv ? '-' + esc(empresa.dv) : ''}${empresa?.regimen ? ' · ' + esc(empresa.regimen).toUpperCase() : ''}</div>
+  ${empresa?.direccion ? `<div class="center empresa-sub">${esc(empresa.direccion)}${empresa?.ciudad ? ', ' + esc(empresa.ciudad) : ''}</div>` : ''}
+  ${empresa?.telefono ? `<div class="center empresa-sub">Tel: ${esc(empresa.telefono)}</div>` : ''}
+
+  <div class="sep"></div>
+  <div class="doc-num">${esc(tituloDoc)} No: ${esc(numero)}</div>
+  <div class="sep"></div>
+
+  ${anulada ? '<div class="anulada">*** ANULADA ***</div>' : ''}
+
+  <div class="meta">
+    <div class="row"><span>Fecha:</span><span>${esc(fechaDoc)}${horaDoc ? ' ' + esc(horaDoc) : ''}</span></div>
+    ${cajero ? `<div class="row"><span>Cajero:</span><span>${esc(cajero)}</span></div>` : ''}
+    <div class="row"><span>Cliente:</span><span>${esc((tercero.nombre || '') + ' ' + (tercero.apellido || '') || 'Mostrador')}</span></div>
+    ${tercero.documento ? `<div class="row"><span>NIT/CC:</span><span>${esc(tercero.documento)}${tercero.dv ? '-' + esc(tercero.dv) : ''}</span></div>` : ''}
+  </div>
+
+  <div class="sep"></div>
+
+  <table class="items">
+    <thead>
+      <tr><th>Cód</th><th>Nombre</th><th style="text-align:right">Precio</th><th style="text-align:right">Cant</th><th style="text-align:right">Total</th></tr>
+    </thead>
+    <tbody>${filas}</tbody>
+  </table>
+
+  <div class="sep"></div>
+
+  <div class="totales">
+    <div class="row"><span>TOTAL NETO</span><span>${simbolo}${fmt(doc.base_grava)}</span></div>
+    <div class="row"><span>TOTAL IMPUESTOS</span><span>${simbolo}${fmt(doc.impuesto)}</span></div>
+    ${Number(doc.descuento) ? `<div class="row"><span>DESCUENTO</span><span>-${simbolo}${fmt(doc.descuento)}</span></div>` : ''}
+    <div class="row grande"><span>TOTAL A PAGAR</span><span>${simbolo}${fmt(doc.total)}</span></div>
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="pago">
+    <div class="row"><span>FORMA DE PAGO:</span><span>${esc(formaPagoTxt)}</span></div>
+    ${recibido != null ? `<div class="row"><span>RECIBIDO:</span><span>${simbolo}${fmt(recibido)}</span></div>` : ''}
+    ${cambio != null ? `<div class="row"><span>CAMBIO:</span><span>${simbolo}${fmt(cambio)}</span></div>` : ''}
+  </div>
+
+  ${doc.observacion ? `<div class="sep"></div><div class="obs"><strong>OBSERVACIONES:</strong><br>${esc(doc.observacion)}</div>` : ''}
+
+  <div class="sep"></div>
+  <div class="gracias">GRACIAS POR SU COMPRA</div>
+  <div class="pie-empresa">${nombreEmpresa}</div>
+</body>
+</html>`;
+
+    this.printHtml(html);
+  }
+
+  /**
+   * Imprime el HTML usando un iframe oculto (sin ventana emergente).
+   * Espera a que carguen las imágenes (logo) antes de imprimir.
+   */
+  private printHtml(html: string) {
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
     iframe.style.right = '0';
@@ -236,7 +393,10 @@ ${anulada ? '<div class="anulada">ANULADA</div>' : ''}
     idoc.write(html);
     idoc.close();
 
+    let printed = false;
     const doPrint = () => {
+      if (printed) return;
+      printed = true;
       const w = iframe.contentWindow;
       if (!w) return;
       w.focus();
@@ -251,7 +411,7 @@ ${anulada ? '<div class="anulada">ANULADA</div>' : ''}
     if (img && !img.complete) {
       img.onload = () => setTimeout(doPrint, 100);
       img.onerror = () => setTimeout(doPrint, 100);
-      setTimeout(doPrint, 1500); // respaldo
+      setTimeout(doPrint, 1500); // respaldo si la imagen no responde
     } else {
       setTimeout(doPrint, 300);
     }

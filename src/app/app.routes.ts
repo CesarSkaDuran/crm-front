@@ -5,6 +5,7 @@ import { ShellComponent } from './features/shell/shell.component';
 import { ComprobantesComponent } from './features/comprobantes/comprobantes.component';
 import { ComprasComponent } from './features/compras/compras.component';
 import { VentasComponent } from './features/ventas/ventas.component';
+import { PosComponent } from './features/pos/pos.component';
 import { KardexComponent } from './features/kardex/kardex.component';
 import { TesoreriaComponent } from './features/tesoreria/tesoreria.component';
 import { BancosComponent } from './features/bancos/bancos.component';
@@ -58,6 +59,7 @@ export const routes: Routes = [
       { path: 'informes', component: InformesComponent },
       { path: 'compras', component: ComprasComponent },
       { path: 'ventas', component: VentasComponent },
+      { path: 'ventas/pos', component: PosComponent },
       { path: 'kardex', component: KardexComponent },
       { path: 'tesoreria', component: TesoreriaComponent },
       { path: 'bancos', component: BancosComponent },

@@ -9,6 +9,7 @@ import {
   AbstractControl,
 } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -21,6 +22,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { AuthService } from '../../core/services/auth.service';
 import { SalesService } from '../../core/services/sales.service';
 import { ThirdsService } from '../../core/services/thirds.service';
 import { ProductsService } from '../../core/services/products.service';
@@ -103,6 +105,8 @@ export class VentasComponent implements OnInit {
   private trmSvc = inject(TrmService);
   private empresasSvc = inject(EmpresasService);
   private print = inject(FacturaPrintService);
+  private router = inject(Router);
+  private auth = inject(AuthService);
 
   monedas: any[] = [];
   trm: TrmActual | null = null;
@@ -376,6 +380,10 @@ export class VentasComponent implements OnInit {
 
 
 
+  irAPos() {
+    this.router.navigate(['/ventas/pos']);
+  }
+
   nuevaVenta() {
     this.ventaSeleccionada = null;
     this.ventaGuardada = null;
@@ -440,6 +448,42 @@ export class VentasComponent implements OnInit {
         this.print.imprimir({ doc: this.ventaSeleccionada, empresa, tipo: 'venta' }),
       error: () =>
         this.print.imprimir({ doc: this.ventaSeleccionada, empresa: null, tipo: 'venta' }),
+    });
+  }
+
+  imprimirTicketSeleccionada() {
+    this.printTicket(this.ventaSeleccionada);
+  }
+
+  /** Imprime la factura en formato carta desde el listado. */
+  imprimirVenta(venta: any) {
+    this.sales.getOne(venta.id).subscribe((res: any) => {
+      this.print.imprimir({ doc: res, empresa: this.empresa, tipo: 'venta' });
+    });
+  }
+
+  /** Imprime la tirilla tipo POS (80 mm) desde el listado. */
+  imprimirTicketVenta(venta: any) {
+    this.sales.getOne(venta.id).subscribe((res: any) => {
+      this.printTicket(res);
+    });
+  }
+
+  private printTicket(venta: any) {
+    const formaPago = this.formasPago.find(
+      (f) => Number(f.codigo_dian) === Number(venta.forma),
+    )?.nombre;
+    this.empresasSvc.getMiEmpresa().subscribe({
+      next: (empresa: any) =>
+        this.print.imprimirTicket({
+          doc: venta,
+          empresa,
+          tipo: 'venta',
+          cajero: this.auth.getUsuario()?.nombre,
+          formaPago,
+        }),
+      error: () =>
+        this.print.imprimirTicket({ doc: venta, empresa: null, tipo: 'venta' }),
     });
   }
 

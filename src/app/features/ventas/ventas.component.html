@@ -10,6 +10,10 @@
         <mat-icon>file_download</mat-icon>
         Excel
       </button>
+      <button mat-stroked-button color="primary" class="fuse-mat-button-rounded" (click)="irAPos()" matTooltip="Venta rápida con productos y cobro en un solo panel">
+        <mat-icon>point_of_sale</mat-icon>
+        Modo POS
+      </button>
       <button mat-raised-button color="primary" class="fuse-mat-button-rounded" (click)="nuevaVenta()">
         <mat-icon>add</mat-icon>
         Nueva venta
@@ -92,6 +96,12 @@
           <button mat-icon-button color="primary" (click)="verDetalle(row)" title="Ver detalle">
             <mat-icon>visibility</mat-icon>
           </button>
+          <button mat-icon-button color="primary" (click)="imprimirVenta(row)" title="Imprimir factura (carta)">
+            <mat-icon>print</mat-icon>
+          </button>
+          <button mat-icon-button color="accent" (click)="imprimirTicketVenta(row)" title="Imprimir tirilla POS (80mm)">
+            <mat-icon>receipt_long</mat-icon>
+          </button>
           <button mat-icon-button color="warn" (click)="anular(row)"
             [disabled]="row.estado === 0" title="Anular venta">
             <mat-icon>cancel</mat-icon>
@@ -130,7 +140,11 @@
     <div class="ventas-detail-actions">
       <button mat-stroked-button (click)="imprimirFactura()">
         <mat-icon>print</mat-icon>
-        Imprimir
+        Factura
+      </button>
+      <button mat-stroked-button color="accent" (click)="imprimirTicketSeleccionada()">
+        <mat-icon>receipt_long</mat-icon>
+        Ticket POS
       </button>
       <button mat-stroked-button (click)="volverAlListado()">
         <mat-icon>arrow_back</mat-icon>

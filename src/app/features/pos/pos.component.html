@@ -1,0 +1,126 @@
+<div class="pos-header mb-4">
+  <div>
+    <h1 class="page-title">Punto de venta</h1>
+    <p class="text-gray-500 mt-1">Venta rápida · {{ cantidadItems }} artículo(s) en la cuenta</p>
+  </div>
+  <div class="pos-header-actions">
+    <button mat-stroked-button (click)="limpiar()" [disabled]="carrito.length === 0 && !ultimaVenta">
+      <mat-icon>restart_alt</mat-icon>
+      Nueva venta
+    </button>
+    <button mat-stroked-button color="primary" (click)="volverAVentas()">
+      <mat-icon>arrow_back</mat-icon>
+      Volver a ventas
+    </button>
+  </div>
+</div>
+
+<div *ngIf="ultimaVenta" class="pos-success mb-4">
+  <mat-icon>check_circle</mat-icon>
+  <span>Venta <strong>{{ ultimaVenta.codigo }}</strong> registrada.</span>
+  <button mat-stroked-button color="primary" (click)="imprimirUltima()">
+    <mat-icon>print</mat-icon>
+    Imprimir
+  </button>
+</div>
+
+<div class="pos-layout">
+  <!-- Catálogo de productos -->
+  <mat-card class="pos-products p-3 sm:p-4">
+    <mat-form-field class="blue-input w-full" subscriptSizing="dynamic">
+      <mat-icon matPrefix>qr_code_scanner</mat-icon>
+      <mat-label>Buscar producto o escanear código</mat-label>
+      <input matInput [(ngModel)]="busqueda" (keyup.enter)="onBuscarEnter()" autofocus />
+    </mat-form-field>
+
+    <div class="pos-grid mt-4">
+      <button type="button" *ngFor="let p of productosFiltrados" class="pos-product"
+        [class.pos-product-agotado]="sinStock(p)"
+        [disabled]="sinStock(p)"
+        (click)="agregar(p)">
+        <span class="pos-product-codigo">{{ p.codigo }}</span>
+        <span class="pos-product-nombre">{{ p.nombre }}</span>
+        <span class="pos-product-precio">{{ precioDe(p) | currencyFormat:currencySymbol:0 }}</span>
+        <span class="pos-product-stock">Stock: {{ p.stock }}</span>
+      </button>
+    </div>
+
+    <div *ngIf="productosFiltrados.length === 0" class="text-center py-8 text-gray-400">
+      No hay productos que coincidan
+    </div>
+  </mat-card>
+
+  <!-- Cuenta / cobro -->
+  <mat-card class="pos-cart p-3 sm:p-4">
+    <h2 class="section-title">Cuenta</h2>
+
+    <mat-form-field class="blue-input w-full mb-2" subscriptSizing="dynamic">
+      <mat-icon matPrefix>person</mat-icon>
+      <mat-label>Cliente *</mat-label>
+      <mat-select [(ngModel)]="clienteId">
+        <mat-option *ngFor="let t of clientes" [value]="t.id">{{ t.nombre }}</mat-option>
+        <mat-option *ngIf="clientes.length === 0" disabled value="">No hay clientes registrados</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <div class="pos-lines">
+      <div *ngIf="carrito.length === 0" class="text-center py-8 text-gray-400">
+        Toca un producto para agregarlo
+      </div>
+      <div *ngFor="let item of carrito" class="pos-line">
+        <div class="pos-line-info">
+          <div class="pos-line-nombre">{{ item.producto.nombre }}</div>
+          <div class="pos-line-sub">{{ item.precio | currencyFormat:currencySymbol:0 }} c/u<span *ngIf="item.impuesto"> · IVA {{ item.impuesto }}%</span></div>
+        </div>
+        <div class="pos-qty">
+          <button mat-icon-button type="button" (click)="cambiarCantidad(item, item.cantidad - 1)" aria-label="Restar">
+            <mat-icon>remove</mat-icon>
+          </button>
+          <span>{{ item.cantidad }}</span>
+          <button mat-icon-button type="button" (click)="cambiarCantidad(item, item.cantidad + 1)" aria-label="Sumar">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
+        <div class="pos-line-total">{{ (item.cantidad * item.precio * (1 + item.impuesto / 100)) | currencyFormat:currencySymbol:0 }}</div>
+        <button mat-icon-button color="warn" type="button" (click)="quitar(item)" aria-label="Quitar">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <div class="pos-totals mt-3">
+      <div class="pos-total-row"><span>Subtotal</span><span>{{ subtotal | currencyFormat:currencySymbol:0 }}</span></div>
+      <div class="pos-total-row"><span>IVA</span><span>{{ impuestoTotal | currencyFormat:currencySymbol:0 }}</span></div>
+      <div class="pos-total-row pos-total-final"><span>Total</span><span>{{ total | currencyFormat:currencySymbol:0 }}</span></div>
+    </div>
+
+    <div class="pos-pay mt-4">
+      <mat-button-toggle-group [(ngModel)]="modo" class="w-full pos-modo" aria-label="Modo de pago">
+        <mat-button-toggle [value]="1">Contado</mat-button-toggle>
+        <mat-button-toggle [value]="2">Crédito</mat-button-toggle>
+      </mat-button-toggle-group>
+
+      <mat-form-field class="blue-input w-full mt-3" subscriptSizing="dynamic" *ngIf="modo === 1">
+        <mat-icon matPrefix>account_balance</mat-icon>
+        <mat-label>Banco / Caja *</mat-label>
+        <mat-select [(ngModel)]="bancoId">
+          <mat-option *ngFor="let b of bancos" [value]="b.id">{{ b.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field class="blue-input w-full mt-3" subscriptSizing="dynamic">
+        <mat-icon matPrefix>payment</mat-icon>
+        <mat-label>Forma de pago</mat-label>
+        <mat-select [(ngModel)]="forma">
+          <mat-option *ngFor="let f of formasPago" [value]="f.codigo_dian">{{ f.nombre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button type="button" mat-raised-button color="primary" class="pos-cobrar fuse-mat-button-rounded mt-4"
+        [disabled]="guardando || carrito.length === 0" (click)="cobrar()">
+        <mat-icon>point_of_sale</mat-icon>
+        {{ guardando ? 'Registrando...' : 'Cobrar ' + (total | currencyFormat:currencySymbol:0) }}
+      </button>
+    </div>
+  </mat-card>
+</div>
